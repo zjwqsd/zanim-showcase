@@ -1,4 +1,5 @@
 import {
+  Camera3D,
   Circle,
   Column,
   CustomObject2D,
@@ -9,14 +10,20 @@ import {
   Easing,
   Group,
   Math as ZMath,
+  MeshObject3D,
   Polygon,
   Polyline,
+  Rectangle,
   Row,
   Scene,
+  Scene3DLayer,
   Square,
   TAU,
   Text,
   Transform2D,
+  Transform3D,
+  TriangleMesh,
+  Vec3,
   VectorObject2D,
 } from '@zanim/web'
 
@@ -46,45 +53,6 @@ async function makeScene(canvas) {
   return Scene.create(canvas, {
     fps: 30,
     renderer: { unitSize: 135 * scale, background: '#0e1118' },
-  })
-}
-
-function colorCSS(value) {
-  if (value == null || typeof value === 'string') return value
-  const [r, g, b, a = 255] = value.map(Number)
-  return `rgba(${r},${g},${b},${a / 255})`
-}
-
-function webDocument(raw) {
-  return {
-    width: Number(raw.width),
-    height: Number(raw.height),
-    group_count: Number(raw.group_count ?? 1),
-    paths: raw.paths.map((path) => ({
-      group: Number(path.group ?? 0),
-      fill: colorCSS(path.fill),
-      stroke: path.stroke ? { color: colorCSS(path.stroke.color), width: Number(path.stroke.width) } : null,
-      contours: path.contours.map((contour) => ({
-        closed: !!contour.closed,
-        segments: contour.segments.map((segment) => segment.map((point) => [Number(point[0]), Number(point[1])])),
-      })),
-    })),
-  }
-}
-
-let vectorCachePromise = null
-function vectorCache() {
-  vectorCachePromise ??= fetch(asset('janim-api-vectors.json')).then((response) => {
-    if (!response.ok) throw new Error(`janim vector cache failed (${response.status})`)
-    return response.json()
-  })
-  return vectorCachePromise
-}
-
-function cachedMath(cache, key, source, options = {}) {
-  return new ZMath(source, {
-    ...options,
-    compiler: async () => ({ document: cache[key] }),
   })
 }
 
@@ -221,14 +189,13 @@ async function textExample(canvas) {
 
 async function typstExample(canvas) {
   const scene = await makeScene(canvas)
-  const cache = await vectorCache()
   const lines = [
     new Text('Zanim provides Text and Math classes to insert Typst content.', { fontSize: 27, opacity: 0 }),
     new Text('Math expressions are also supported.', { fontSize: 27, opacity: 0 }),
-    cachedMath(cache, 'math:A', 'A = pi r^2', { fontSize: 34, color: WHITE, reveal: 0 }),
-    cachedMath(cache, 'math:area', '"area" = pi dot "radius"^2', { fontSize: 34, color: WHITE, reveal: 0 }),
-    cachedMath(cache, 'math:set', 'cal(A) := { x in RR | x "is natural" }', { fontSize: 31, color: WHITE, reveal: 0 }),
-    cachedMath(cache, 'math:less', '5 < 17', { fontSize: 34, color: WHITE, reveal: 0 }),
+    new ZMath('A = pi r^2', { fontSize: 34, color: WHITE, reveal: 0 }),
+    new ZMath('"area" = pi dot "radius"^2', { fontSize: 34, color: WHITE, reveal: 0 }),
+    new ZMath('cal(A) := { x in RR | x "is natural" }', { fontSize: 31, color: WHITE, reveal: 0 }),
+    new ZMath('5 < 17', { fontSize: 34, color: WHITE, reveal: 0 }),
     new Text('Vector documents can also be composed as a full Typst-style document.', { fontSize: 26, opacity: 0 }),
   ]
   await Promise.all(lines.filter((item) => item.ready).map((item) => item.ready))
@@ -247,7 +214,7 @@ async function typstExample(canvas) {
     new Text('TypstText', { fontSize: 34, color: BLUE, opacity: 0, transform: T(-3, 0.8) }),
     new Text('This is a sentence with a math expression f(x)=x²', { fontSize: 27, opacity: 0, transform: T(3, 0.8) }),
     new Text('TypstMath', { fontSize: 34, color: BLUE, opacity: 0, transform: T(-3, -0.8) }),
-    cachedMath(cache, 'math:sum', 'sum_(i=1)^n x_i = x_1 + x_2 + dots.c + x_n', { fontSize: 31, color: WHITE, reveal: 0, transform: T(3, -0.8) }),
+    new ZMath('sum_(i=1)^n x_i = x_1 + x_2 + dots.c + x_n', { fontSize: 31, color: WHITE, reveal: 0, transform: T(3, -0.8) }),
   ]
   await Promise.all(cells.filter((item) => item.ready).map((item) => item.ready))
   scene.add(...cells)
@@ -264,53 +231,74 @@ async function typstExample(canvas) {
 
 async function typstColorize(canvas) {
   const scene = await makeScene(canvas)
-  const cache = await vectorCache()
-  const tokens = ['cos', 'space^2', 'theta', '+', 'sin', 'space^2', 'theta', '=', '1']
-  const objs = tokens.map((token) => cachedMath(cache, `token:${token}:white`, token, { fontSize: 95, color: WHITE }))
-  await Promise.all(objs.map((obj) => obj.ready))
+  const objs = [
+    new ZMath('cos', { fontSize: 95, color: WHITE }),
+    new ZMath('space^2', { fontSize: 95, color: WHITE }),
+    new ZMath('theta', { fontSize: 95, color: WHITE }),
+    new ZMath('+', { fontSize: 95, color: WHITE }),
+    new ZMath('sin', { fontSize: 95, color: WHITE }),
+    new ZMath('space^2', { fontSize: 95, color: WHITE }),
+    new ZMath('theta', { fontSize: 95, color: WHITE }),
+    new ZMath('=', { fontSize: 95, color: WHITE }),
+    new ZMath('1', { fontSize: 95, color: WHITE }),
+  ]
+  const replacements = {
+    cosBlue: new ZMath('cos', { fontSize: 95, color: BLUE, opacity: 0 }),
+    sinBlue: new ZMath('sin', { fontSize: 95, color: BLUE, opacity: 0 }),
+    thetaGold: new ZMath('theta', { fontSize: 95, color: GOLD, opacity: 0 }),
+    thetaOrange: new ZMath('theta', { fontSize: 95, color: ORANGE, opacity: 0 }),
+    thetaGreen0: new ZMath('theta', { fontSize: 95, color: GREEN, opacity: 0 }),
+    thetaGreen1: new ZMath('theta', { fontSize: 95, color: GREEN, opacity: 0 }),
+    spaceRed0: new ZMath('space^2', { fontSize: 95, color: RED, opacity: 0 }),
+    spaceRed1: new ZMath('space^2', { fontSize: 95, color: RED, opacity: 0 }),
+  }
+  await Promise.all([...objs, ...Object.values(replacements)].map((obj) => obj.ready))
   new Row({ gap: 0.04, at: [0, 0] }).place(...objs)
   scene.add(...objs)
   scene.wait(1)
 
-  async function recolor(index, colorName, color) {
-    const old = objs[index]
-    const next = cachedMath(cache, `token:${tokens[index]}:${colorName}`, tokens[index], {
-      fontSize: 95, color, opacity: 0, transform: old.transform,
-    })
-    await next.ready
+  function placeReplacement(index, next) {
+    next.transform = objs[index].transform
     scene.add(next)
+    const old = objs[index]
     scene.parallel(1, (api) => { api.fadeOut(old); api.fadeIn(next) })
     objs[index] = next
   }
-  await recolor(0, 'blue', BLUE)
-  await recolor(4, 'blue', BLUE)
-  await recolor(2, 'gold', GOLD)
-  await recolor(6, 'orange', ORANGE)
+
+  placeReplacement(0, replacements.cosBlue)
+  placeReplacement(4, replacements.sinBlue)
+  placeReplacement(2, replacements.thetaGold)
+  placeReplacement(6, replacements.thetaOrange)
   scene.wait(1)
 
-  async function recolorMany(indices, colorName, color) {
-    const replacements = indices.map((index) => {
-      const old = objs[index]
-      const next = cachedMath(cache, `token:${tokens[index]}:${colorName}`, tokens[index], {
-        fontSize: 95, color, opacity: 0, transform: old.transform,
-      })
-      return { index, old, next }
-    })
-    await Promise.all(replacements.map(({ next }) => next.ready))
-    scene.add(...replacements.map(({ next }) => next))
-    scene.parallel(1, (api) => replacements.forEach(({ old, next }) => { api.fadeOut(old); api.fadeIn(next) }))
-    replacements.forEach(({ index, next }) => { objs[index] = next })
-  }
-  await recolorMany([2, 6], 'green', GREEN)
-  await recolorMany([1, 5], 'red', RED)
+  replacements.thetaGreen0.transform = objs[2].transform
+  replacements.thetaGreen1.transform = objs[6].transform
+  scene.add(replacements.thetaGreen0, replacements.thetaGreen1)
+  scene.parallel(1, (api) => {
+    api.fadeOut(objs[2]); api.fadeIn(replacements.thetaGreen0)
+    api.fadeOut(objs[6]); api.fadeIn(replacements.thetaGreen1)
+  })
+  objs[2] = replacements.thetaGreen0
+  objs[6] = replacements.thetaGreen1
+
+  replacements.spaceRed0.transform = objs[1].transform
+  replacements.spaceRed1.transform = objs[5].transform
+  scene.add(replacements.spaceRed0, replacements.spaceRed1)
+  scene.parallel(1, (api) => {
+    api.fadeOut(objs[1]); api.fadeIn(replacements.spaceRed0)
+    api.fadeOut(objs[5]); api.fadeIn(replacements.spaceRed1)
+  })
+  objs[1] = replacements.spaceRed0
+  objs[5] = replacements.spaceRed1
   scene.wait(1)
   return scene
 }
 
 async function animatingPi(canvas) {
   const scene = await makeScene(canvas)
-  const cache = await vectorCache()
-  const glyph = webDocument(cache['pi:white'])
+  const piGlyph = new ZMath('pi', { fontSize: 24, color: WHITE })
+  await piGlyph.ready
+  const glyph = piGlyph.document
   const placed = []
   for (let row = 0; row < 10; row++) for (let col = 0; col < 10; col++) {
     const dx = (col - 4.5) * 0.68, dy = (4.5 - row) * 0.62
@@ -664,6 +652,167 @@ async function maskExample(canvas) {
   return scene
 }
 
+
+const SHAPE3D_DURATION = 4
+
+class Grid3D {
+  constructor(point, normal, { nu, nv, periodicV }) {
+    this.nu = nu; this.nv = nv; this.periodicV = periodicV
+    this.points = []; this.normals = []
+    for (let j = 0; j < nv; j++) {
+      const v = periodicV ? j / nv : j / (nv - 1)
+      for (let i = 0; i < nu; i++) {
+        const u = i / nu
+        this.points.push(point(u, v))
+        this.normals.push(normal(u, v).normalized())
+      }
+    }
+  }
+  idx(i, j) { return ((j % this.nv) + this.nv) % this.nv * this.nu + ((i % this.nu) + this.nu) % this.nu }
+  *cells() {
+    const jCount = this.periodicV ? this.nv : this.nv - 1
+    for (let j = 0; j < jCount; j++) for (let i = 0; i < this.nu; i++) {
+      yield [i, j, [this.idx(i, j), this.idx(i + 1, j), this.idx(i, j + 1), this.idx(i + 1, j + 1)]]
+    }
+  }
+}
+
+function smoothMesh3D(grid) {
+  const indices = []
+  for (const [, , [a, b, c, d]] of grid.cells()) indices.push(a, c, b, b, c, d)
+  return new TriangleMesh(grid.points, grid.normals, indices)
+}
+
+function checkerMeshes3D(grid) {
+  const vertices = [[], []], normals = [[], []], indices = [[], []]
+  for (const [i, j, [a, b, c, d]] of grid.cells()) {
+    const side = (i + j) & 1, outV = vertices[side], outN = normals[side], outI = indices[side], base = outV.length
+    for (const index of [a, b, c, d]) { outV.push(grid.points[index]); outN.push(grid.normals[index]) }
+    outI.push(base, base + 2, base + 1, base + 1, base + 2, base + 3)
+  }
+  return [0, 1].map((k) => new TriangleMesh(vertices[k], normals[k], indices[k]))
+}
+
+function ribbonSegment3D(vertices, normals, indices, a, b, width) {
+  const delta = b.sub(a)
+  if (delta.length <= 1e-9) return
+  const direction = delta.normalized(), reference = Math.abs(direction.y) < .85 ? new Vec3(0, 1, 0) : new Vec3(1, 0, 0)
+  const side = direction.cross(reference).normalized().mul(width * .5)
+  const up = direction.cross(side.normalized()).normalized().mul(width * .5)
+  for (const offset of [side, up]) {
+    const quad = [a.add(offset), b.add(offset), b.sub(offset), a.sub(offset)]
+    const normal = quad[1].sub(quad[0]).cross(quad[3].sub(quad[0])).normalized(), base = vertices.length
+    vertices.push(...quad); normals.push(normal, normal, normal, normal)
+    indices.push(base, base + 1, base + 2, base, base + 2, base + 3, base + 2, base + 1, base, base + 3, base + 2, base)
+  }
+}
+
+function wireMesh3D(grid, width = .025) {
+  const vertices = [], normals = [], indices = []
+  for (let j = 0; j < grid.nv; j++) for (let i = 0; i < grid.nu; i++) {
+    ribbonSegment3D(vertices, normals, indices, grid.points[grid.idx(i, j)], grid.points[grid.idx(i + 1, j)], width)
+  }
+  const step = Math.max(1, Math.floor(grid.nu / 12)), jCount = grid.periodicV ? grid.nv : grid.nv - 1
+  for (let i = 0; i < grid.nu; i += step) for (let j = 0; j < jCount; j++) {
+    ribbonSegment3D(vertices, normals, indices, grid.points[grid.idx(i, j)], grid.points[grid.idx(i, j + 1)], width)
+  }
+  return new TriangleMesh(vertices, normals, indices)
+}
+
+function dotMesh3D(grid, radius = .045) {
+  const vertices = [], normals = [], indices = [], istep = Math.max(1, Math.floor(grid.nu / 14)), jstep = Math.max(1, Math.floor(grid.nv / 8))
+  const faces = [
+    [[radius,0,0],[0,radius,0],[0,0,radius]], [[0,radius,0],[-radius,0,0],[0,0,radius]],
+    [[-radius,0,0],[0,-radius,0],[0,0,radius]], [[0,-radius,0],[radius,0,0],[0,0,radius]],
+    [[0,radius,0],[radius,0,0],[0,0,-radius]], [[-radius,0,0],[0,radius,0],[0,0,-radius]],
+    [[0,-radius,0],[-radius,0,0],[0,0,-radius]], [[radius,0,0],[0,-radius,0],[0,0,-radius]],
+  ].map((face) => face.map((p) => new Vec3(...p)))
+  for (let j = 0; j < grid.nv; j += jstep) for (let i = 0; i < grid.nu; i += istep) {
+    const center = grid.points[grid.idx(i, j)]
+    for (const [oa, ob, oc] of faces) {
+      const a = center.add(oa), b = center.add(ob), c = center.add(oc), normal = b.sub(a).cross(c.sub(a)).normalized(), base = vertices.length
+      vertices.push(a, b, c); normals.push(normal, normal, normal); indices.push(base, base + 1, base + 2)
+    }
+  }
+  return new TriangleMesh(vertices, normals, indices)
+}
+
+function torusGrid3D() {
+  const major = .78, minor = .31
+  return new Grid3D(
+    (u, v) => new Vec3((major + minor * Math.cos(TAU * v)) * Math.cos(TAU * u), (major + minor * Math.cos(TAU * v)) * Math.sin(TAU * u), minor * Math.sin(TAU * v)),
+    (u, v) => new Vec3(Math.cos(TAU * v) * Math.cos(TAU * u), Math.cos(TAU * v) * Math.sin(TAU * u), Math.sin(TAU * v)),
+    { nu: 28, nv: 14, periodicV: true },
+  )
+}
+
+function cylinderGrid3D() {
+  const radius = .82, height = 2.15
+  return new Grid3D(
+    (u, v) => new Vec3(radius * Math.cos(TAU * u), height * (v - .5), radius * Math.sin(TAU * u)),
+    (u) => new Vec3(Math.cos(TAU * u), 0, Math.sin(TAU * u)),
+    { nu: 28, nv: 9, periodicV: false },
+  )
+}
+
+function coneGrid3D() {
+  const radius = .92, height = 2.25
+  return new Grid3D(
+    (u, v) => new Vec3(radius * (.025 + .975 * v) * Math.cos(TAU * u), height * (.5 - v), radius * (.025 + .975 * v) * Math.sin(TAU * u)),
+    (u) => new Vec3(height * Math.cos(TAU * u), radius, height * Math.sin(TAU * u)),
+    { nu: 28, nv: 9, periodicV: false },
+  )
+}
+
+function shape3DOpacity(time, start) {
+  if (time < start || time >= start + SHAPE3D_DURATION) return 0
+  if (time < start + .12) return smooth((time - start) / .12)
+  if (time >= start + SHAPE3D_DURATION - .12) return 1 - smooth((time - (start + SHAPE3D_DURATION - .12)) / .12)
+  return 1
+}
+
+function shape3DTransform(time, center, start) {
+  const a = clamp01((time - start) / SHAPE3D_DURATION)
+  return Transform3D.translation(center.x, center.y, 0)
+    .mul(Transform3D.rotationZ(TAU * a))
+    .mul(Transform3D.rotationX(TAU * a - .38))
+    .mul(Transform3D.rotationY(.45))
+}
+
+function styleMeshes3D(grid, styleName, center, start) {
+  const common = (mesh, color) => new MeshObject3D(mesh, {
+    color,
+    transform: (time) => shape3DTransform(time, center, start),
+    opacity: (time) => shape3DOpacity(time, start),
+  })
+  if (styleName === 'checker') {
+    const [a, b] = checkerMeshes3D(grid)
+    return [common(a, '#2a64cd'), common(b, '#69b1ff')]
+  }
+  if (styleName === 'wire') return [common(wireMesh3D(grid), '#68b2ff')]
+  if (styleName === 'smooth') return [common(smoothMesh3D(grid), '#58a6f2')]
+  if (styleName === 'dots') return [common(dotMesh3D(grid), '#7dbcff')]
+  throw new Error(styleName)
+}
+
+async function threeDShapesExample(canvas) {
+  const scene = await makeScene(canvas)
+  const panelW = 1920 / 135 / 2, panelH = 1080 / 135 / 2
+  const centers = [new Vec3(-panelW / 2, panelH / 2, 0), new Vec3(panelW / 2, panelH / 2, 0), new Vec3(-panelW / 2, -panelH / 2, 0), new Vec3(panelW / 2, -panelH / 2, 0)]
+  const backgrounds = ['#000022', '#000033', '#000033', '#000022']
+  centers.forEach((center, i) => scene.add(new Rectangle(panelW + .01, panelH + .01, { fill: backgrounds[i], stroke: null, transform: T(center.x, center.y), zIndex: -10 })))
+
+  const styles = ['checker', 'wire', 'smooth', 'dots'], grids = [torusGrid3D(), cylinderGrid3D(), coneGrid3D()], meshes = []
+  grids.forEach((grid, shapeIndex) => {
+    const start = shapeIndex * SHAPE3D_DURATION
+    styles.forEach((styleName, i) => meshes.push(...styleMeshes3D(grid, styleName, centers[i], start)))
+  })
+  const camera = new Camera3D({ position: new Vec3(0, 0, 15), target: new Vec3(), up: new Vec3(0, 1, 0), orthographicHeight: 8, layerZIndex: 0 })
+  scene.add(new Scene3DLayer(meshes, { camera, resolution: .9, maxWidth: 1280, maxHeight: 720, zIndex: 0 }))
+  scene.wait(12)
+  return scene
+}
+
 export const janimApiScenes = [
   { id: 'janim-hello', title: 'JAnim · Hello', source: 'janim_api/suite.py · HelloJAnimExample', width: 1920, height: 1080, builder: helloJAnim },
   { id: 'janim-basic', title: 'JAnim · Basic animation', source: 'janim_api/suite.py · BasicAnimationExample', width: 1920, height: 1080, builder: basicAnimation },
@@ -679,4 +828,5 @@ export const janimApiScenes = [
   { id: 'janim-marked', title: 'JAnim · Marked item', source: 'janim_api/suite.py · MarkedItemExample', width: 1920, height: 1080, builder: markedItem },
   { id: 'janim-frame-effect', title: 'JAnim · Frame effect', source: 'janim_api/frame_effect_example.py', width: 1920, height: 1080, builder: frameEffect, note: 'Recreated with the public CustomObject2D Canvas API: identical 8 s rotation and effect onset times, browser-native channel/scanline compositing.' },
   { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim_api/mask_example.py', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages and their original 4.0 + 9.8 + 6.0 + 8.9 s timing are preserved. Stage-two feathering is approximated by a hard browser clip.' },
+  { id: 'janim-3d-shapes', title: 'JAnim · 3D shapes', source: 'janim_api/three_d_shapes_example.py · ThreeDShapesExample', width: 1920, height: 1080, builder: threeDShapesExample, note: 'Real WASM depth rasterization using the same camera/projection conventions as Native Zanim; torus, cylinder and cone keep the original 3 × 4 s timing.' },
 ]

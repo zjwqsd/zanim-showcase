@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python/generated tutorial data
+__pycache__/
+*.py[cod]
+.pytest_cache/
+examples/assets/MNIST/

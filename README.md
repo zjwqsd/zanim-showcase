@@ -1,10 +1,10 @@
-# Zanim Vue Showcase
+# Zanim Tutorial / Web Showcase
 
-An independent downstream Vue + Vite project using the published shape of `@zanim/web`.
+Independent tutorial repository for Zanim. The core Zanim repository contains runtime code and tests only; executable examples live here.
 
-The project was created outside the Zanim repository, installs a packed `@zanim/web@0.0.1` tarball from `vendor/`, and does not import or reuse Zanim's existing Web Gallery/demo source. Scene implementations are reconstructed from the Python examples and public package API.
+## Web showcase
 
-## Run
+This Vue + Vite site installs a packed `@zanim/web` from `vendor/` and rebuilds the Python examples with public Web APIs.
 
 ```bash
 npm install
@@ -18,18 +18,34 @@ npm run build
 npm run preview
 ```
 
-Node 18 is intentionally supported here, so this project uses Vite 5 instead of the current `create-vite@latest` toolchain.
+The site currently includes core 2D/timeline/layout examples, interactive linear algebra, external media, Fourier/fractal/complex examples, JAnim effect-parity scenes and real WASM 3D.
 
-## Ported scenes
+Web formulas use `zanim()` from `@zanim/web/vite`. `vite dev` / `vite build` automatically invoke local Typst and emit SVG assets; the production browser never downloads a Typst compiler. Provide Typst through `ZANIM_TYPST`, project `.tools/typst`, `PATH`, or the plugin option.
 
-17 scenes are implemented in `src/scenes/index.js`, covering core authoring, lifetime/state, layout, timeline composition, coordinate frames, dense batches, forward kinematics, infinite linear algebra, Math/Typst vectors, external media, SVG vectors, Hilbert curves, classic fractals, modular multiplication, De Casteljau, Mandelbrot/Julia and complex mappings.
+`public/assets/math-matrices.json` remains intentional: it records Python's seeded `random.Random` sequence so the browser example uses exactly the same matrix values rather than JavaScript's unrelated PRNG. Formula cache JSON files are no longer used.
 
-The ports preserve the Python examples' authored timings, relative `at` offsets, `parallel()` structure, LOCAL/PARENT/WORLD frame semantics, procedural formulas and geometry motion where the public Web API can express them.
+## Python examples
 
-Math uses the public Web `Math` object with a static compiler callback. Typst-generated `VectorDocument` data is precompiled into `public/assets/math-cache.json`, keeping the site fully static. The deterministic matrix sequence in the Python math example is also precomputed with Python's `random.Random` into `math-matrices.json`, so browser output does not drift because of a different JavaScript PRNG.
+The original Zanim Python tutorial/examples are under:
 
-## Deferred
+```text
+examples/
+├── showcase/
+├── extras/
+├── janim_api/
+└── assets/
+```
 
-3D, compositing/masks, red-black-tree traces, sorting traces and specialized neural-network/MNIST/MIDI examples are intentionally left out until they can be reproduced without changing their semantics.
+They are plain user projects, not part of the Zanim package itself. Typical usage after installing Zanim:
 
-- Fourier drawing: runtime SVG fetch → arc-length samples → browser DFT → `FourierEpicycles`.
+```bash
+zanim preview examples/showcase/basics.py
+zanim render examples/showcase/three_d.py -o three_d.mp4
+python examples/extras/fourier_draw.py
+```
+
+This separation is intentional: examples can grow as teaching material without adding maintenance/runtime coupling to the core repository.
+
+## Toolchain
+
+Node 18 is supported by this tutorial, so it currently uses Vite 5 rather than the newest create-vite toolchain.

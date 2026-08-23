@@ -474,19 +474,15 @@ async function fourierDraw(canvas) {
     circleSamples: 28,
     traceSamples: 1000,
   })
-  const mathCache = await fetch(asset('math-cache.json')).then((response) => response.json())
-  const compiler = async ({ source }) => ({ document: mathCache[source] })
   const formula = new ZMath('f(t) = sum_k c_k e^(2 pi i k t)', {
     fontSize: 29,
     color: '#dfe4f0',
-    compiler,
     transform: T(0, 4.25),
     zIndex: 10,
   })
-  const termLabel = new ZMath(`N = ${epicycles.visualIndices.length}`, {
+  const termLabel = new ZMath('N = 36', {
     fontSize: 21,
     color: '#96a3bc',
-    compiler,
     transform: T(0, 3.72),
     zIndex: 10,
   })
@@ -657,17 +653,11 @@ async function complexMapping(canvas){
 
 async function mathShowcase(canvas) {
   const scene = await makeScene(canvas, { width: 1920, height: 1080, unitSize: 105 })
-  const [cache, matrixTicks] = await Promise.all([
-    fetch(asset('math-cache.json')).then((r) => r.json()),
-    fetch(asset('math-matrices.json')).then((r) => r.json()),
-  ])
-  // Python vector JSON uses RGBA byte arrays. Returning it under `document`
-  // intentionally lets @zanim/web's Typst adapter normalize those colors to CSS.
-  const compiler = async ({ source }) => ({ document: cache[source] })
+  const matrixTicks = await fetch(asset('math-matrices.json')).then((r) => r.json())
   const formulaSource = 'f(x) = 1.2 + 0.5 sin(1.2 x) + 0.055 x^2'
   const integralSource = 'integral_a^b f(x) dif x'
-  const formula = new ZMath(formulaSource, { fontSize: 30, color: '#f0f2f8', compiler, transform: T(3.7, 2.35) })
-  const integral = new ZMath(integralSource, { fontSize: 30, color: '#f0f2f8', compiler, transform: T(3.7, 1.45) })
+  const formula = new ZMath(formulaSource, { fontSize: 30, color: '#f0f2f8', transform: T(3.7, 2.35) })
+  const integral = new ZMath(integralSource, { fontSize: 30, color: '#f0f2f8', transform: T(3.7, 1.45) })
   await Promise.all([formula.ready, integral.ready])
 
   const title = new Text('Dynamic geometry and dynamic math', { fontSize: 33, opacity: 0, transform: T(0, 4.7) })
@@ -766,7 +756,7 @@ export const scenes = [
   { id:'kinematics', title:'Forward kinematics', source:'showcase/kinematics.py', width:1280, height:720, builder:kinematics },
   { id:'infinite', title:'Infinite linear algebra', source:'showcase/infinite_space.py', width:1280, height:720, builder:infiniteSpace },
   { id:'interactive-linear', title:'Interactive linear algebra', source:'Web interaction lab', width:1280, height:720, interactive:'linear-algebra', note:'Pointer-driven retained Scene state; no authored timeline.' },
-  { id:'math', title:'Math + dynamic geometry', source:'showcase/math.py', width:1920, height:1080, builder:mathShowcase, note:'Typst math is precompiled into static vector assets for a serverless site.' },
+  { id:'math', title:'Math + dynamic geometry', source:'showcase/math.py', width:1920, height:1080, builder:mathShowcase, note:'Math is precompiled to SVG automatically by @zanim/web/vite; the production browser only loads the generated vector asset.' },
   { id:'media', title:'External media', source:'showcase/media.py', width:1280, height:720, builder:media },
   { id:'vectors', title:'Vector document', source:'showcase/vectors.py', width:1280, height:720, builder:vectors },
   { id:'fourier', title:'Fourier drawing', source:'extras/fourier_draw.py', width:1920, height:1080, builder:fourierDraw, note:'The browser fetches assets/fourier_heart.svg, samples the closed path, computes the DFT, and feeds FourierEpicycles directly.' },
@@ -780,7 +770,6 @@ export const scenes = [
 ]
 
 export const deferred = [
-  ['3D scenes', 'Web 3D intentionally deferred; this includes janim_api/ThreeDShapesExample'],
   ['Red-black tree', 'discrete insertion/fix-up event trace needs a faithful port rather than a cosmetic imitation'],
   ['Sorting algorithms', 'same reason: event trace and settled/active states should be ported exactly'],
   ['Neural network / MNIST / MIDI', 'specialized assets and event/data pipelines deferred'],
