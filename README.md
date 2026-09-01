@@ -1,6 +1,6 @@
-# Zanim Tutorial / Web Showcase
+# Zanim Showcase & Examples
 
-Independent tutorial repository for Zanim. The core Zanim repository contains runtime code and tests only; executable examples live here.
+Standalone showcase and example repository for Zanim. The core Zanim repository contains runtime code and tests only; executable examples live here.
 
 ## Web showcase
 

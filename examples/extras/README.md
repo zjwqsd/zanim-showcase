@@ -11,6 +11,9 @@ These are deliberately not part of the step-by-step tutorial. They are larger en
 - `complex_mapping.py` uses the native Zig `ComplexMappedGrid`: target pixels are analytically inverse-mapped to an infinite source lattice for `z^2`, `e^z - 1`, `1/z`, and Möbius maps, with no finite source window or Python polyline sampling.
 - `midi_piano.py` parses Standard MIDI files into falling note blocks over a full 88-key piano; note-on/contact, key press, audio, and note-off/trailing-edge arrival share the same absolute timeline.
 - `red_black_tree.py` inserts a seeded random key sequence and animates red-black recolors plus left/right rotations until every insertion is repaired.
+- `simulation_collisions.py` uses one fixed-step global `Simulation` and binds multiple circles to its shared elastic-collision state.
+- `rubiks_cube.py` builds an articulated 3D Rubik's Cube from `Group3D` cubies and animates a scramble followed by its exact reverse solve.
+- `electric_field.py` uses the generic `VectorField` object to show a planar Coulomb field as sampled vectors and integrated field lines.
 - `neural_network.py` visualizes forward/backward signal propagation with dense batch geometry.
 - `mnist_training.py` trains a real NumPy 784→8→10 MLP and visualizes eight epochs, exact weights/gradients, metrics and inference. It is also a useful performance stress test.
 

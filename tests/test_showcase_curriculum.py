@@ -40,12 +40,11 @@ class ShowcaseCurriculumTests(unittest.TestCase):
                     assert source is not None
                     self.assertTrue(source.object_names)
                     self.assertGreaterEqual(len(scene._registry), 1)
-                    # Animated lessons should expose at least one real runtime
-                    # clip-to-source mapping from their top-level authoring code.
+                    # Animated lessons should expose scheduler-recorded actions.
                     if scene._timeline.clips:
                         self.assertTrue(
                             any(
-                                source.clip_source(clip) is not None
+                                id(clip) in scene._timeline._event_actions
                                 for clip in scene._timeline.clips
                             )
                         )
