@@ -73,7 +73,11 @@ def _stage1(duration=4.0) -> Scene:
     with content.parallel():
         for i, (c, target) in enumerate(zip(chars, finals)):
             content.transform(
-                c, to=target, duration=1.15, easing=Easing.SMOOTHSTEP, at=0.55 + i * 0.09
+                c,
+                to=target,
+                duration=1.15,
+                easing=Easing.SMOOTHSTEP,
+                at=0.55 + i * 0.09,
             )
     content.wait(max(0.0, duration - content.duration))
 
@@ -82,8 +86,10 @@ def _stage1(duration=4.0) -> Scene:
     mask.wait(duration)
 
     stage = _subscene()
-    stage.add(_full(AlphaMaskSource(SceneRasterSource(content), SceneRasterSource(mask))))
-    stage.media(stage.objects[0], duration=duration)
+    layer = stage.add(
+        _full(AlphaMaskSource(SceneRasterSource(content), SceneRasterSource(mask)))
+    )
+    layer.media(duration=duration)
     return stage
 
 
@@ -114,7 +120,9 @@ def _stage2(duration=9.8) -> Scene:
     def feather(t):
         return 0.0 if t < 2.4 else 10.0 * _smooth((t - 2.4) / 1.0)
 
-    masked = AlphaMaskSource(SceneRasterSource(content), SceneRasterSource(mask), feather=feather)
+    masked = AlphaMaskSource(
+        SceneRasterSource(content), SceneRasterSource(mask), feather=feather
+    )
 
     stage = _subscene()
     brown = Rectangle(3, 3, fill=LIGHT_BROWN, opacity=0, z_index=-2)
@@ -170,10 +178,14 @@ def _stage3(duration=6.0) -> Scene:
 def _stage4(duration=8.9) -> Scene:
     content = _subscene()
     centers = tuple(
-        Vec2(i * 0.3 + 0.15, j * 0.3) for j in range(20, -40, -1) for i in range(-23, 23)
+        Vec2(i * 0.3 + 0.15, j * 0.3)
+        for j in range(20, -40, -1)
+        for i in range(-23, 23)
     )
     dots = BatchObject2D(
-        CircleSet(centers, tuple(0.10 for _ in centers), tuple(PURPLE_E for _ in centers))
+        CircleSet(
+            centers, tuple(0.10 for _ in centers), tuple(PURPLE_E for _ in centers)
+        )
     )
     dots = content.add(dots)
     dots.move(by=(0, 3), frame=WORLD, duration=5.0, easing=Easing.LINEAR)
@@ -197,11 +209,17 @@ def _stage4(duration=8.9) -> Scene:
     return stage
 
 
-def build_mask_example() -> Scene:
-    main = Scene(canvas=Canvas(width=1920, height=1080, unit_size=135), fps=30)
-    for stage in (_stage1(), _stage2(), _stage3(), _stage4()):
-        source = SceneRasterSource(stage)
-        obj = RasterObject2D(source, width=1920 / 135, height=1080 / 135)
-        obj = main.add(obj)
-        obj.media(duration=source.duration)
-    return main
+class MaskExample(Scene):
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1920, height=1080, unit_size=135)
+        self.fps = 30
+        self.layers = []
+        for stage in (_stage1(), _stage2(), _stage3(), _stage4()):
+            source = SceneRasterSource(stage)
+            obj = RasterObject2D(source, width=1920 / 135, height=1080 / 135)
+            self.layers.append((obj, source.duration))
+
+    def construct(self) -> None:
+        for raw, duration in self.layers:
+            obj = self.add(raw)
+            obj.media(duration=duration)

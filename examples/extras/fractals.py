@@ -39,7 +39,9 @@ def _as_vec2(points: list[complex]) -> tuple[Vec2, ...]:
     return tuple(Vec2(point.real, point.imag) for point in points)
 
 
-def orient_endpoint_chord(points: tuple[Vec2, ...], *, angle: float = 0.0) -> tuple[Vec2, ...]:
+def orient_endpoint_chord(
+    points: tuple[Vec2, ...], *, angle: float = 0.0
+) -> tuple[Vec2, ...]:
     """Rotate an open path so its start-to-end chord has one canonical angle."""
     if len(points) < 2:
         raise ValueError("path requires at least two points")
@@ -49,7 +51,10 @@ def orient_endpoint_chord(points: tuple[Vec2, ...], *, angle: float = 0.0) -> tu
     rotation = angle - atan2(source.imag, source.real)
     unit = complex(cos(rotation), sin(rotation))
     return tuple(
-        Vec2((complex(point.x, point.y) * unit).real, (complex(point.x, point.y) * unit).imag)
+        Vec2(
+            (complex(point.x, point.y) * unit).real,
+            (complex(point.x, point.y) * unit).imag,
+        )
         for point in points
     )
 
@@ -72,7 +77,9 @@ def fit_points(points: tuple[Vec2, ...], *, side: float = SIDE) -> tuple[Vec2, .
     scale = side / extent
     cx = (x0 + x1) * 0.5
     cy = (y0 + y1) * 0.5
-    return tuple(Vec2((point.x - cx) * scale, (point.y - cy) * scale) for point in points)
+    return tuple(
+        Vec2((point.x - cx) * scale, (point.y - cy) * scale) for point in points
+    )
 
 
 def koch_snowflake_points(order: int, *, side: float = SIDE) -> tuple[Vec2, ...]:
@@ -104,7 +111,8 @@ def sierpinski_arrowhead_points(order: int, *, side: float = SIDE) -> tuple[Vec2
     word = "A"
     for _ in range(order):
         word = "".join(
-            "B-A-B" if token == "A" else "A+B+A" if token == "B" else token for token in word
+            "B-A-B" if token == "A" else "A+B+A" if token == "B" else token
+            for token in word
         )
 
     angle = 0.0
@@ -270,29 +278,35 @@ def _animate_fractal(scene: Scene, spec: FractalSpec) -> None:
     label.remove()
 
 
-def _build_scene(*, section: str | None = None) -> Scene:
-    scene = Scene(canvas=Canvas(width=1280, height=960, unit_size=100), fps=60)
-    specs = FRACTALS
-    if section is not None:
-        key = section.casefold()
-        specs = tuple(spec for spec in FRACTALS if key in spec.name.casefold())
-        if not specs:
-            names = ", ".join(spec.name for spec in FRACTALS)
-            raise ValueError(f"unknown fractal section {section!r}; choose from: {names}")
+class Fractals(Scene):
+    def __init__(self, *, section: str | None = None) -> None:
+        super().__init__()
+        self._arg_section = section
 
-    for spec in specs:
-        _animate_fractal(scene, spec)
-    scene.wait(0.35)
-    return scene
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1280, height=960, unit_size=100)
+        self.fps = 60
+        specs = FRACTALS
+        if self._arg_section is not None:
+            key = self._arg_section.casefold()
+            specs = tuple(spec for spec in FRACTALS if key in spec.name.casefold())
+            if not specs:
+                names = ", ".join(spec.name for spec in FRACTALS)
+                raise ValueError(
+                    f"unknown fractal section {self._arg_section!r}; choose from: {names}"
+                )
+        self.specs = specs
 
-
-def build_scene() -> Scene:
-    """Default gallery used by ``zanim preview/render``."""
-    return _build_scene()
+    def construct(self) -> None:
+        for spec in self.specs:
+            _animate_fractal(self, spec)
+        self.wait(0.35)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Animate several classic fractals in one scene")
+    parser = argparse.ArgumentParser(
+        description="Animate several classic fractals in one scene"
+    )
     parser.add_argument(
         "--section",
         default=None,
@@ -301,7 +315,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
 
-    scene = _build_scene(section=args.section)
+    scene = Fractals(section=args.section)
+    scene._run_authoring_hooks()
     output = scene.render_video(
         args.output,
         fps=60,

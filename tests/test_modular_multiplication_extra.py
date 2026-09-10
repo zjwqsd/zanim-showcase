@@ -5,7 +5,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "examples" / "extras" / "modular_multiplication.py"
-SPEC = importlib.util.spec_from_file_location("zanim_modular_multiplication_extra", MODULE_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "zanim_modular_multiplication_extra", MODULE_PATH
+)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -40,7 +42,9 @@ class ModularMultiplicationExtraTests(unittest.TestCase):
             self.assertEqual(len(MODULE.circle_dots(count)), count)
 
     def test_scene_builds_and_evaluates_random_access(self):
-        scene = MODULE._build_scene(points=48, start=1.0, end=3.0, duration=0.6)
+        scene = MODULE.ModularMultiplication(
+            points=48, start=1.0, end=3.0, duration=0.6
+        )._run_authoring_hooks()
         self.assertGreater(scene.duration, 0)
         for time in (0.0, scene.duration * 0.25, scene.duration * 0.75, scene.duration):
             scene.evaluate(time)

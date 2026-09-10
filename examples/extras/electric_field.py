@@ -1,4 +1,5 @@
 """Moving planar electric field shown as sampled vectors and field lines."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -85,7 +86,10 @@ def field_line_seeds(time: float, count: int = 24) -> tuple[Vec2, ...]:
 
 
 def near_charge(point: Vec2, time: float) -> bool:
-    return any((point - center).length < CHARGE_RADIUS * 0.88 for center in charge_positions(time))
+    return any(
+        (point - center).length < CHARGE_RADIUS * 0.88
+        for center in charge_positions(time)
+    )
 
 
 @dataclass
@@ -97,91 +101,108 @@ def step_orbit(state: OrbitState, dt: float) -> None:
     state.theta += OMEGA * dt
 
 
-def build_scene() -> Scene:
-    scene = Scene(canvas=CANVAS, fps=60)
+class ElectricField(Scene):
+    def setup(self) -> None:
+        self.canvas = CANVAS
+        self.fps = 60
 
-    axes = Axes(X_RANGE, Y_RANGE, width=X_RANGE[1] - X_RANGE[0], height=Y_RANGE[1] - Y_RANGE[0])
-    grid = axes.grid_object(
-        x_step=0.6,
-        y_step=0.6,
-        color=Color(92, 105, 130, 32),
-        width=0.008,
-    )
+        axes = Axes(
+            X_RANGE,
+            Y_RANGE,
+            width=X_RANGE[1] - X_RANGE[0],
+            height=Y_RANGE[1] - Y_RANGE[0],
+        )
+        self.grid = axes.grid_object(
+            x_step=0.6,
+            y_step=0.6,
+            color=Color(92, 105, 130, 32),
+            width=0.008,
+        )
+        self.vector_field = DynamicVectorField(
+            electric_field,
+            x_range=X_RANGE,
+            y_range=Y_RANGE,
+            step=0.6,
+            show_points=True,
+            point_radius=0.018,
+            point_color=Color(165, 177, 198, 100),
+            color=field_color,
+            stroke_width=0.017,
+            vector_length=0.31,
+            normalize=True,
+            tip_length=0.085,
+            tip_width=0.075,
+            opacity=0.0,
+            z_index=2,
+        )
+        self.positive = charge_object(1.0)
+        self.negative = charge_object(-1.0)
+        self.title = Text(
+            "Moving electric field · sampled vectors",
+            font_size=31,
+            color=WHITE,
+            opacity=0.0,
+        )
+        self.title.move_to(Vec2(0.0, 2.96))
+        self.orbit = Simulation(
+            OrbitState(), step_orbit, hz=240, checkpoint_interval=0.5
+        )
 
-    vector_field = DynamicVectorField(
-        electric_field,
-        x_range=X_RANGE,
-        y_range=Y_RANGE,
-        step=0.6,
-        show_points=True,
-        point_radius=0.018,
-        point_color=Color(165, 177, 198, 100),
-        color=field_color,
-        stroke_width=0.017,
-        vector_length=0.31,
-        normalize=True,
-        tip_length=0.085,
-        tip_width=0.075,
-        opacity=0.0,
-        z_index=2,
-    )
+    def construct(self) -> None:
+        scene = self
+        grid, vectors, positive, negative, title = scene.add(
+            self.grid, self.vector_field, self.positive, self.negative, self.title
+        )
+        orbit = self.orbit
+        scene.bind(
+            positive,
+            orbit,
+            position=lambda state: charge_positions_from_angle(state.theta)[0],
+        )
+        scene.bind(
+            negative,
+            orbit,
+            position=lambda state: charge_positions_from_angle(state.theta)[1],
+        )
 
-    positive = charge_object(1.0)
-    negative = charge_object(-1.0)
-    title = Text("Moving electric field · sampled vectors", font_size=31, color=WHITE, opacity=0.0)
-    title.move_to(Vec2(0.0, 2.96))
+        scene.wait(0.45)
+        with scene.parallel(duration=0.8):
+            vectors.fade_in()
+            positive.fade_in()
+            negative.fade_in()
+            title.fade_in()
 
-    grid, vectors, positive, negative, title = scene.add(
-        grid, vector_field, positive, negative, title
-    )
+        scene.wait(2.0)
 
-    orbit = Simulation(OrbitState(), step_orbit, hz=240, checkpoint_interval=0.5)
-    scene.bind(
-        positive,
-        orbit,
-        position=lambda state: charge_positions_from_angle(state.theta)[0],
-    )
-    scene.bind(
-        negative,
-        orbit,
-        position=lambda state: charge_positions_from_angle(state.theta)[1],
-    )
+        # The field lines are instantaneous integral curves of the same moving
+        # Coulomb field. They only enter the Scene when this view becomes visible,
+        # so we do not spend the first half of the video integrating hidden lines.
+        lines = self.vector_field.streamlines(
+            field_line_seeds,
+            direction="forward",
+            step=0.045,
+            max_steps=720,
+            stop=near_charge,
+            color=CYAN.with_alpha(210),
+            stroke_width=0.021,
+            opacity=0.0,
+            z_index=3,
+        )
+        lines = scene.add(lines)
 
-    scene.wait(0.45)
-    with scene.parallel(duration=0.8):
-        vectors.fade_in()
-        positive.fade_in()
-        negative.fade_in()
-        title.fade_in()
+        next_title = Text(
+            "Moving electric field · field lines", font_size=31, color=WHITE
+        )
+        next_title.move_to(Vec2(0.0, 2.96))
+        with scene.parallel(duration=1.0):
+            vectors.fade_out()
+            lines.fade_in()
+            title.morph(to=next_title)
 
-    scene.wait(2.0)
-
-    # The field lines are instantaneous integral curves of the same moving
-    # Coulomb field. They only enter the Scene when this view becomes visible,
-    # so we do not spend the first half of the video integrating hidden lines.
-    lines = vector_field.streamlines(
-        field_line_seeds,
-        direction="forward",
-        step=0.045,
-        max_steps=720,
-        stop=near_charge,
-        color=CYAN.with_alpha(210),
-        stroke_width=0.021,
-        opacity=0.0,
-        z_index=3,
-    )
-    lines = scene.add(lines)
-
-    next_title = Text("Moving electric field · field lines", font_size=31, color=WHITE)
-    next_title.move_to(Vec2(0.0, 2.96))
-    with scene.parallel(duration=1.0):
-        vectors.fade_out()
-        lines.fade_in()
-        title.morph(to=next_title)
-
-    scene.wait(2.7)
-    return scene
+        scene.wait(2.7)
 
 
 if __name__ == "__main__":
-    build_scene().preview()
+    scene = ElectricField()
+    scene._run_authoring_hooks()
+    scene.preview()

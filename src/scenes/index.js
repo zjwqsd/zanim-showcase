@@ -139,8 +139,8 @@ function radialLines(count, phase = 0) {
 
 async function basics(canvas) {
   const scene = await makeScene(canvas, { width: 1280, height: 720, unitSize: 90 })
-  const title = new Text('Objects compose like values', { fontSize: 34, opacity: 0 })
-  const subtitle = new Text('Scene = objects + timeline', { fontSize: 27, color: '#aab9d7', opacity: 0 })
+  const title = new Text('Objects define; Scene owns time', { fontSize: 34, opacity: 0 })
+  const subtitle = new Text('Scene = initial + authored head + timeline', { fontSize: 27, color: '#aab9d7', opacity: 0 })
   const square = new Square(1.25, { fill: alpha(BLUE, 185), stroke: '#dce8ff', trim: 0 })
   const circle = new Circle(0.68, { fill: alpha(ORANGE, 185), stroke: '#dce8ff', trim: 0 })
   const dot = new Circle(0.11, { fill: '#ffe370', stroke: null, opacity: 0, zIndex: 5 })
@@ -170,8 +170,9 @@ async function basics(canvas) {
     api.style(square, { to: { fill: alpha(GREEN, 205), stroke: '#dcfff0', width: 0.06, worldStroke: true } })
     api.move(arrow, [0.15, 0.1], { frame: WORLD })
   })
-  scene.rotate(shapes, 0.18, { about: [shapes.center.x, shapes.center.y], duration: 0.8 })
-  scene.scale(shapes, 1.08, { about: [shapes.center.x, shapes.center.y], duration: 0.6 })
+  const shapesCenter = scene.authoredCenter(shapes)
+  scene.rotate(shapes, 0.18, { about: [shapesCenter.x, shapesCenter.y], duration: 0.8 })
+  scene.scale(shapes, 1.08, { about: [shapesCenter.x, shapesCenter.y], duration: 0.6 })
   scene.camera.affine({ position: [-0.3, -0.08], scale: 1.15, duration: 1.3 })
   scene.fadeOut(stage, { duration: 0.9 })
   scene.wait(0.3)
@@ -180,8 +181,8 @@ async function basics(canvas) {
 
 async function stateModel(canvas) {
   const scene = await makeScene(canvas, { width: 1280, height: 720, unitSize: 92 })
-  const title = new Text('Explicit state, explicit time', { fontSize: 36, transform: T(0, 3.35) })
-  const rule = new Text('add/remove define lifetime; animations only change authored state', { fontSize: 23, color: MUTED, transform: T(0, 2.82) })
+  const title = new Text('One definition, two kinds of state', { fontSize: 36, transform: T(0, 3.35) })
+  const rule = new Text('raw object = initial definition; Scene owns authored head', { fontSize: 23, color: MUTED, transform: T(0, 2.82) })
   const immediate = new Square(1.25, { fill: BLUE, stroke: null })
   const hidden = new Circle(0.68, { fill: GREEN, stroke: null, opacity: 0 })
   const drawn = new Square(1.25, { fill: null, stroke: PURPLE, strokeWidth: 0.055, trim: 0 })
@@ -218,10 +219,11 @@ async function layout(canvas) {
   const center = [0, -0.35]
   new Row({ gap: 0.75, at: center }).place(...group.children)
   scene.add(group); scene.wait(0.7)
+  const circleCenter = scene.authoredCenter(circle), triangleCenter = scene.authoredCenter(triangle)
   scene.parallel(1.2, (api) => {
     api.move(square, [-1.5, 1], { frame: WORLD })
-    api.rotate(circle, 0.9, { about: [circle.center.x, circle.center.y] })
-    api.scale(triangle, 1.45, { about: [triangle.center.x, triangle.center.y] })
+    api.rotate(circle, 0.9, { about: [circleCenter.x, circleCenter.y] })
+    api.scale(triangle, 1.45, { about: [triangleCenter.x, triangleCenter.y] })
     api.move(card, [1.3, -0.9], { frame: WORLD })
   })
   scene.wait(0.35)
@@ -248,9 +250,10 @@ async function timeline(canvas) {
   const origin = left.center
   scene.add(title, left, middle, source, target)
   scene.fadeIn(title, { duration: 0.7 })
+  const middleCenter = scene.authoredCenter(middle)
   scene.parallel((api) => {
     api.transformFunction(left, (a) => T(origin.x, origin.y + 0.55 * Math.sin(4 * PI * a), TAU * a), { duration: 3, easing: Easing.LINEAR })
-    api.affine(middle, { position: [middle.center.x, middle.center.y], rotation: PI, scale: 1.35, duration: 1.1, at: 0.35 })
+    api.affine(middle, { position: [middleCenter.x, middleCenter.y], rotation: PI, scale: 1.35, duration: 1.1, at: 0.35 })
     api.style(middle, { to: { fill: alpha(GREEN, 80), stroke: GREEN, width: 0.045, worldStroke: true }, duration: 1, at: 1.45 })
     api.interpolate(source, target, { duration: 2.2, at: 0.5 })
   })
@@ -309,7 +312,7 @@ async function kinematics(canvas) {
   const joint1 = new Group([new Circle(0.11, { fill: WHITE, stroke: null }), link(l1, BLUE), joint2])
   moveTo(joint1, [-0.6, -0.55])
   scene.add(joint1); scene.wait(0.6)
-  const h1 = joint1.transform, h2 = joint2.transform, h3 = joint3.transform
+  const h1 = scene.authoredState(joint1).transform, h2 = scene.authoredState(joint2).transform, h3 = scene.authoredState(joint3).transform
   scene.parallel(6, (api) => {
     api.transformFunction(joint1, (a) => h1.mul(Transform2D.rotation(0.75 * Math.sin(TAU * a))))
     api.transformFunction(joint2, (a) => h2.mul(Transform2D.rotation(-0.9 * Math.sin(TAU * a + 0.8))))
@@ -361,6 +364,7 @@ async function media(canvas) {
   const labels = [new Text('IMAGE', { fontSize: 24 }), new Text('GIF', { fontSize: 24 }), new Text('VIDEO + AUDIO', { fontSize: 24 })]
   for (let i = 0; i < 3; i++) moveTo(labels[i], [i === 0 ? -3.45 : i === 1 ? 0 : 3.55, -1.65])
   scene.add(image, gif, video, videoAudio, tone, ...labels)
+  const gifCenter = scene.authoredCenter(gif)
   scene.parallel(5, (api) => {
     api.media(image, { duration: 5 })
     api.media(gif, { duration: 5, loop: true })
@@ -368,7 +372,7 @@ async function media(canvas) {
     api.media(videoAudio, { duration: 4, sourceStart: 0.25, speed: 1.25, loop: true, at: 0.5 })
     api.media(tone, { duration: 5, loop: true })
     api.affine(image, { rotation: 0.30, scale: 1.08 })
-    api.affine(gif, { position: [gif.center.x, gif.center.y + 0.25], rotation: -0.16 })
+    api.affine(gif, { position: [gifCenter.x, gifCenter.y + 0.25], rotation: -0.16 })
     api.affine(video, { rotation: 0.18 })
   })
   return scene
@@ -748,7 +752,7 @@ async function mathShowcase(canvas) {
 
 export const scenes = [
   { id:'basics', title:'Core authoring', source:'showcase/basics.py', width:1280, height:720, builder:basics },
-  { id:'state', title:'Explicit state', source:'showcase/state_model.py', width:1280, height:720, builder:stateModel },
+  { id:'state', title:'Scene-owned state', source:'showcase/state_model.py', width:1280, height:720, builder:stateModel },
   { id:'layout', title:'Layout', source:'showcase/layout.py', width:1280, height:720, builder:layout },
   { id:'timeline', title:'Timeline', source:'showcase/timeline.py', width:1280, height:720, builder:timeline },
   { id:'transforms', title:'Coordinate frames', source:'showcase/transforms.py', width:1280, height:720, builder:transforms },

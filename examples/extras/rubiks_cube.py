@@ -1,4 +1,5 @@
 """A fully articulated 3D Rubik's Cube built from Group3D cubies."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,13 +7,14 @@ from math import pi
 
 from zanim import (
     PARENT,
+    SE3,
+    SO3,
     WHITE,
     Box3D,
+    Camera3D,
     Canvas,
     Color,
     Group3D,
-    SE3,
-    SO3,
     Scene,
     Text,
     Transform3D,
@@ -137,68 +139,100 @@ SCRAMBLE = (
 )
 
 
-def build_scene() -> Scene:
-    scene = Scene(canvas=CANVAS, fps=60)
-    scene.camera3d.position = Vec3(6.4, 5.2, 7.6)
-    scene.camera3d.target = Vec3(0.0, 0.05, 0.0)
-    scene.camera3d.fov_y_degrees = 34.0
+class RubiksCube(Scene):
+    def __init__(self) -> None:
+        super().__init__(
+            canvas=CANVAS,
+            fps=60,
+            camera3d=Camera3D(
+                position=Vec3(6.4, 5.2, 7.6),
+                target=Vec3(0.0, 0.05, 0.0),
+                fov_y_degrees=34.0,
+            ),
+        )
 
-    cubies = [make_cubie((x, y, z)) for x in (-1, 0, 1) for y in (-1, 0, 1) for z in (-1, 0, 1)]
-    root_rotation = SO3.rotation_y(-0.28) @ SO3.rotation_x(0.18)
-    cube = Group3D(
-        [cubie.node for cubie in cubies],
-        transform=SE3(rotation=root_rotation).as_affine(),
-        opacity=0.0,
-    )
+    def setup(self) -> None:
+        self.cubies = [
+            make_cubie((x, y, z))
+            for x in (-1, 0, 1)
+            for y in (-1, 0, 1)
+            for z in (-1, 0, 1)
+        ]
+        root_rotation = SO3.rotation_y(-0.28) @ SO3.rotation_x(0.18)
+        self.cube = Group3D(
+            [cubie.node for cubie in self.cubies],
+            transform=SE3(rotation=root_rotation).as_affine(),
+            opacity=0.0,
+        )
+        self.pedestal = Box3D(
+            Vec3(5.8, 0.08, 5.2),
+            color=Color(25, 29, 36),
+            transform=Transform3D.translation(0, -1.72, 0),
+        )
+        self.title = Text(
+            "Rubik's Cube · scramble",
+            font_size=31,
+            color=WHITE,
+            opacity=0.0,
+            z_index=20,
+        )
+        self.title.move_to((0, 2.83))
+        self.move_text = Text(
+            "R", font_size=27, color=Color(157, 181, 222), opacity=0.0, z_index=20
+        )
+        self.move_text.move_to((5.15, -2.62))
 
-    # A very dark pedestal gives the object a spatial reference without trying
-    # to fake a shadow system the renderer does not have yet.
-    pedestal = Box3D(
-        Vec3(5.8, 0.08, 5.2),
-        color=Color(25, 29, 36),
-        transform=Transform3D.translation(0, -1.72, 0),
-    )
+    def construct(self) -> None:
+        scene = self
+        cubies = self.cubies
+        pedestal, cube, title, move_text = scene.add(
+            self.pedestal, self.cube, self.title, self.move_text
+        )
+        scene.wait(0.35)
+        with scene.parallel(duration=0.75):
+            cube.fade_in()
+            title.fade_in()
+            move_text.fade_in()
+        scene.wait(0.25)
 
-    title = Text("Rubik's Cube · scramble", font_size=31, color=WHITE, opacity=0.0, z_index=20)
-    title.move_to((0, 2.83))
-    move_text = Text("R", font_size=27, color=Color(157, 181, 222), opacity=0.0, z_index=20)
-    move_text.move_to((5.15, -2.62))
+        for index, (notation, axis, layer, quarter) in enumerate(SCRAMBLE):
+            if index:
+                target = Text(notation, font_size=27, color=Color(157, 181, 222))
+                target.move_to((5.15, -2.62))
+                move_text.morph(to=target, duration=0.18)
+            turn(scene, cubies, axis, layer, quarter)
+            scene.wait(TURN_PAUSE)
 
-    pedestal, cube, title, move_text = scene.add(pedestal, cube, title, move_text)
-    scene.wait(0.35)
-    with scene.parallel(duration=0.75):
-        cube.fade_in()
-        title.fade_in()
-        move_text.fade_in()
-    scene.wait(0.25)
+        scene.wait(0.3)
+        solve_title = Text("Rubik's Cube · reverse solve", font_size=31, color=WHITE)
+        solve_title.move_to((0, 2.83))
+        title.morph(to=solve_title, duration=0.45)
+        scene.wait(0.15)
 
-    for index, (notation, axis, layer, quarter) in enumerate(SCRAMBLE):
-        if index:
-            target = Text(notation, font_size=27, color=Color(157, 181, 222))
+        for notation, axis, layer, quarter in reversed(SCRAMBLE):
+            shown = (
+                notation.removesuffix("'") if notation.endswith("'") else notation + "'"
+            )
+            target = Text(shown, font_size=27, color=Color(157, 181, 222))
             target.move_to((5.15, -2.62))
-            move_text.morph(to=target, duration=0.18)
-        turn(scene, cubies, axis, layer, quarter)
-        scene.wait(TURN_PAUSE)
+            move_text.morph(to=target, duration=0.16)
+            turn(scene, cubies, axis, layer, -quarter)
+            scene.wait(TURN_PAUSE)
 
-    scene.wait(0.3)
-    solve_title = Text("Rubik's Cube · reverse solve", font_size=31, color=WHITE)
-    solve_title.move_to((0, 2.83))
-    title.morph(to=solve_title, duration=0.45)
-    scene.wait(0.15)
-
-    for notation, axis, layer, quarter in reversed(SCRAMBLE):
-        shown = notation.removesuffix("'") if notation.endswith("'") else notation + "'"
-        target = Text(shown, font_size=27, color=Color(157, 181, 222))
-        target.move_to((5.15, -2.62))
-        move_text.morph(to=target, duration=0.16)
-        turn(scene, cubies, axis, layer, -quarter)
-        scene.wait(TURN_PAUSE)
-
-    scene.wait(0.8)
-    if any(cubie.coord != original for cubie, original in zip(cubies, [(x, y, z) for x in (-1, 0, 1) for y in (-1, 0, 1) for z in (-1, 0, 1)])):
-        raise AssertionError("reverse move sequence did not restore cubie coordinates")
-    return scene
+        scene.wait(0.8)
+        if any(
+            cubie.coord != original
+            for cubie, original in zip(
+                cubies,
+                [(x, y, z) for x in (-1, 0, 1) for y in (-1, 0, 1) for z in (-1, 0, 1)],
+            )
+        ):
+            raise AssertionError(
+                "reverse move sequence did not restore cubie coordinates"
+            )
 
 
 if __name__ == "__main__":
-    build_scene().preview()
+    scene = RubiksCube()
+    scene._run_authoring_hooks()
+    scene.preview()

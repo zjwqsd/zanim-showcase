@@ -142,7 +142,9 @@ def bubble_sort_trace(values: tuple[int, ...]) -> SortTrace:
             break
     r.finish()
     return SortTrace(
-        "Bubble sort", "adjacent comparisons · largest value bubbles right", tuple(r.steps)
+        "Bubble sort",
+        "adjacent comparisons · largest value bubbles right",
+        tuple(r.steps),
     )
 
 
@@ -157,7 +159,10 @@ def selection_sort_trace(values: tuple[int, ...]) -> SortTrace:
             if r.values[j] < r.values[minimum]:
                 minimum = j
                 r.add(
-                    "pivot", active=(r.values[minimum],), pivot=r.values[minimum], settled=settled
+                    "pivot",
+                    active=(r.values[minimum],),
+                    pivot=r.values[minimum],
+                    settled=settled,
                 )
         if minimum != start:
             r.swap(start, minimum, settled=settled)
@@ -165,7 +170,9 @@ def selection_sort_trace(values: tuple[int, ...]) -> SortTrace:
         r.add("settle", settled=settled)
     r.finish()
     return SortTrace(
-        "Selection sort", "scan for the minimum · place one value per pass", tuple(r.steps)
+        "Selection sort",
+        "scan for the minimum · place one value per pass",
+        tuple(r.steps),
     )
 
 
@@ -185,7 +192,9 @@ def insertion_sort_trace(values: tuple[int, ...]) -> SortTrace:
         r.add("settle", settled=tuple(r.values[: end + 1]))
     r.finish()
     return SortTrace(
-        "Insertion sort", "grow a sorted prefix · insert each next value", tuple(r.steps)
+        "Insertion sort",
+        "grow a sorted prefix · insert each next value",
+        tuple(r.steps),
     )
 
 
@@ -227,7 +236,9 @@ def merge_sort_trace(values: tuple[int, ...]) -> SortTrace:
 
     sort(0, len(r.values))
     r.finish()
-    return SortTrace("Merge sort", "merge sorted runs · stable divide and conquer", tuple(r.steps))
+    return SortTrace(
+        "Merge sort", "merge sorted runs · stable divide and conquer", tuple(r.steps)
+    )
 
 
 def quick_sort_trace(values: tuple[int, ...]) -> SortTrace:
@@ -358,7 +369,9 @@ def _trace_for(name: str, values: tuple[int, ...]) -> SortTrace:
     return matches[0][1](values)
 
 
-def _animate_trace(scene: Scene, trace: SortTrace, initial: tuple[int, ...], n: int) -> None:
+def _animate_trace(
+    scene: Scene, trace: SortTrace, initial: tuple[int, ...], n: int
+) -> None:
     title = Text(trace.name, font_size=35, color=WHITE, opacity=0, z_index=10)
     subtitle = Text(trace.subtitle, font_size=18, color=MUTED, opacity=0, z_index=10)
     legend = Text(
@@ -383,7 +396,9 @@ def _animate_trace(scene: Scene, trace: SortTrace, initial: tuple[int, ...], n: 
         opacity=0,
         z_index=0,
     )
-    bars, baseline, title, subtitle, legend = scene.add(bars, baseline, title, subtitle, legend)
+    bars, baseline, title, subtitle, legend = scene.add(
+        bars, baseline, title, subtitle, legend
+    )
     with scene.parallel(duration=0.2):
         bars.fade_in()
         baseline.fade_in()
@@ -407,32 +422,35 @@ def _animate_trace(scene: Scene, trace: SortTrace, initial: tuple[int, ...], n: 
         obj.remove()
 
 
-def _build_scene(
-    *,
-    n: int = DEFAULT_N,
-    seed: int = DEFAULT_SEED,
-    algorithm: str | None = None,
-) -> tuple[Scene, tuple[int, ...], tuple[SortTrace, ...]]:
-    if not 2 <= n <= 32:
-        raise ValueError("n must be between 2 and 32")
-    initial = random_permutation(n, seed)
-    traces = (
-        (_trace_for(algorithm, initial),)
-        if algorithm is not None
-        else tuple(factory(initial) for _, factory in ALGORITHMS)
-    )
+class SortingAlgorithms(Scene):
+    def __init__(
+        self,
+        *,
+        n: int = DEFAULT_N,
+        seed: int = DEFAULT_SEED,
+        algorithm: str | None = None,
+    ) -> None:
+        super().__init__()
+        self._arg_n = n
+        self._arg_seed = seed
+        self._arg_algorithm = algorithm
 
-    scene = Scene(canvas=Canvas(width=1280, height=960, unit_size=100), fps=60)
-    for trace in traces:
-        _animate_trace(scene, trace, initial, n)
-    scene.wait(0.125)
-    return scene, initial, traces
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1280, height=960, unit_size=100)
+        self.fps = 60
+        if not 2 <= self._arg_n <= 32:
+            raise ValueError("n must be between 2 and 32")
+        self.initial = random_permutation(self._arg_n, self._arg_seed)
+        self.traces = (
+            (_trace_for(self._arg_algorithm, self.initial),)
+            if self._arg_algorithm is not None
+            else tuple(factory(self.initial) for _, factory in ALGORITHMS)
+        )
 
-
-def build_scene() -> Scene:
-    """Default scene used by ``zanim preview/render``."""
-    scene, _, _ = _build_scene()
-    return scene
+    def construct(self) -> None:
+        for trace in self.traces:
+            _animate_trace(self, trace, self.initial, self._arg_n)
+        self.wait(0.125)
 
 
 def main() -> None:
@@ -443,14 +461,22 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
 
-    scene, initial, traces = _build_scene(n=args.n, seed=args.seed, algorithm=args.algorithm)
-    output = scene.render_video(args.output, fps=60, workers=8, verify_random_access=True)
+    scene = SortingAlgorithms(n=args.n, seed=args.seed, algorithm=args.algorithm)
+    scene._run_authoring_hooks()
+    initial, traces = scene.initial, scene.traces
+    output = scene.render_video(
+        args.output, fps=60, workers=8, verify_random_access=True
+    )
     print(output)
-    print(f"duration={scene.duration:.2f}s n={args.n} seed={args.seed} initial={initial}")
+    print(
+        f"duration={scene.duration:.2f}s n={args.n} seed={args.seed} initial={initial}"
+    )
     for trace in traces:
         moves = sum(step.kind == "move" for step in trace.steps)
         compares = sum(step.kind == "compare" for step in trace.steps)
-        print(f"{trace.name}: steps={len(trace.steps)} compares={compares} moves={moves}")
+        print(
+            f"{trace.name}: steps={len(trace.steps)} compares={compares} moves={moves}"
+        )
     print("random-access=ok")
 
 

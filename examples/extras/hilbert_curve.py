@@ -108,72 +108,83 @@ def _curve(order: int) -> Polyline:
     )
 
 
-def _build_scene(
-    *,
-    max_order: int = DEFAULT_MAX_ORDER,
-    transition_duration: float = TRANSITION_DURATION,
-    hold: float = HOLD,
-) -> Scene:
-    if not 1 <= max_order <= 7:
-        raise ValueError("max_order must be between 1 and 7")
-    if transition_duration <= 0:
-        raise ValueError("transition_duration must be positive")
-    if hold < 0:
-        raise ValueError("hold must be >= 0")
+class HilbertCurve(Scene):
+    def __init__(
+        self,
+        *,
+        max_order: int = DEFAULT_MAX_ORDER,
+        transition_duration: float = TRANSITION_DURATION,
+        hold: float = HOLD,
+    ) -> None:
+        super().__init__()
+        self._arg_max_order = max_order
+        self._arg_transition_duration = transition_duration
+        self._arg_hold = hold
 
-    scene = Scene(canvas=Canvas(width=1280, height=960, unit_size=100), fps=60)
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1280, height=960, unit_size=100)
+        self.fps = 60
+        if not 1 <= self._arg_max_order <= 7:
+            raise ValueError("max_order must be between 1 and 7")
+        if self._arg_transition_duration <= 0:
+            raise ValueError("transition_duration must be positive")
+        if self._arg_hold < 0:
+            raise ValueError("hold must be >= 0")
+        self.title = Text(
+            "Hilbert curve", font_size=36, color=WHITE, opacity=0, z_index=10
+        )
+        self.title.move_to((0, 4.25))
+        self.label = _order_label(1)
+        self.label.move_to((0, -4.25))
+        self.first = _curve(1)
+        self.first.trim = 0
 
-    title = Text("Hilbert curve", font_size=36, color=WHITE, opacity=0, z_index=10)
-    title.move_to((0, 4.25))
-    label = _order_label(1)
-    label.move_to((0, -4.25))
-
-    first = _curve(1)
-    first.trim = 0
-    curve, title, label = scene.add(first, title, label)
-    with scene.parallel():
-        curve.create(duration=CREATE_DURATION)
-        title.fade_in(duration=0.55)
-        label.fade_in(duration=0.55)
-    scene.wait(hold)
-
-    for order in range(2, max_order + 1):
-        # replace() is a real geometry morph. The renderer resamples both
-        # polylines to the denser endpoint, so high-order detail is preserved.
-        curve = scene.replace(curve, _curve(order), duration=transition_duration)
-
-        next_label = _order_label(order)
-        next_label.move_to((0, -4.25))
-        next_label = scene.add(next_label)
-        with scene.parallel(duration=LABEL_FADE):
-            label.fade_out()
-            next_label.fade_in()
-        label.remove()
-        label = next_label
+    def construct(self) -> None:
+        max_order = self._arg_max_order
+        transition_duration = self._arg_transition_duration
+        hold = self._arg_hold
+        scene = self
+        curve, title, label = scene.add(self.first, self.title, self.label)
+        with scene.parallel():
+            curve.create(duration=CREATE_DURATION)
+            title.fade_in(duration=0.55)
+            label.fade_in(duration=0.55)
         scene.wait(hold)
 
-    scene.wait(0.5)
-    return scene
+        for order in range(2, max_order + 1):
+            # replace() is a real geometry morph. The renderer resamples both
+            # polylines to the denser endpoint, so high-order detail is preserved.
+            curve = scene.replace(curve, _curve(order), duration=transition_duration)
 
+            next_label = _order_label(order)
+            next_label.move_to((0, -4.25))
+            next_label = scene.add(next_label)
+            with scene.parallel(duration=LABEL_FADE):
+                label.fade_out()
+                next_label.fade_in()
+            label.remove()
+            label = next_label
+            scene.wait(hold)
 
-def build_scene() -> Scene:
-    """Default scene used by ``zanim preview/render``."""
-    return _build_scene()
+        scene.wait(0.5)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Animate increasing Hilbert-curve order")
+    parser = argparse.ArgumentParser(
+        description="Animate increasing Hilbert-curve order"
+    )
     parser.add_argument("--max-order", type=int, default=DEFAULT_MAX_ORDER)
     parser.add_argument("--transition", type=float, default=TRANSITION_DURATION)
     parser.add_argument("--hold", type=float, default=HOLD)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
 
-    scene = _build_scene(
+    scene = HilbertCurve(
         max_order=args.max_order,
         transition_duration=args.transition,
         hold=args.hold,
     )
+    scene._run_authoring_hooks()
     output = scene.render_video(
         args.output,
         fps=60,

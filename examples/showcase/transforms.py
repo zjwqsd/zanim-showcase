@@ -1,4 +1,4 @@
-"""Lesson 05: LOCAL, PARENT and WORLD transforms plus Camera2D."""
+"""Lesson 05: LOCAL/PARENT/WORLD authored transforms and the Scene-owned Camera2D."""
 
 from __future__ import annotations
 
@@ -53,45 +53,51 @@ def make_panel(center_x: float) -> tuple[Group, Group]:
     return panel, tool
 
 
-scene = Scene(canvas=Canvas(1280, 720, 90), fps=60)
+class Transforms(Scene):
+    def setup(self) -> None:
+        self.canvas = Canvas(1280, 720, 90)
+        self.fps = 60
 
-title = Text("One vector, three coordinate frames", font_size=35)
-subtitle = Text(
-    "move(by=(1.5, 0), frame=...) changes which basis interprets the vector",
-    font_size=21,
-    color=MUTED,
-)
-title.place(anchor=TOP, at=scene.frame.top + Vec2(0, -0.28))
-subtitle.place(anchor=TOP, at=title.anchor(TOP) + Vec2(0, -0.55))
+        self.title = Text("One vector, three coordinate frames", font_size=35)
+        self.subtitle = Text(
+            "move(by=(1.5, 0), frame=...) changes which basis interprets the vector",
+            font_size=21,
+            color=MUTED,
+        )
+        self.title.place(anchor=TOP, at=self.frame.top + Vec2(0, -0.28))
+        self.subtitle.place(anchor=TOP, at=self.title.anchor(TOP) + Vec2(0, -0.55))
 
-local_panel, local_tool = make_panel(-4.1)
-parent_panel, parent_tool = make_panel(0.0)
-world_panel, world_tool = make_panel(4.1)
-labels = [
-    Text("LOCAL", font_size=24, color=YELLOW),
-    Text("PARENT", font_size=24, color=YELLOW),
-    Text("WORLD", font_size=24, color=YELLOW),
-]
-for x, label in zip((-4.1, 0.0, 4.1), labels):
-    label.place(anchor=TOP, at=Vec2(x, 2.05))
+        self.local_panel, _ = make_panel(-4.1)
+        self.parent_panel, _ = make_panel(0.0)
+        self.world_panel, _ = make_panel(4.1)
+        self.labels = [
+            Text("LOCAL", font_size=24, color=YELLOW),
+            Text("PARENT", font_size=24, color=YELLOW),
+            Text("WORLD", font_size=24, color=YELLOW),
+        ]
+        for x, label in zip((-4.1, 0.0, 4.1), self.labels):
+            label.place(anchor=TOP, at=Vec2(x, 2.05))
 
-title, subtitle, local_panel, parent_panel, world_panel, *_ = scene.add(
-    title, subtitle, local_panel, parent_panel, world_panel, *labels
-)
-local_tool = local_panel.children[-1]
-parent_tool = parent_panel.children[-1]
-world_tool = world_panel.children[-1]
-scene.wait(0.6)
+    def construct(self) -> None:
+        title, subtitle, local_panel, parent_panel, world_panel, *_ = self.add(
+            self.title,
+            self.subtitle,
+            self.local_panel,
+            self.parent_panel,
+            self.world_panel,
+            *self.labels,
+        )
+        local_tool = local_panel.children[-1]
+        parent_tool = parent_panel.children[-1]
+        world_tool = world_panel.children[-1]
+        self.wait(0.6)
 
-with scene.parallel(duration=2.2):
-    local_tool.move(by=(1.5, 0), frame=LOCAL)
-    parent_tool.move(by=(1.5, 0), frame=PARENT)
-    world_tool.move(by=(1.5, 0), frame=WORLD)
+        with self.parallel(duration=2.2):
+            local_tool.move(by=(1.5, 0), frame=LOCAL)
+            parent_tool.move(by=(1.5, 0), frame=PARENT)
+            world_tool.move(by=(1.5, 0), frame=WORLD)
 
-scene.wait(0.45)
-# Camera2D is a view transform over the same deterministic world state.
-scene.camera.affine(position=(0.65, -0.15), scale=1.12, duration=1.0)
-scene.camera.affine(position=(0.0, 0.0), scale=1.0, duration=0.9)
-scene.wait(0.35)
-
-scene.preview()
+        self.wait(0.45)
+        self.camera.affine(position=(0.65, -0.15), scale=1.12, duration=1.0)
+        self.camera.affine(position=(0.0, 0.0), scale=1.0, duration=0.9)
+        self.wait(0.35)

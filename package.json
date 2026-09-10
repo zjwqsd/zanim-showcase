@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@zanim/web": "file:vendor/zanim-web-0.0.1.tgz",
+    "@zanim/web": "file:vendor/zanim-web-0.0.2.tgz",
     "vue": "^3.5.12"
   },
   "devDependencies": {

@@ -20,7 +20,9 @@ class DeCasteljauExtraTests(unittest.TestCase):
         controls = MODULE.CONTROL_POINTS
         for step in range(21):
             t = step / 20
-            _, first, second, final_level, final = MODULE.de_casteljau_levels(controls, t)
+            _, first, second, final_level, final = MODULE.de_casteljau_levels(
+                controls, t
+            )
             bernstein = MODULE.cubic_bezier_point(controls, t)
             self.assertEqual(len(first), 3)
             self.assertEqual(len(second), 2)
@@ -33,8 +35,12 @@ class DeCasteljauExtraTests(unittest.TestCase):
         controls = MODULE.CONTROL_POINTS
         t = 0.37
         _, first, second, final_level, _ = MODULE.de_casteljau_levels(controls, t)
-        expected_first = tuple(MODULE.lerp_point(a, b, t) for a, b in zip(controls, controls[1:]))
-        expected_second = tuple(MODULE.lerp_point(a, b, t) for a, b in zip(first, first[1:]))
+        expected_first = tuple(
+            MODULE.lerp_point(a, b, t) for a, b in zip(controls, controls[1:])
+        )
+        expected_second = tuple(
+            MODULE.lerp_point(a, b, t) for a, b in zip(first, first[1:])
+        )
         self.assertEqual(first, expected_first)
         self.assertEqual(second, expected_second)
         self.assertEqual(final_level[0], MODULE.lerp_point(second[0], second[1], t))
@@ -50,7 +56,7 @@ class DeCasteljauExtraTests(unittest.TestCase):
             self.assertAlmostEqual(trace.ends[-1].y, current.y, places=12)
 
     def test_scene_builds_and_evaluates_random_access(self):
-        scene = MODULE._build_scene(duration=0.25)
+        scene = MODULE.DeCasteljau(duration=0.25)._run_authoring_hooks()
         self.assertGreater(scene.duration, 0)
         for t in (0.0, scene.duration * 0.2, scene.duration * 0.7, scene.duration):
             scene.evaluate(t)

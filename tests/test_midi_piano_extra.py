@@ -41,7 +41,10 @@ class MidiPianoExtraTests(unittest.TestCase):
         self.assertGreater(song.duration, 10.0)
         self.assertTrue(all(note.end > note.start for note in song.notes))
         self.assertTrue(
-            all(MODULE.PIANO_LOW <= note.pitch <= MODULE.PIANO_HIGH for note in song.notes)
+            all(
+                MODULE.PIANO_LOW <= note.pitch <= MODULE.PIANO_HIGH
+                for note in song.notes
+            )
         )
         self.assertEqual(song.track_name, "Original piano rain demo")
 
@@ -98,10 +101,16 @@ class MidiPianoExtraTests(unittest.TestCase):
         note = MODULE.MidiNote(60, 100, 0.75, 1.9)
         start_center, start_size = MODULE.note_rect(note, MODULE._visual_start(note))
         end_center, end_size = MODULE.note_rect(note, MODULE._rain_end(note))
-        self.assertAlmostEqual(start_center.y - start_size.y / 2, MODULE.STRIKE_Y, places=12)
-        self.assertAlmostEqual(end_center.y + end_size.y / 2, MODULE.STRIKE_Y, places=12)
         self.assertAlmostEqual(
-            start_size.y, MODULE.visual_note_duration(note.duration) * MODULE.FALL_SPEED, places=12
+            start_center.y - start_size.y / 2, MODULE.STRIKE_Y, places=12
+        )
+        self.assertAlmostEqual(
+            end_center.y + end_size.y / 2, MODULE.STRIKE_Y, places=12
+        )
+        self.assertAlmostEqual(
+            start_size.y,
+            MODULE.visual_note_duration(note.duration) * MODULE.FALL_SPEED,
+            places=12,
         )
 
     def test_long_visual_note_durations_are_logarithmically_compressed(self):
@@ -109,7 +118,9 @@ class MidiPianoExtraTests(unittest.TestCase):
         self.assertAlmostEqual(MODULE.visual_note_duration(1.0), 1.0)
         self.assertAlmostEqual(MODULE.visual_note_duration(2.0), 1.5)
         self.assertAlmostEqual(MODULE.visual_note_duration(4.0), 2.0)
-        self.assertAlmostEqual(MODULE.visual_note_duration(6.0), 1.0 + 0.5 * 2.584962500721156)
+        self.assertAlmostEqual(
+            MODULE.visual_note_duration(6.0), 1.0 + 0.5 * 2.584962500721156
+        )
 
     def test_key_press_still_uses_uncompressed_midi_note_duration(self):
         note = MODULE.MidiNote(60, 100, 0.0, 6.0)
@@ -169,7 +180,8 @@ class MidiPianoExtraTests(unittest.TestCase):
         self.assertNotEqual(tail, bytes(len(tail)))
 
     def test_default_scene_builds_and_evaluates_random_access(self):
-        scene, song = MODULE._build_scene()
+        scene = MODULE.MidiPiano()._run_authoring_hooks()
+        song = scene.song
         self.assertGreater(scene.duration, MODULE.LEAD_TIME + song.duration)
         for time in (0.0, MODULE.LEAD_TIME, scene.duration / 2, scene.duration):
             snapshot = scene.evaluate(time)

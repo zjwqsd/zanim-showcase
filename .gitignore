@@ -28,3 +28,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 examples/assets/MNIST/
+
+# Local rendered showcase outputs
+renders/
+media/
+
+.venv

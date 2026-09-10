@@ -67,7 +67,20 @@ BLACK_KEY = Color(24, 28, 37)
 BLACK_KEY_STROKE = Color(8, 10, 15, 220)
 STRIKE_COLOR = Color(205, 216, 240, 125)
 TRANSPARENT = Color(0, 0, 0, 0)
-NOTE_COLORS = (CYAN, BLUE, PURPLE, PINK, RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, PINK)
+NOTE_COLORS = (
+    CYAN,
+    BLUE,
+    PURPLE,
+    PINK,
+    RED,
+    ORANGE,
+    YELLOW,
+    GREEN,
+    CYAN,
+    BLUE,
+    PURPLE,
+    PINK,
+)
 
 SAMPLE_RATE = 48_000
 SYNTH_VERSION = 3
@@ -236,11 +249,17 @@ def _parse_track(
         offset += length
 
         if kind == 0x90:
-            events.append(_RawNoteEvent(tick, global_order, second > 0, channel, first, second))
+            events.append(
+                _RawNoteEvent(tick, global_order, second > 0, channel, first, second)
+            )
         elif kind == 0x80:
-            events.append(_RawNoteEvent(tick, global_order, False, channel, first, second))
+            events.append(
+                _RawNoteEvent(tick, global_order, False, channel, first, second)
+            )
         elif kind == 0xB0:
-            controls.append(_RawControlEvent(tick, global_order, channel, first, second))
+            controls.append(
+                _RawControlEvent(tick, global_order, channel, first, second)
+            )
 
     return events, controls, tempos, track_name
 
@@ -261,7 +280,9 @@ def _tick_converter(ticks_per_quarter: int, tempos: list[_TempoEvent]):
     previous_tick, previous_tempo = collapsed[0]
     starts.append((previous_tick, seconds, previous_tempo))
     for tick, tempo in collapsed[1:]:
-        seconds += (tick - previous_tick) * previous_tempo / (ticks_per_quarter * 1_000_000.0)
+        seconds += (
+            (tick - previous_tick) * previous_tempo / (ticks_per_quarter * 1_000_000.0)
+        )
         starts.append((tick, seconds, tempo))
         previous_tick, previous_tempo = tick, tempo
 
@@ -270,7 +291,11 @@ def _tick_converter(ticks_per_quarter: int, tempos: list[_TempoEvent]):
         for start_tick, start_seconds, tempo in starts[1:]:
             if start_tick > tick:
                 break
-            selected_tick, selected_seconds, selected_tempo = start_tick, start_seconds, tempo
+            selected_tick, selected_seconds, selected_tempo = (
+                start_tick,
+                start_seconds,
+                tempo,
+            )
         return selected_seconds + (tick - selected_tick) * selected_tempo / (
             ticks_per_quarter * 1_000_000.0
         )
@@ -289,7 +314,9 @@ def parse_midi(path: str | Path) -> MidiSong:
         raise ValueError("invalid MIDI header length")
     midi_format, track_count, division = struct.unpack(">HHH", data[8:14])
     if midi_format not in (0, 1):
-        raise ValueError(f"unsupported MIDI format {midi_format}; expected format 0 or 1")
+        raise ValueError(
+            f"unsupported MIDI format {midi_format}; expected format 0 or 1"
+        )
     if track_count <= 0:
         raise ValueError("MIDI file contains no tracks")
     if division & 0x8000:
@@ -367,7 +394,9 @@ def parse_midi(path: str | Path) -> MidiSong:
         for event in sorted(control_events, key=lambda event: (event.tick, event.order))
     )
     duration = max(note.end for note in normalized)
-    return MidiSong(normalized, duration, ticks_per_quarter, track_name, normalized_controls)
+    return MidiSong(
+        normalized, duration, ticks_per_quarter, track_name, normalized_controls
+    )
 
 
 def _is_black(pitch: int) -> bool:
@@ -376,7 +405,9 @@ def _is_black(pitch: int) -> bool:
 
 def _key_x(pitch: int) -> float:
     if not PIANO_LOW <= pitch <= PIANO_HIGH:
-        raise ValueError(f"MIDI pitch {pitch} is outside the 88-key piano range 21..108")
+        raise ValueError(
+            f"MIDI pitch {pitch} is outside the 88-key piano range 21..108"
+        )
     if not _is_black(pitch):
         index = WHITE_INDEX[pitch]
         return KEYBOARD_LEFT + (index + 0.5) * WHITE_KEY_WIDTH
@@ -464,7 +495,9 @@ def _visible_note_state(notes: tuple[MidiNote, ...], time: float) -> RectSet:
 
 
 def _active_pitches(notes: tuple[MidiNote, ...], time: float) -> set[int]:
-    return {note.pitch for note in notes if _visual_start(note) <= time < _visual_end(note)}
+    return {
+        note.pitch for note in notes if _visual_start(note) <= time < _visual_end(note)
+    }
 
 
 def _white_key_state(notes: tuple[MidiNote, ...], time: float) -> RectSet:
@@ -478,16 +511,26 @@ def _white_key_state(notes: tuple[MidiNote, ...], time: float) -> RectSet:
         pressed = pitch in active
         shift = -0.035 if pressed else 0.0
         centers.append(Vec2(_key_x(pitch), (STRIKE_Y + KEYBOARD_BOTTOM) * 0.5 + shift))
-        sizes.append(Vec2(WHITE_KEY_WIDTH * 0.965, WHITE_KEY_HEIGHT - (0.035 if pressed else 0.0)))
-        fills.append(_blend(WHITE_KEY, _pitch_color(pitch), 0.42) if pressed else WHITE_KEY)
+        sizes.append(
+            Vec2(
+                WHITE_KEY_WIDTH * 0.965, WHITE_KEY_HEIGHT - (0.035 if pressed else 0.0)
+            )
+        )
+        fills.append(
+            _blend(WHITE_KEY, _pitch_color(pitch), 0.42) if pressed else WHITE_KEY
+        )
         strokes.append(WHITE_KEY_STROKE)
         widths.append(0.012)
-    return RectSet(tuple(centers), tuple(sizes), tuple(fills), tuple(strokes), tuple(widths))
+    return RectSet(
+        tuple(centers), tuple(sizes), tuple(fills), tuple(strokes), tuple(widths)
+    )
 
 
 def _black_key_state(notes: tuple[MidiNote, ...], time: float) -> RectSet:
     active = _active_pitches(notes, time)
-    pitches = tuple(note for note in range(PIANO_LOW, PIANO_HIGH + 1) if _is_black(note))
+    pitches = tuple(
+        note for note in range(PIANO_LOW, PIANO_HIGH + 1) if _is_black(note)
+    )
     centers: list[Vec2] = []
     sizes: list[Vec2] = []
     fills: list[Color] = []
@@ -497,11 +540,17 @@ def _black_key_state(notes: tuple[MidiNote, ...], time: float) -> RectSet:
         pressed = pitch in active
         shift = -0.045 if pressed else 0.0
         centers.append(Vec2(_key_x(pitch), STRIKE_Y - BLACK_KEY_HEIGHT * 0.5 + shift))
-        sizes.append(Vec2(BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT - (0.04 if pressed else 0.0)))
-        fills.append(_blend(BLACK_KEY, _pitch_color(pitch), 0.82) if pressed else BLACK_KEY)
+        sizes.append(
+            Vec2(BLACK_KEY_WIDTH, BLACK_KEY_HEIGHT - (0.04 if pressed else 0.0))
+        )
+        fills.append(
+            _blend(BLACK_KEY, _pitch_color(pitch), 0.82) if pressed else BLACK_KEY
+        )
         strokes.append(BLACK_KEY_STROKE)
         widths.append(0.014)
-    return RectSet(tuple(centers), tuple(sizes), tuple(fills), tuple(strokes), tuple(widths))
+    return RectSet(
+        tuple(centers), tuple(sizes), tuple(fills), tuple(strokes), tuple(widths)
+    )
 
 
 def _synth_note(note: MidiNote, sample_rate: int) -> tuple[np.ndarray, np.ndarray]:
@@ -511,7 +560,14 @@ def _synth_note(note: MidiNote, sample_rate: int) -> tuple[np.ndarray, np.ndarra
     frequency = 440.0 * 2.0 ** ((note.pitch - 69) / 12.0)
 
     signal = np.zeros(count, dtype=np.float64)
-    for harmonic, strength in ((1, 1.0), (2, 0.38), (3, 0.19), (4, 0.10), (5, 0.055), (6, 0.03)):
+    for harmonic, strength in (
+        (1, 1.0),
+        (2, 0.38),
+        (3, 0.19),
+        (4, 0.10),
+        (5, 0.055),
+        (6, 0.03),
+    ):
         stretch = 1.0 + 0.00018 * harmonic * harmonic
         signal += strength * np.sin(2.0 * np.pi * frequency * harmonic * stretch * t)
     signal += 0.07 * np.sin(2.0 * np.pi * frequency * 8.03 * t) * np.exp(-22.0 * t)
@@ -529,7 +585,9 @@ def _synth_note(note: MidiNote, sample_rate: int) -> tuple[np.ndarray, np.ndarra
     return signal * left_gain, signal * right_gain
 
 
-def synthesize_song(song: MidiSong, path: str | Path, *, sample_rate: int = SAMPLE_RATE) -> Path:
+def synthesize_song(
+    song: MidiSong, path: str | Path, *, sample_rate: int = SAMPLE_RATE
+) -> Path:
     """Synthesize a deterministic, SoundFont-free piano-like stereo WAV."""
     output = Path(path).expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -570,7 +628,9 @@ def find_soundfont(explicit: str | Path | None = None) -> Path | None:
         path = Path(configured).expanduser().resolve()
         if path.is_file():
             return path
-    return next((path.resolve() for path in SOUNDFONT_CANDIDATES if path.is_file()), None)
+    return next(
+        (path.resolve() for path in SOUNDFONT_CANDIDATES if path.is_file()), None
+    )
 
 
 def _fluidsynth_library() -> str | None:
@@ -602,8 +662,13 @@ class _FluidSynth:
             if sfid < 0:
                 raise RuntimeError(f"FluidSynth could not load SoundFont: {soundfont}")
             for channel in range(16):
-                if self.lib.fluid_synth_program_select(self.synth, channel, sfid, 0, 0) != 0:
-                    raise RuntimeError("FluidSynth could not select acoustic grand piano")
+                if (
+                    self.lib.fluid_synth_program_select(self.synth, channel, sfid, 0, 0)
+                    != 0
+                ):
+                    raise RuntimeError(
+                        "FluidSynth could not select acoustic grand piano"
+                    )
         except Exception:
             self.close()
             raise
@@ -612,14 +677,26 @@ class _FluidSynth:
         lib = self.lib
         lib.new_fluid_settings.restype = ctypes.c_void_p
         lib.delete_fluid_settings.argtypes = (ctypes.c_void_p,)
-        lib.fluid_settings_setnum.argtypes = (ctypes.c_void_p, ctypes.c_char_p, ctypes.c_double)
+        lib.fluid_settings_setnum.argtypes = (
+            ctypes.c_void_p,
+            ctypes.c_char_p,
+            ctypes.c_double,
+        )
         lib.fluid_settings_setnum.restype = ctypes.c_int
-        lib.fluid_settings_setint.argtypes = (ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int)
+        lib.fluid_settings_setint.argtypes = (
+            ctypes.c_void_p,
+            ctypes.c_char_p,
+            ctypes.c_int,
+        )
         lib.fluid_settings_setint.restype = ctypes.c_int
         lib.new_fluid_synth.argtypes = (ctypes.c_void_p,)
         lib.new_fluid_synth.restype = ctypes.c_void_p
         lib.delete_fluid_synth.argtypes = (ctypes.c_void_p,)
-        lib.fluid_synth_sfload.argtypes = (ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int)
+        lib.fluid_synth_sfload.argtypes = (
+            ctypes.c_void_p,
+            ctypes.c_char_p,
+            ctypes.c_int,
+        )
         lib.fluid_synth_sfload.restype = ctypes.c_int
         lib.fluid_synth_program_select.argtypes = (
             ctypes.c_void_p,
@@ -645,7 +722,12 @@ class _FluidSynth:
         lib.fluid_synth_noteon.restype = ctypes.c_int
         lib.fluid_synth_noteoff.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
         lib.fluid_synth_noteoff.restype = ctypes.c_int
-        lib.fluid_synth_cc.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int)
+        lib.fluid_synth_cc.argtypes = (
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_int,
+        )
         lib.fluid_synth_cc.restype = ctypes.c_int
         lib.fluid_synth_write_float.argtypes = (
             ctypes.c_void_p,
@@ -669,7 +751,9 @@ class _FluidSynth:
 
     def note_on(self, note: MidiNote) -> None:
         if (
-            self.lib.fluid_synth_noteon(self.synth, note.channel % 16, note.pitch, note.velocity)
+            self.lib.fluid_synth_noteon(
+                self.synth, note.channel % 16, note.pitch, note.velocity
+            )
             != 0
         ):
             raise RuntimeError("FluidSynth note-on failed")
@@ -680,7 +764,9 @@ class _FluidSynth:
 
     def control(self, event: MidiControl) -> None:
         if (
-            self.lib.fluid_synth_cc(self.synth, event.channel % 16, event.controller, event.value)
+            self.lib.fluid_synth_cc(
+                self.synth, event.channel % 16, event.controller, event.value
+            )
             != 0
         ):
             raise RuntimeError("FluidSynth control-change failed")
@@ -692,7 +778,12 @@ class _FluidSynth:
             return
         lptr = left.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
         rptr = right.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-        if self.lib.fluid_synth_write_float(self.synth, len(left), lptr, 0, 1, rptr, 0, 1) != 0:
+        if (
+            self.lib.fluid_synth_write_float(
+                self.synth, len(left), lptr, 0, 1, rptr, 0, 1
+            )
+            != 0
+        ):
             raise RuntimeError("FluidSynth audio rendering failed")
 
     def close(self) -> None:
@@ -737,7 +828,9 @@ def synthesize_song_soundfont(
     # sample boundary apply controls first, then note-offs, then retriggers.
     events: list[tuple[int, int, str, MidiNote | MidiControl]] = []
     for control in song.controls:
-        events.append((max(0, round(control.time * sample_rate)), 0, "control", control))
+        events.append(
+            (max(0, round(control.time * sample_rate)), 0, "control", control)
+        )
     for note in song.notes:
         events.append((min(frame_count, round(note.end * sample_rate)), 1, "off", note))
         events.append((max(0, round(note.start * sample_rate)), 2, "on", note))
@@ -797,7 +890,9 @@ def resolve_synth_backend(
     return "builtin", None
 
 
-def _audio_cache_path(song: MidiSong, *, backend: str, soundfont: Path | None = None) -> Path:
+def _audio_cache_path(
+    song: MidiSong, *, backend: str, soundfont: Path | None = None
+) -> Path:
     digest = hashlib.sha256()
     digest.update(f"synth={SYNTH_VERSION};backend={backend};sr={SAMPLE_RATE};".encode())
     if soundfont is not None:
@@ -814,7 +909,9 @@ def _audio_cache_path(song: MidiSong, *, backend: str, soundfont: Path | None = 
         digest.update(
             f"cc,{control.time:.9f},{control.channel},{control.controller},{control.value};".encode()
         )
-    return Path(tempfile.gettempdir()) / f"zanim-midi-piano-{digest.hexdigest()[:20]}.wav"
+    return (
+        Path(tempfile.gettempdir()) / f"zanim-midi-piano-{digest.hexdigest()[:20]}.wav"
+    )
 
 
 def _ensure_audio(
@@ -844,82 +941,115 @@ def _validate_piano_range(song: MidiSong) -> None:
         {note.pitch for note in song.notes if not PIANO_LOW <= note.pitch <= PIANO_HIGH}
     )
     if outside:
-        raise ValueError(f"MIDI contains pitches outside the 88-key piano range 21..108: {outside}")
+        raise ValueError(
+            f"MIDI contains pitches outside the 88-key piano range 21..108: {outside}"
+        )
 
 
-def _build_scene(
-    midi_path: str | Path = DEFAULT_MIDI,
-    *,
-    gain: float = 0.82,
-    synth: str = "auto",
-    soundfont: str | Path | None = None,
-) -> tuple[Scene, MidiSong]:
-    song = parse_midi(midi_path)
-    _validate_piano_range(song)
-    if gain < 0:
-        raise ValueError("gain must be >= 0")
-    notes = song.notes
-    audio_path, synth_backend = _ensure_audio(song, backend=synth, soundfont=soundfont)
+class MidiPiano(Scene):
+    def __init__(
+        self,
+        midi_path: str | Path = DEFAULT_MIDI,
+        *,
+        gain: float = 0.82,
+        synth: str = "auto",
+        soundfont: str | Path | None = None,
+    ) -> None:
+        super().__init__()
+        self._arg_midi_path = midi_path
+        self._arg_gain = gain
+        self._arg_synth = synth
+        self._arg_soundfont = soundfont
 
-    scene = Scene(canvas=Canvas(width=1280, height=960, unit_size=100), fps=60)
-    rain = DynamicBatchObject2D(lambda time: _visible_note_state(notes, time), z_index=1)
-    whites = DynamicBatchObject2D(lambda time: _white_key_state(notes, time), z_index=4)
-    blacks = DynamicBatchObject2D(lambda time: _black_key_state(notes, time), z_index=5)
-    strike = BatchObject2D(
-        LineSet(
-            (Vec2(KEYBOARD_LEFT, STRIKE_Y),),
-            (Vec2(KEYBOARD_LEFT + KEYBOARD_WIDTH, STRIKE_Y),),
-            (STRIKE_COLOR,),
-            (0.025,),
-        ),
-        z_index=6,
-    )
-    title = Text("MIDI piano rain", font_size=34, color=WHITE, opacity=0, z_index=10)
-    source_name = song.track_name or Path(midi_path).stem
-    low = min(note.pitch for note in notes)
-    high = max(note.pitch for note in notes)
-    subtitle = Text(
-        f"{source_name}   ·   {len(notes)} notes   ·   {_note_name(low)}–{_note_name(high)}   ·   {synth_backend}",
-        font_size=18,
-        color=MUTED,
-        opacity=0,
-        z_index=10,
-    )
-    title.move_to((0, 4.34))
-    subtitle.move_to((0, 3.92))
-    audio = Audio(audio_path, gain=gain)
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1280, height=960, unit_size=100)
+        self.fps = 60
+        if self._arg_gain < 0:
+            raise ValueError("gain must be >= 0")
+        self.song = parse_midi(self._arg_midi_path)
+        _validate_piano_range(self.song)
+        self.audio_path, self.synth_backend = _ensure_audio(
+            self.song, backend=self._arg_synth, soundfont=self._arg_soundfont
+        )
 
-    rain, whites, blacks, strike, title, subtitle, audio = scene.add(
-        rain, whites, blacks, strike, title, subtitle, audio
-    )
-    with scene.parallel():
-        title.fade_in(duration=0.45)
-        subtitle.fade_in(duration=0.55, at=0.05)
-        audio.media(duration=audio.raw.source.duration, at=LEAD_TIME)
-    scene.wait(OUTRO)
-    return scene, song
+        notes = self.song.notes
+        self.rain = DynamicBatchObject2D(
+            lambda time: _visible_note_state(notes, time), z_index=1
+        )
+        self.whites = DynamicBatchObject2D(
+            lambda time: _white_key_state(notes, time), z_index=4
+        )
+        self.blacks = DynamicBatchObject2D(
+            lambda time: _black_key_state(notes, time), z_index=5
+        )
+        self.strike = BatchObject2D(
+            LineSet(
+                (Vec2(KEYBOARD_LEFT, STRIKE_Y),),
+                (Vec2(KEYBOARD_LEFT + KEYBOARD_WIDTH, STRIKE_Y),),
+                (STRIKE_COLOR,),
+                (0.025,),
+            ),
+            z_index=6,
+        )
+        self.title = Text(
+            "MIDI piano rain", font_size=34, color=WHITE, opacity=0, z_index=10
+        )
+        source_name = self.song.track_name or Path(self._arg_midi_path).stem
+        low = min(note.pitch for note in notes)
+        high = max(note.pitch for note in notes)
+        self.subtitle = Text(
+            f"{source_name}   ·   {len(notes)} notes   ·   {_note_name(low)}–{_note_name(high)}   ·   {self.synth_backend}",
+            font_size=18,
+            color=MUTED,
+            opacity=0,
+            z_index=10,
+        )
+        self.title.move_to((0, 4.34))
+        self.subtitle.move_to((0, 3.92))
+        self.audio = Audio(self.audio_path, gain=self._arg_gain)
 
-
-def build_scene() -> Scene:
-    """Default scene used by ``zanim preview/render``."""
-    scene, _ = _build_scene(DEFAULT_MIDI)
-    return scene
+    def construct(self) -> None:
+        scene = self
+        rain, whites, blacks, strike, title, subtitle, audio = scene.add(
+            self.rain,
+            self.whites,
+            self.blacks,
+            self.strike,
+            self.title,
+            self.subtitle,
+            self.audio,
+        )
+        with scene.parallel():
+            title.fade_in(duration=0.45)
+            subtitle.fade_in(duration=0.55, at=0.05)
+            audio.media(duration=audio.raw.source.duration, at=LEAD_TIME)
+        scene.wait(OUTRO)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Render MIDI notes falling onto an 88-key piano")
+    parser = argparse.ArgumentParser(
+        description="Render MIDI notes falling onto an 88-key piano"
+    )
     parser.add_argument("midi", nargs="?", type=Path, default=DEFAULT_MIDI)
     parser.add_argument("--gain", type=float, default=0.82)
-    parser.add_argument("--synth", choices=("auto", "soundfont", "builtin"), default="auto")
+    parser.add_argument(
+        "--synth", choices=("auto", "soundfont", "builtin"), default="auto"
+    )
     parser.add_argument("--soundfont", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
 
-    resolved_synth, resolved_soundfont = resolve_synth_backend(args.synth, args.soundfont)
-    scene, song = _build_scene(
+    resolved_synth, resolved_soundfont = resolve_synth_backend(
+        args.synth, args.soundfont
+    )
+    scene = MidiPiano(
         args.midi, gain=args.gain, synth=resolved_synth, soundfont=resolved_soundfont
     )
-    output = scene.render_video(args.output, fps=60, workers=8, verify_random_access=True)
+    scene._run_authoring_hooks()
+    song = scene.song
+    output = scene.render_video(
+        args.output, fps=60, workers=8, verify_random_access=True
+    )
     print(output)
     print(
         f"duration={scene.duration:.2f}s midi_duration={song.duration:.2f}s "

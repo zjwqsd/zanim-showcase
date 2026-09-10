@@ -76,73 +76,91 @@ def _animated_map(
     scene.wait(0.12)
 
 
-def build_scene() -> Scene:
-    scene = Scene(canvas=Canvas(width=1280, height=960, unit_size=100), fps=60)
+class ComplexMapping(Scene):
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1280, height=960, unit_size=100)
+        self.fps = 60
 
-    title = Text("Infinite complex-plane mappings", font_size=36, color=WHITE, opacity=0, z_index=10)
-    subtitle = Text(
-        "native inverse mapping · no source window · no sampled polylines",
-        font_size=19,
-        color=MUTED,
-        opacity=0,
-        z_index=10,
-    )
-    legend_h = Text("Re(z) = constant", font_size=17, color=ORANGE, opacity=0, z_index=10)
-    legend_v = Text("Im(z) = constant", font_size=17, color=CYAN, opacity=0, z_index=10)
-    title.move_to((0.0, 4.25))
-    subtitle.move_to((0.0, 3.82))
-    legend_h.move_to((-4.75, 3.33))
-    legend_v.move_to((-4.75, 3.01))
+        self.title = Text(
+            "Infinite complex-plane mappings",
+            font_size=36,
+            color=WHITE,
+            opacity=0,
+            z_index=10,
+        )
+        self.subtitle = Text(
+            "native inverse mapping · no source window · no sampled polylines",
+            font_size=19,
+            color=MUTED,
+            opacity=0,
+            z_index=10,
+        )
+        self.legend_h = Text(
+            "Re(z) = constant", font_size=17, color=ORANGE, opacity=0, z_index=10
+        )
+        self.legend_v = Text(
+            "Im(z) = constant", font_size=17, color=CYAN, opacity=0, z_index=10
+        )
+        self.title.move_to((0.0, 4.25))
+        self.subtitle.move_to((0.0, 3.82))
+        self.legend_h.move_to((-4.75, 3.33))
+        self.legend_v.move_to((-4.75, 3.01))
 
-    title, subtitle, legend_h, legend_v = scene.add(title, subtitle, legend_h, legend_v)
-    with scene.parallel(duration=0.7):
-        title.fade_in()
-        subtitle.fade_in()
-        legend_h.fade_in()
-        legend_v.fade_in()
-    scene.wait(0.25)
+    def construct(self) -> None:
+        scene = self
+        title, subtitle, legend_h, legend_v = scene.add(
+            self.title, self.subtitle, self.legend_h, self.legend_v
+        )
+        with scene.parallel(duration=0.7):
+            title.fade_in()
+            subtitle.fade_in()
+            legend_h.fade_in()
+            legend_v.fade_in()
+        scene.wait(0.25)
 
-    # H_a(z) = (1-a)z + a z^2.  The Zig core analytically solves both inverse
-    # branches, including the branch arriving from infinity for every a > 0.
-    _animated_map(scene, "square", r"H_a(z)=(1-a)z+a z^2")
+        # H_a(z) = (1-a)z + a z^2.  The Zig core analytically solves both inverse
+        # branches, including the branch arriving from infinity for every a > 0.
+        _animated_map(scene, "square", r"H_a(z)=(1-a)z+a z^2")
 
-    # A one-parameter Möbius subgroup gives a nonsingular identity -> 1/z
-    # homotopy: H_a(z)=(cos θ z+i sin θ)/(i sin θ z+cos θ), θ=aπ/2.
-    _animated_map(scene, "reciprocal", r"H_a(z): z -> 1/z")
+        # A one-parameter Möbius subgroup gives a nonsingular identity -> 1/z
+        # homotopy: H_a(z)=(cos θ z+i sin θ)/(i sin θ z+cos θ), θ=aπ/2.
+        _animated_map(scene, "reciprocal", r"H_a(z): z -> 1/z")
 
-    # This is a genuine periodic analytic homotopy, not a crossfade:
-    # F_a(z)=exp(z)-1+(1-a)exp(-z), from 2 cosh(z)-1 to exp(z)-1.
-    exp_step = (0.5, 2.0 * math.pi / 12.0)
-    _animated_map(
-        scene,
-        "exp",
-        r"F_a(z)=e^z-1+(1-a)e^(-z)",
-        step=exp_step,
-    )
+        # This is a genuine periodic analytic homotopy, not a crossfade:
+        # F_a(z)=exp(z)-1+(1-a)exp(-z), from 2 cosh(z)-1 to exp(z)-1.
+        exp_step = (0.5, 2.0 * math.pi / 12.0)
+        _animated_map(
+            scene,
+            "exp",
+            r"F_a(z)=e^z-1+(1-a)e^(-z)",
+            step=exp_step,
+        )
 
-    # Choose a nontrivial target and let the core construct a guaranteed
-    # nonsingular identity -> target Gauss path in PSL(2,C).
-    b = 0.70 - 0.32j
-    c = 0.24 - 0.16j
-    mobius = (1.0 + b * c, b, c, 1.0 + 0.0j)
-    _animated_map(
-        scene,
-        "mobius",
-        r"M_a(z): z -> (A_a z+B_a)/(C_a z+D_a)",
-        mobius=mobius,
-    )
+        # Choose a nontrivial target and let the core construct a guaranteed
+        # nonsingular identity -> target Gauss path in PSL(2,C).
+        b = 0.70 - 0.32j
+        c = 0.24 - 0.16j
+        mobius = (1.0 + b * c, b, c, 1.0 + 0.0j)
+        _animated_map(
+            scene,
+            "mobius",
+            r"M_a(z): z -> (A_a z+B_a)/(C_a z+D_a)",
+            mobius=mobius,
+        )
 
-    scene.wait(0.35)
-    return scene
+        scene.wait(0.35)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Render native infinite complex-plane mappings")
+    parser = argparse.ArgumentParser(
+        description="Render native infinite complex-plane mappings"
+    )
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()
 
-    scene = build_scene()
+    scene = ComplexMapping()
+    scene._run_authoring_hooks()
     output = scene.render_video(
         args.output,
         fps=60,

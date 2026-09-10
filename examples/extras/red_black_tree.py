@@ -106,7 +106,9 @@ class RedBlackTree:
 
         visit(self.root, 0)
         active_values = tuple(node.value for node in active if node is not None)
-        self.steps.append(TraceStep(kind, message, tuple(sorted(states)), active_values))
+        self.steps.append(
+            TraceStep(kind, message, tuple(sorted(states)), active_values)
+        )
 
     def _left_rotate(self, pivot: RBNode) -> None:
         child = pivot.right
@@ -435,121 +437,130 @@ def _step_duration(kind: str) -> float:
     return RECOLOR_DURATION
 
 
-def _build_scene(*, seed: int = DEFAULT_SEED, count: int = DEFAULT_COUNT) -> tuple[Scene, dict]:
-    values = random_values(seed, count)
-    trace = build_trace(values)
+class RedBlackTreeExample(Scene):
+    def __init__(self, *, seed: int = DEFAULT_SEED, count: int = DEFAULT_COUNT) -> None:
+        super().__init__()
+        self._arg_seed = seed
+        self._arg_count = count
 
-    scene = Scene(canvas=Canvas(width=1280, height=960, unit_size=100), fps=60)
-    title = Text("Random red-black tree insertion", font_size=34, color=WHITE)
-    sequence = Text(
-        "sequence  " + "  ".join(str(value) for value in values),
-        font_size=18,
-        color=MUTED,
-    )
-    title.move_to((0, 4.35))
-    sequence.move_to((0, 3.90))
-
-    nodes = BatchObject2D(_node_batch(None, values), z_index=2)
-    edges = BatchObject2D(_edge_batch(None, values), z_index=0)
-    edges, nodes, title, sequence = scene.add(edges, nodes, title, sequence)
-
-    labels = {}
-    initial_positions = _position_map(TraceStep("empty", "", ()), values)
-    for value in values:
-        label = Text(str(value), font_size=18, color=WHITE, opacity=0, z_index=4)
-        label.move_to(initial_positions[value])
-        labels[value] = scene.add(label)
-
-    status = Text(
-        f"seed {seed} · {count} unique keys",
-        font_size=20,
-        color=MUTED,
-        opacity=0,
-        z_index=10,
-    )
-    status.move_to((0, 3.43))
-    status = scene.add(status)
-    status.fade_in(duration=0.25)
-    scene.wait(0.22)
-
-    visible: set[int] = set()
-    previous_step: TraceStep | None = None
-    kind_counts: dict[str, int] = {}
-
-    for step in trace:
-        kind_counts[step.kind] = kind_counts.get(step.kind, 0) + 1
-        next_status = Text(
-            step.message,
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1280, height=960, unit_size=100)
+        self.fps = 60
+        self.values = random_values(self._arg_seed, self._arg_count)
+        self.trace = build_trace(self.values)
+        self.title = Text("Random red-black tree insertion", font_size=34, color=WHITE)
+        self.sequence = Text(
+            "sequence  " + "  ".join(str(value) for value in self.values),
+            font_size=18,
+            color=MUTED,
+        )
+        self.title.move_to((0, 4.35))
+        self.sequence.move_to((0, 3.90))
+        self.nodes = BatchObject2D(_node_batch(None, self.values), z_index=2)
+        self.edges = BatchObject2D(_edge_batch(None, self.values), z_index=0)
+        initial_positions = _position_map(TraceStep("empty", "", ()), self.values)
+        self.labels = {}
+        for value in self.values:
+            label = Text(str(value), font_size=18, color=WHITE, opacity=0, z_index=4)
+            label.move_to(initial_positions[value])
+            self.labels[value] = label
+        self.status = Text(
+            f"seed {self._arg_seed} · {self._arg_count} unique keys",
             font_size=20,
-            color=_status_color(step.kind),
+            color=MUTED,
             opacity=0,
             z_index=10,
         )
-        next_status.move_to((0, 3.43))
-        next_status = scene.add(next_status)
-        with scene.parallel(duration=STATUS_FADE):
+        self.status.move_to((0, 3.43))
+
+    def construct(self) -> None:
+        seed, count = self._arg_seed, self._arg_count
+        values, trace = self.values, self.trace
+        scene = self
+        edges, nodes, title, sequence = scene.add(
+            self.edges, self.nodes, self.title, self.sequence
+        )
+        labels = {value: scene.add(label) for value, label in self.labels.items()}
+        status = scene.add(self.status)
+        status.fade_in(duration=0.25)
+        scene.wait(0.22)
+
+        visible: set[int] = set()
+        previous_step: TraceStep | None = None
+        kind_counts: dict[str, int] = {}
+
+        for step in trace:
+            kind_counts[step.kind] = kind_counts.get(step.kind, 0) + 1
+            next_status = Text(
+                step.message,
+                font_size=20,
+                color=_status_color(step.kind),
+                opacity=0,
+                z_index=10,
+            )
+            next_status.move_to((0, 3.43))
+            next_status = scene.add(next_status)
+            with scene.parallel(duration=STATUS_FADE):
+                status.fade_out()
+                next_status.fade_in()
+            status.remove()
+            status = next_status
+
+            duration = _step_duration(step.kind)
+            positions = _position_map(step, values)
+            step_values = {state.value for state in step.nodes}
+            newly_visible = step_values - visible
+
+            with scene.parallel(duration=duration):
+                nodes.batch(to=_node_batch(step, values))
+                edges.batch(to=_edge_batch(step, values))
+                for value in step_values:
+                    labels[value].move(to=positions[value])
+                for value in newly_visible:
+                    labels[value].fade_in()
+
+            visible = step_values
+            previous_step = step
+            scene.wait(INSERT_HOLD if step.kind == "insert" else STEP_HOLD)
+
+        final_status = Text(
+            "all invariants restored · root black · equal black height",
+            font_size=20,
+            color=Color(120, 220, 165),
+            opacity=0,
+            z_index=10,
+        )
+        final_status.move_to((0, 3.43))
+        final_status = scene.add(final_status)
+        with scene.parallel(duration=0.24):
             status.fade_out()
-            next_status.fade_in()
+            final_status.fade_in()
         status.remove()
-        status = next_status
+        scene.wait(0.85)
 
-        duration = _step_duration(step.kind)
-        positions = _position_map(step, values)
-        step_values = {state.value for state in step.nodes}
-        newly_visible = step_values - visible
-
-        with scene.parallel(duration=duration):
-            nodes.batch(to=_node_batch(step, values))
-            edges.batch(to=_edge_batch(step, values))
-            for value in step_values:
-                labels[value].move(to=positions[value])
-            for value in newly_visible:
-                labels[value].fade_in()
-
-        visible = step_values
-        previous_step = step
-        scene.wait(INSERT_HOLD if step.kind == "insert" else STEP_HOLD)
-
-    final_status = Text(
-        "all invariants restored · root black · equal black height",
-        font_size=20,
-        color=Color(120, 220, 165),
-        opacity=0,
-        z_index=10,
-    )
-    final_status.move_to((0, 3.43))
-    final_status = scene.add(final_status)
-    with scene.parallel(duration=0.24):
-        status.fade_out()
-        final_status.fade_in()
-    status.remove()
-    scene.wait(0.85)
-
-    info = {
-        "seed": seed,
-        "count": count,
-        "values": values,
-        "steps": len(trace),
-        "kind_counts": kind_counts,
-        "final_step": previous_step,
-    }
-    return scene, info
-
-
-def build_scene() -> Scene:
-    """Default scene used by ``zanim preview/render``."""
-    scene, _ = _build_scene()
-    return scene
+        info = {
+            "seed": seed,
+            "count": count,
+            "values": values,
+            "steps": len(trace),
+            "kind_counts": kind_counts,
+            "final_step": previous_step,
+        }
+        self.info = info
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Animate random red-black-tree insertion")
+    parser = argparse.ArgumentParser(
+        description="Animate random red-black-tree insertion"
+    )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--count", type=int, default=DEFAULT_COUNT)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
 
-    scene, info = _build_scene(seed=args.seed, count=args.count)
+    scene = RedBlackTreeExample(seed=args.seed, count=args.count)
+    scene._run_authoring_hooks()
+    info = scene.info
     output = scene.render_video(
         args.output,
         fps=60,

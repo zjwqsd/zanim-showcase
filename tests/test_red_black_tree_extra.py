@@ -40,7 +40,8 @@ class RedBlackTreeExtraTests(unittest.TestCase):
             self.assertEqual(xs, sorted(xs))
 
     def test_scene_builds_and_evaluates_random_access(self):
-        scene, info = MODULE._build_scene(seed=3, count=7)
+        scene = MODULE.RedBlackTreeExample(seed=3, count=7)._run_authoring_hooks()
+        info = scene.info
         self.assertEqual(info["count"], 7)
         self.assertGreater(scene.duration, 0)
         for time in (scene.duration, 0.0, scene.duration * 0.57, scene.duration * 0.21):

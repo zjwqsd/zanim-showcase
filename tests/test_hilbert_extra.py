@@ -36,11 +36,17 @@ class HilbertExtraTests(unittest.TestCase):
         )
 
     def test_default_scene_reaches_requested_order(self):
-        scene = MODULE._build_scene(max_order=4, transition_duration=0.05, hold=0.0)
+        scene = MODULE.HilbertCurve(
+            max_order=4, transition_duration=0.05, hold=0.0
+        )._run_authoring_hooks()
         self.assertGreater(scene.duration, 0)
         final = scene.evaluate(scene.duration)
-        curves = [obj for obj in final.objects if hasattr(obj.snapshot.geometry, "points")]
-        self.assertTrue(any(len(obj.snapshot.geometry.points) == 4**4 for obj in curves))
+        curves = [
+            obj for obj in final.objects if hasattr(obj.snapshot.geometry, "points")
+        ]
+        self.assertTrue(
+            any(len(obj.snapshot.geometry.points) == 4**4 for obj in curves)
+        )
 
 
 if __name__ == "__main__":

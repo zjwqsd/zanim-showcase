@@ -274,7 +274,8 @@ def train_with_epoch_trace(
 
     # Eight visually distinct real MNIST examples, one per epoch.
     sample_indices = np.asarray(
-        [int(np.flatnonzero(y_train == digit)[0]) for digit in range(epochs)]
+        [int(np.flatnonzero(y_train == digit)[0]) for digit in range(epochs)],
+        dtype=np.intp,
     )
     samples = X_train[sample_indices].astype(np.float32, copy=True)
     sample_labels = y_train[sample_indices].astype(np.int16, copy=True)
@@ -310,9 +311,13 @@ def train_with_epoch_trace(
         effective_G2 = (W2[epoch].astype(np.float64) - W2[epoch + 1]) / learning_rate
         effective_Gb2 = (b2[epoch].astype(np.float64) - b2[epoch + 1]) / learning_rate
         np.testing.assert_allclose(effective_G1, sum_dW1, rtol=2e-5, atol=2e-5)
-        np.testing.assert_allclose(effective_Gb1, sum_db1.reshape(-1), rtol=2e-5, atol=2e-5)
+        np.testing.assert_allclose(
+            effective_Gb1, sum_db1.reshape(-1), rtol=2e-5, atol=2e-5
+        )
         np.testing.assert_allclose(effective_G2, sum_dW2, rtol=2e-5, atol=2e-5)
-        np.testing.assert_allclose(effective_Gb2, sum_db2.reshape(-1), rtol=2e-5, atol=2e-5)
+        np.testing.assert_allclose(
+            effective_Gb2, sum_db2.reshape(-1), rtol=2e-5, atol=2e-5
+        )
         G1[epoch], Gb1[epoch] = effective_G1, effective_Gb1
         G2[epoch], Gb2[epoch] = effective_G2, effective_Gb2
 
@@ -389,7 +394,9 @@ def _input_centers() -> tuple[Vec2, ...]:
 
 def _filter_centers() -> tuple[Vec2, ...]:
     return tuple(
-        Vec2(-4.22 + 0.88 * col, 1.70 - 0.86 * row) for row in range(4) for col in range(2)
+        Vec2(-4.22 + 0.88 * col, 1.70 - 0.86 * row)
+        for row in range(4)
+        for col in range(2)
     )
 
 
@@ -438,8 +445,12 @@ class EpochVisual:
         self.filter_cells = _filter_cells()
         self.hidden_centers = _layer_centers(-1.55, HIDDEN_SIZE, 3.65)
         self.output_centers = _layer_centers(1.15, OUTPUT_SIZE, 4.15)
-        self.w2_starts = tuple(p for p in self.hidden_centers for _ in self.output_centers)
-        self.w2_ends = tuple(p for _ in self.hidden_centers for p in self.output_centers)
+        self.w2_starts = tuple(
+            p for p in self.hidden_centers for _ in self.output_centers
+        )
+        self.w2_ends = tuple(
+            p for _ in self.hidden_centers for p in self.output_centers
+        )
 
         # Eight readable aggregate paths stand in front of the dense W1 maps.
         # They communicate propagation direction without reintroducing 6,272
@@ -540,7 +551,9 @@ class EpochVisual:
         return None
 
     @staticmethod
-    def _staggered(progress: float, index: int, count: int, *, spread: float = 0.46) -> float:
+    def _staggered(
+        progress: float, index: int, count: int, *, spread: float = 0.46
+    ) -> float:
         if count <= 1:
             return _smooth01(progress)
         offset = spread * index / (count - 1)
@@ -552,7 +565,9 @@ class EpochVisual:
 
     @staticmethod
     def _scaled_alpha(color: Color, scale: float) -> Color:
-        return color.with_alpha(max(0, min(255, round(color.a * max(0.0, min(1.0, scale))))))
+        return color.with_alpha(
+            max(0, min(255, round(color.a * max(0.0, min(1.0, scale)))))
+        )
 
     def input_reveal(self, time: float) -> float:
         local = self._forward_local(time)
@@ -598,7 +613,9 @@ class EpochVisual:
         filter_to_input = _smooth01((u - 0.86) / 0.48)
         return output_to_hidden, hidden_to_filter, filter_to_input
 
-    def node_phase(self, time: float, *, layer: str, index: int, count: int) -> tuple[float, bool]:
+    def node_phase(
+        self, time: float, *, layer: str, index: int, count: int
+    ) -> tuple[float, bool]:
         forward = self._forward_local(time)
         if forward is not None:
             if layer == "hidden":
@@ -648,7 +665,9 @@ class EpochVisual:
         return LineSet(source, tuple(grown_ends), tuple(grown_colors), widths)
 
     @staticmethod
-    def _signed_colors(values: np.ndarray, positive: Color, negative: Color, *, min_alpha=18):
+    def _signed_colors(
+        values: np.ndarray, positive: Color, negative: Color, *, min_alpha=18
+    ):
         flat = np.asarray(values, dtype=np.float64).reshape(-1)
         scale = max(1e-12, float(np.max(np.abs(flat))))
         mags = np.minimum(1.0, np.abs(flat) / scale)
@@ -733,7 +752,9 @@ class EpochVisual:
         fills: list[Color] = []
         for i, color in enumerate(base.fills):
             filter_index = i // INPUT_SIZE
-            p = self._staggered(reveal, HIDDEN_SIZE - 1 - filter_index, HIDDEN_SIZE, spread=0.42)
+            p = self._staggered(
+                reveal, HIDDEN_SIZE - 1 - filter_index, HIDDEN_SIZE, spread=0.42
+            )
             fills.append(self._scaled_alpha(color, p))
         return RectSet(base.centers, base.sizes, tuple(fills))
 
@@ -883,7 +904,8 @@ class EpochVisual:
     def _input_for_key(self, key: int, inference: bool) -> RectSet:
         x = self.inference.X[key] if inference else self.trace.samples[key]
         fills = tuple(
-            Color(round(20 + 230 * v), round(23 + 230 * v), round(31 + 220 * v)) for v in x
+            Color(round(20 + 230 * v), round(23 + 230 * v), round(31 + 220 * v))
+            for v in x
         )
         return RectSet(
             self.input_centers,
@@ -917,12 +939,18 @@ class EpochVisual:
         fills: list[Color] = []
         strokes: list[Color] = []
         for i, value in enumerate(np.asarray(hidden)):
-            light, backward = self.node_phase(time, layer="hidden", index=i, count=HIDDEN_SIZE)
+            light, backward = self.node_phase(
+                time, layer="hidden", index=i, count=HIDDEN_SIZE
+            )
             activation = float(value) * light
             base = PURPLE if backward else CYAN
             radii.append(0.105 + 0.11 * activation + 0.025 * light)
-            fills.append(base.with_alpha(round(28 + 220 * max(light * 0.45, activation))))
-            strokes.append((ORANGE if backward else WHITE).with_alpha(round(90 + 150 * light)))
+            fills.append(
+                base.with_alpha(round(28 + 220 * max(light * 0.45, activation)))
+            )
+            strokes.append(
+                (ORANGE if backward else WHITE).with_alpha(round(90 + 150 * light))
+            )
         return CircleSet(
             self.hidden_centers,
             tuple(radii),
@@ -937,12 +965,18 @@ class EpochVisual:
         fills: list[Color] = []
         strokes: list[Color] = []
         for i, value in enumerate(np.asarray(probs)):
-            light, backward = self.node_phase(time, layer="output", index=i, count=OUTPUT_SIZE)
+            light, backward = self.node_phase(
+                time, layer="output", index=i, count=OUTPUT_SIZE
+            )
             activation = float(value) * light
             base = ORANGE if backward else GREEN
             radii.append(0.095 + 0.18 * activation + 0.024 * light)
-            fills.append(base.with_alpha(round(26 + 225 * max(light * 0.42, activation))))
-            strokes.append((PURPLE if backward else WHITE).with_alpha(round(85 + 155 * light)))
+            fills.append(
+                base.with_alpha(round(26 + 225 * max(light * 0.42, activation)))
+            )
+            strokes.append(
+                (PURPLE if backward else WHITE).with_alpha(round(85 + 155 * light))
+            )
         return CircleSet(
             self.output_centers,
             tuple(radii),
@@ -961,7 +995,9 @@ class EpochVisual:
             width = 0.02 + 1.05 * float(probability) * reveal
             centers.append(Vec2(1.62 + width * 0.5, node.y))
             sizes.append(Vec2(width, 0.095))
-            fills.append((YELLOW if digit == pred else GREEN).with_alpha(round(205 * reveal)))
+            fills.append(
+                (YELLOW if digit == pred else GREEN).with_alpha(round(205 * reveal))
+            )
         return RectSet(tuple(centers), tuple(sizes), tuple(fills))
 
     def mean_loss_at(self, time: float) -> float:
@@ -1007,425 +1043,582 @@ def _dynamic_number(
 
 
 def _curve(points: tuple[Vec2, ...], count: int) -> PolylineGeometry:
-    if count <= 0:
+    if not points:
+        raise ValueError("curve requires at least one point")
+    if count <= 1 or len(points) == 1:
         return PolylineGeometry((points[0], points[0]))
-    visible = points[:count]
-    return PolylineGeometry(visible if len(visible) >= 2 else (visible[0], visible[0]))
+    return PolylineGeometry(points[:count])
 
 
-def _build_scene(result: TrainingResult) -> Scene:
-    trace = result.trace
-    visual = EpochVisual(trace, result.inference)
-    scene = Scene(canvas=Canvas(1920, 1080, 105), fps=60)
+class MnistTraining(Scene):
+    def __init__(self, result: TrainingResult | None = None) -> None:
+        super().__init__()
+        self._arg_result = result
 
-    # Dense first-layer weights are shown as eight learned 28x28 filters instead
-    # of 6,272 crossing lines. No weight is discarded.
-    pixels = DynamicBatchObject2D(visual.input_pixels, z_index=3)
-    # W1 has known epoch endpoints, so use the retained BatchClip channel.
-    # The Zig renderer interpolates the two cached endpoint batches directly;
-    # Python does not rebuild 6,272 colors on every update frame.
-    weight_filters = BatchObject2D(visual._static_weight_filters(0), z_index=3)
-    # G1 is also known per epoch. Keep eight static filter tiles so the backward
-    # wave can reveal them independently without rebuilding 6,272 colors/frame.
-    gradient_tile_objects = [
-        BatchObject2D(visual._gradient_filter_tile(0, i), opacity=0, z_index=4)
-        for i in range(HIDDEN_SIZE)
-    ]
-    gradient_filters = Group(gradient_tile_objects, z_index=4)
-    hidden = DynamicBatchObject2D(visual.hidden_nodes, z_index=6)
-    output = DynamicBatchObject2D(visual.output_nodes, z_index=6)
-    bars = DynamicBatchObject2D(visual.probability_bars, z_index=4)
+    def setup(self) -> None:
+        self.canvas = Canvas(1920, 1080, 105)
+        self.fps = 60
+        self.result = self._arg_result or _prepare_training_result()
+        self.trace = self.result.trace
+        self.visual = EpochVisual(self.trace, self.result.inference)
 
-    # Propagation lines are transient absolute-time geometry. Each epoch starts
-    # with a clean network, then forward lines grow left->right and accumulated
-    # gradient lines grow right->left.
-    f_input_filter = DynamicBatchObject2D(visual.forward_input_filter_lines, z_index=2)
-    f_filter_hidden = DynamicBatchObject2D(visual.forward_filter_hidden_lines, z_index=2)
-    f_w2 = DynamicBatchObject2D(visual.forward_w2_lines, z_index=2)
-    b_w2 = DynamicBatchObject2D(visual.backward_w2_lines, z_index=3)
-    b_hidden_filter = DynamicBatchObject2D(visual.backward_hidden_filter_lines, z_index=3)
-    b_filter_input = DynamicBatchObject2D(visual.backward_filter_input_lines, z_index=3)
+        result = self.result
+        trace = self.trace
+        visual = self.visual
+        scene = self
 
-    title = Text("MNIST MLP · eight real training epochs", font_size=34, color=WHITE)
-    subtitle = Text(
-        "real NumPy training · each backward pass accumulates all 938 mini-batches",
-        font_size=20,
-        color=MUTED,
-    )
-    title.place(anchor=TOP, at=scene.frame.top + Vec2(0, -0.26))
-    subtitle.place(anchor=TOP, at=title.anchor(BOTTOM) + Vec2(0, -0.10))
+        # Dense first-layer weights are shown as eight learned 28x28 filters instead
+        # of 6,272 crossing lines. No weight is discarded.
+        pixels = DynamicBatchObject2D(visual.input_pixels, z_index=3)
+        # W1 has known epoch endpoints, so use the retained BatchClip channel.
+        # The Zig renderer interpolates the two cached endpoint batches directly;
+        # Python does not rebuild 6,272 colors on every update frame.
+        weight_filters = BatchObject2D(visual._static_weight_filters(0), z_index=3)
+        # G1 is also known per epoch. Keep eight static filter tiles so the backward
+        # wave can reveal them independently without rebuilding 6,272 colors/frame.
+        gradient_tile_objects = [
+            BatchObject2D(visual._gradient_filter_tile(0, i), opacity=0, z_index=4)
+            for i in range(HIDDEN_SIZE)
+        ]
+        gradient_filters = Group(gradient_tile_objects, z_index=4)
+        hidden = DynamicBatchObject2D(visual.hidden_nodes, z_index=6)
+        output = DynamicBatchObject2D(visual.output_nodes, z_index=6)
+        bars = DynamicBatchObject2D(visual.probability_bars, z_index=4)
 
-    input_label = Text("28 × 28 input", font_size=17, color=MUTED)
-    filters_label = Text("W₁ · 8 learned filters", font_size=17, color=MUTED)
-    hidden_label = Text("sigmoid · 8", font_size=17, color=MUTED)
-    output_label = Text("softmax · 10", font_size=17, color=MUTED)
-    input_label.place(anchor=BOTTOM, at=Vec2(-7.0, -1.02))
-    filters_label.place(anchor=BOTTOM, at=Vec2(-3.78, -2.05))
-    hidden_label.place(anchor=BOTTOM, at=Vec2(-1.55, -1.90))
-    output_label.place(anchor=BOTTOM, at=Vec2(1.15, -2.15))
+        # Propagation lines are transient absolute-time geometry. Each epoch starts
+        # with a clean network, then forward lines grow left->right and accumulated
+        # gradient lines grow right->left.
+        f_input_filter = DynamicBatchObject2D(
+            visual.forward_input_filter_lines, z_index=2
+        )
+        f_filter_hidden = DynamicBatchObject2D(
+            visual.forward_filter_hidden_lines, z_index=2
+        )
+        f_w2 = DynamicBatchObject2D(visual.forward_w2_lines, z_index=2)
+        b_w2 = DynamicBatchObject2D(visual.backward_w2_lines, z_index=3)
+        b_hidden_filter = DynamicBatchObject2D(
+            visual.backward_hidden_filter_lines, z_index=3
+        )
+        b_filter_input = DynamicBatchObject2D(
+            visual.backward_filter_input_lines, z_index=3
+        )
 
-    filter_numbers = []
-    for i, center in enumerate(visual.filter_centers):
-        label = Text(f"h{i}", font_size=11, color=MUTED)
-        label.place(anchor=BOTTOM, at=Vec2(center.x, center.y - 0.38))
-        filter_numbers.append(label)
+        title = Text(
+            "MNIST MLP · eight real training epochs", font_size=34, color=WHITE
+        )
+        subtitle = Text(
+            "real NumPy training · each backward pass accumulates all 938 mini-batches",
+            font_size=20,
+            color=MUTED,
+        )
+        title.place(anchor=TOP, at=scene.frame.top + Vec2(0, -0.26))
+        subtitle.place(anchor=TOP, at=title.anchor(BOTTOM) + Vec2(0, -0.10))
 
-    digit_labels = []
-    for digit, node in enumerate(visual.output_centers):
-        label = Text(str(digit), font_size=14, color=MUTED)
-        label.place(anchor=BOTTOM, at=Vec2(1.48, node.y - 0.05))
-        digit_labels.append(label)
+        input_label = Text("28 × 28 input", font_size=17, color=MUTED)
+        filters_label = Text("W₁ · 8 learned filters", font_size=17, color=MUTED)
+        hidden_label = Text("sigmoid · 8", font_size=17, color=MUTED)
+        output_label = Text("softmax · 10", font_size=17, color=MUTED)
+        input_label.place(anchor=BOTTOM, at=Vec2(-7.0, -1.02))
+        filters_label.place(anchor=BOTTOM, at=Vec2(-3.78, -2.05))
+        hidden_label.place(anchor=BOTTOM, at=Vec2(-1.55, -1.90))
+        output_label.place(anchor=BOTTOM, at=Vec2(1.15, -2.15))
 
-    # Right panel is exclusively metrics; formulas live in their own bottom strip.
-    metrics_frame = Rectangle(
-        4.55, 3.25, position=(6.35, 1.4), stroke=PANEL, stroke_width=0.012, z_index=8
-    )
-    metrics_title = Text("training state", font_size=17, color=MUTED)
-    metrics_title.place(anchor=TOP, at=Vec2(6.35, 3.00))
+        filter_numbers = []
+        for i, center in enumerate(visual.filter_centers):
+            label = Text(f"h{i}", font_size=11, color=MUTED)
+            label.place(anchor=BOTTOM, at=Vec2(center.x, center.y - 0.38))
+            filter_numbers.append(label)
 
-    metric_specs = [
-        ("epoch", 2.55),
-        ("mean loss", 2.08),
-        ("train acc %", 1.61),
-        ("test acc %", 1.14),
-        ("||G₁||₂", 0.67),
-        ("||G₂||₂", 0.20),
-    ]
-    metric_labels = []
-    for i, (text, y) in enumerate(metric_specs):
-        item = Text(text, font_size=16, color=MUTED, opacity=1 if i == 0 else 0)
-        item.place(anchor=TOP, at=Vec2(4.55, y))
-        metric_labels.append(item)
+        digit_labels = []
+        for digit, node in enumerate(visual.output_centers):
+            label = Text(str(digit), font_size=14, color=MUTED)
+            label.place(anchor=BOTTOM, at=Vec2(1.48, node.y - 0.05))
+            digit_labels.append(label)
 
-    epoch_num = _dynamic_number(
-        visual.display_epoch, at=(7.72, 2.48), color=CYAN, width=2, decimals=0
-    )
-    loss_num = _dynamic_number(visual.mean_loss_at, at=(7.72, 2.01), color=ORANGE, opacity=0)
-    train_num = _dynamic_number(
-        visual.train_acc_at, at=(7.72, 1.54), color=CYAN, width=7, decimals=2, opacity=0
-    )
-    test_num = _dynamic_number(
-        visual.test_acc_at, at=(7.72, 1.07), color=GREEN, width=7, decimals=2, opacity=0
-    )
-    g1_num = _dynamic_number(visual.grad_norm_g1, at=(7.72, 0.60), color=PURPLE, opacity=0)
-    g2_num = _dynamic_number(visual.grad_norm_g2, at=(7.72, 0.13), color=PURPLE, opacity=0)
+        # Right panel is exclusively metrics; formulas live in their own bottom strip.
+        metrics_frame = Rectangle(
+            4.55,
+            3.25,
+            position=(6.35, 1.4),
+            stroke=PANEL,
+            stroke_width=0.012,
+            z_index=8,
+        )
+        metrics_title = Text("training state", font_size=17, color=MUTED)
+        metrics_title.place(anchor=TOP, at=Vec2(6.35, 3.00))
 
-    sample_label = Text("sample", font_size=15, color=MUTED)
-    true_label = Text("true", font_size=15, color=MUTED)
-    pred_label = Text("pred", font_size=15, color=MUTED, opacity=0)
-    conf_label = Text("confidence %", font_size=15, color=MUTED, opacity=0)
-    for obj, y in zip(
-        (sample_label, true_label, pred_label, conf_label), (-0.55, -0.92, -1.29, -1.66)
-    ):
-        obj.place(anchor=TOP, at=Vec2(4.55, y))
+        metric_specs = [
+            ("epoch", 2.55),
+            ("mean loss", 2.08),
+            ("train acc %", 1.61),
+            ("test acc %", 1.14),
+            ("||G₁||₂", 0.67),
+            ("||G₂||₂", 0.20),
+        ]
+        metric_labels = []
+        for i, (text, y) in enumerate(metric_specs):
+            item = Text(text, font_size=16, color=MUTED, opacity=1 if i == 0 else 0)
+            item.place(anchor=TOP, at=Vec2(4.55, y))
+            metric_labels.append(item)
 
-    true_num = _dynamic_number(
-        lambda t: visual.sample_state(t)[3], at=(7.72, -0.99), color=YELLOW, width=2, decimals=0
-    )
-    pred_num = _dynamic_number(
-        lambda t: visual.sample_state(t)[4],
-        at=(7.72, -1.36),
-        color=GREEN,
-        width=2,
-        decimals=0,
-        opacity=0,
-    )
-    conf_num = _dynamic_number(
-        lambda t: visual.sample_state(t)[5] * 100,
-        at=(7.72, -1.73),
-        color=GREEN,
-        width=7,
-        decimals=2,
-        opacity=0,
-    )
+        epoch_num = _dynamic_number(
+            visual.display_epoch, at=(7.72, 2.48), color=CYAN, width=2, decimals=0
+        )
+        loss_num = _dynamic_number(
+            visual.mean_loss_at, at=(7.72, 2.01), color=ORANGE, opacity=0
+        )
+        train_num = _dynamic_number(
+            visual.train_acc_at,
+            at=(7.72, 1.54),
+            color=CYAN,
+            width=7,
+            decimals=2,
+            opacity=0,
+        )
+        test_num = _dynamic_number(
+            visual.test_acc_at,
+            at=(7.72, 1.07),
+            color=GREEN,
+            width=7,
+            decimals=2,
+            opacity=0,
+        )
+        g1_num = _dynamic_number(
+            visual.grad_norm_g1, at=(7.72, 0.60), color=PURPLE, opacity=0
+        )
+        g2_num = _dynamic_number(
+            visual.grad_norm_g2, at=(7.72, 0.13), color=PURPLE, opacity=0
+        )
 
-    # Compact eight-point training curves.
-    graph_frame = Rectangle(
-        4.55, 2.45, position=(6.35, -3.18), stroke=PANEL, stroke_width=0.012, z_index=8
-    )
-    graph_title = Text("epoch summary", font_size=16, color=MUTED)
-    graph_title.place(anchor=TOP, at=Vec2(6.35, -1.92))
+        sample_label = Text("sample", font_size=15, color=MUTED)
+        true_label = Text("true", font_size=15, color=MUTED)
+        pred_label = Text("pred", font_size=15, color=MUTED, opacity=0)
+        conf_label = Text("confidence %", font_size=15, color=MUTED, opacity=0)
+        for obj, y in zip(
+            (sample_label, true_label, pred_label, conf_label),
+            (-0.55, -0.92, -1.29, -1.66),
+        ):
+            obj.place(anchor=TOP, at=Vec2(4.55, y))
 
-    loss_max = float(np.max(trace.mean_loss))
-    loss_min = float(np.min(trace.mean_loss))
-    loss_span = max(1e-6, loss_max - loss_min)
-    loss_points = tuple(
-        Vec2(4.45 + 3.8 * i / 7, -2.55 - 0.75 * (float(v) - loss_min) / loss_span)
-        for i, v in enumerate(trace.mean_loss)
-    )
-    train_points = tuple(
-        Vec2(4.45 + 3.8 * i / 7, -3.55 - 0.72 * (1.0 - float(v)))
-        for i, v in enumerate(trace.train_accuracy)
-    )
-    test_points = tuple(
-        Vec2(4.45 + 3.8 * i / 7, -3.55 - 0.72 * (1.0 - float(v)))
-        for i, v in enumerate(trace.test_accuracy)
-    )
-    loss_curve = DynamicGeometryObject2D(
-        lambda t: _curve(loss_points, visual.completed_epochs(t)),
-        style=Style.outline(ORANGE, 0.028),
-        z_index=10,
-    )
-    train_curve = DynamicGeometryObject2D(
-        lambda t: _curve(train_points, visual.completed_epochs(t)),
-        style=Style.outline(CYAN, 0.025),
-        z_index=10,
-    )
-    test_curve = DynamicGeometryObject2D(
-        lambda t: _curve(test_points, visual.completed_epochs(t)),
-        style=Style.outline(GREEN, 0.025),
-        z_index=10,
-    )
-    loss_legend = Text("mean loss", font_size=13, color=ORANGE)
-    acc_legend = Text("train / test accuracy", font_size=13, color=MUTED)
-    loss_legend.place(anchor=TOP, at=Vec2(5.05, -2.22))
-    acc_legend.place(anchor=TOP, at=Vec2(6.35, -3.38))
+        true_num = _dynamic_number(
+            lambda t: visual.sample_state(t)[3],
+            at=(7.72, -0.99),
+            color=YELLOW,
+            width=2,
+            decimals=0,
+        )
+        pred_num = _dynamic_number(
+            lambda t: visual.sample_state(t)[4],
+            at=(7.72, -1.36),
+            color=GREEN,
+            width=2,
+            decimals=0,
+            opacity=0,
+        )
+        conf_num = _dynamic_number(
+            lambda t: visual.sample_state(t)[5] * 100,
+            at=(7.72, -1.73),
+            color=GREEN,
+            width=7,
+            decimals=2,
+            opacity=0,
+        )
 
-    # Dedicated formula strip: nothing else is allowed to occupy this region.
-    formula_frame = Rectangle(
-        10.15, 1.45, position=(-2.55, -3.72), stroke=PANEL, stroke_width=0.012, z_index=8
-    )
-    forward_formula = Group(
-        [
-            Text("FORWARD", font_size=15, color=CYAN),
-            Math("Z_1 = X W_1 + b_1", font_size=21, color=CYAN),
-            Math(
-                'Y_1 = sigma(Z_1)   comma   Y_2 = "softmax"(Y_1 W_2 + b_2)',
-                font_size=20,
-                color=GREEN,
-            ),
-            Math("L = -log Y_(2,y)", font_size=20, color=ORANGE),
-        ],
-        opacity=0,
-        z_index=15,
-    )
-    Column(gap=0.055, at=Vec2(-2.55, -3.72)).place(*forward_formula.children)
+        # Compact eight-point training curves.
+        graph_frame = Rectangle(
+            4.55,
+            2.45,
+            position=(6.35, -3.18),
+            stroke=PANEL,
+            stroke_width=0.012,
+            z_index=8,
+        )
+        graph_title = Text("epoch summary", font_size=16, color=MUTED)
+        graph_title.place(anchor=TOP, at=Vec2(6.35, -1.92))
 
-    backward_formula = Group(
-        [
-            Text("BACKWARD · epoch aggregate", font_size=15, color=PURPLE),
-            Math(
-                'G_e = sum_(b in e) "grad"_W L_b = (W_e - W_(e+1)) / eta',
-                font_size=21,
-                color=PURPLE,
-            ),
-            Text(
-                "all 938 mini-batches contribute; no per-batch gradient is animated",
-                font_size=15,
-                color=MUTED,
-            ),
-        ],
-        opacity=0,
-        z_index=15,
-    )
-    Column(gap=0.075, at=Vec2(-2.55, -3.72)).place(*backward_formula.children)
+        loss_max = float(np.max(trace.mean_loss))
+        loss_min = float(np.min(trace.mean_loss))
+        loss_span = max(1e-6, loss_max - loss_min)
+        loss_points = tuple(
+            Vec2(4.45 + 3.8 * i / 7, -2.55 - 0.75 * (float(v) - loss_min) / loss_span)
+            for i, v in enumerate(trace.mean_loss)
+        )
+        train_points = tuple(
+            Vec2(4.45 + 3.8 * i / 7, -3.55 - 0.72 * (1.0 - float(v)))
+            for i, v in enumerate(trace.train_accuracy)
+        )
+        test_points = tuple(
+            Vec2(4.45 + 3.8 * i / 7, -3.55 - 0.72 * (1.0 - float(v)))
+            for i, v in enumerate(trace.test_accuracy)
+        )
+        loss_curve = DynamicGeometryObject2D(
+            lambda t: _curve(loss_points, visual.completed_epochs(t)),
+            style=Style.outline(ORANGE, 0.028),
+            z_index=10,
+        )
+        train_curve = DynamicGeometryObject2D(
+            lambda t: _curve(train_points, visual.completed_epochs(t)),
+            style=Style.outline(CYAN, 0.025),
+            z_index=10,
+        )
+        test_curve = DynamicGeometryObject2D(
+            lambda t: _curve(test_points, visual.completed_epochs(t)),
+            style=Style.outline(GREEN, 0.025),
+            z_index=10,
+        )
+        loss_legend = Text("mean loss", font_size=13, color=ORANGE)
+        acc_legend = Text("train / test accuracy", font_size=13, color=MUTED)
+        loss_legend.place(anchor=TOP, at=Vec2(5.05, -2.22))
+        acc_legend.place(anchor=TOP, at=Vec2(6.35, -3.38))
 
-    update_formula = Group(
-        [
-            Text("UPDATE", font_size=15, color=YELLOW),
-            Math("W_(e+1) = W_e - eta G_e", font_size=24, color=YELLOW),
-            Math("Delta W_e = -eta G_e", font_size=20, color=WHITE),
-        ],
-        opacity=0,
-        z_index=15,
-    )
-    Column(gap=0.085, at=Vec2(-2.55, -3.72)).place(*update_formula.children)
+        # Dedicated formula strip: nothing else is allowed to occupy this region.
+        formula_frame = Rectangle(
+            10.15,
+            1.45,
+            position=(-2.55, -3.72),
+            stroke=PANEL,
+            stroke_width=0.012,
+            z_index=8,
+        )
+        forward_formula = Group(
+            [
+                Text("FORWARD", font_size=15, color=CYAN),
+                Math("Z_1 = X W_1 + b_1", font_size=21, color=CYAN),
+                Math(
+                    'Y_1 = sigma(Z_1)   comma   Y_2 = "softmax"(Y_1 W_2 + b_2)',
+                    font_size=20,
+                    color=GREEN,
+                ),
+                Math("L = -log Y_(2,y)", font_size=20, color=ORANGE),
+            ],
+            opacity=0,
+            z_index=15,
+        )
+        Column(gap=0.055, at=Vec2(-2.55, -3.72)).place(*forward_formula.children)
 
-    # During update the actual W1 map and the actual accumulated gradient map
-    # move into these slots. The gradient then slides onto W1 while W1 morphs
-    # to the next epoch boundary.
-    weight_slot_label = Math("W_(1,e)", font_size=17, color=CYAN, opacity=0, z_index=16)
-    grad_slot_label = Math("- eta G_(1,e)", font_size=17, color=PURPLE, opacity=0, z_index=16)
-    plus_label = Text("+", font_size=23, color=WHITE, opacity=0, z_index=16)
-    next_weight_label = Math("W_(1,e+1)", font_size=17, color=YELLOW, opacity=0, z_index=16)
-    weight_slot_label.place(anchor=BOTTOM, at=Vec2(WEIGHT_SLOT_CENTER.x, 1.73))
-    grad_slot_label.place(anchor=BOTTOM, at=Vec2(GRADIENT_SLOT_CENTER.x, 1.73))
-    plus_label.place(anchor=BOTTOM, at=Vec2(-4.00, 2.48))
-    next_weight_label.place(anchor=BOTTOM, at=Vec2(WEIGHT_SLOT_CENTER.x, 1.73))
+        backward_formula = Group(
+            [
+                Text("BACKWARD · epoch aggregate", font_size=15, color=PURPLE),
+                Math(
+                    'G_e = sum_(b in e) "grad"_W L_b = (W_e - W_(e+1)) / eta',
+                    font_size=21,
+                    color=PURPLE,
+                ),
+                Text(
+                    "all 938 mini-batches contribute; no per-batch gradient is animated",
+                    font_size=15,
+                    color=MUTED,
+                ),
+            ],
+            opacity=0,
+            z_index=15,
+        )
+        Column(gap=0.075, at=Vec2(-2.55, -3.72)).place(*backward_formula.children)
 
-    scene.add(
-        pixels,
-        weight_filters,
-        gradient_filters,
-        hidden,
-        output,
-        bars,
-        f_input_filter,
-        f_filter_hidden,
-        f_w2,
-        b_w2,
-        b_hidden_filter,
-        b_filter_input,
-        title,
-        subtitle,
-        input_label,
-        filters_label,
-        hidden_label,
-        output_label,
-        *filter_numbers,
-        *digit_labels,
-        metrics_frame,
-        metrics_title,
-        *metric_labels,
-        epoch_num,
-        loss_num,
-        train_num,
-        test_num,
-        g1_num,
-        g2_num,
-        sample_label,
-        true_label,
-        pred_label,
-        conf_label,
-        true_num,
-        pred_num,
-        conf_num,
-        graph_frame,
-        graph_title,
-        loss_curve,
-        train_curve,
-        test_curve,
-        loss_legend,
-        acc_legend,
-        formula_frame,
-        forward_formula,
-        backward_formula,
-        update_formula,
-        weight_slot_label,
-        grad_slot_label,
-        plus_label,
-        next_weight_label,
-    )
+        update_formula = Group(
+            [
+                Text("UPDATE", font_size=15, color=YELLOW),
+                Math("W_(e+1) = W_e - eta G_e", font_size=24, color=YELLOW),
+                Math("Delta W_e = -eta G_e", font_size=20, color=WHITE),
+            ],
+            opacity=0,
+            z_index=15,
+        )
+        Column(gap=0.085, at=Vec2(-2.55, -3.72)).place(*update_formula.children)
 
-    forward_formula = scene.on(forward_formula)
-    backward_formula = scene.on(backward_formula)
-    update_formula = scene.on(update_formula)
-    weight_filters = scene.on(weight_filters)
-    gradient_filters = scene.on(gradient_filters)
-    gradient_tiles = [scene.on(tile) for tile in gradient_tile_objects]
-    pred_label = scene.on(pred_label)
-    conf_label = scene.on(conf_label)
-    pred_num = scene.on(pred_num)
-    conf_num = scene.on(conf_num)
-    loss_label, train_label, test_label = (
-        scene.on(metric_labels[1]),
-        scene.on(metric_labels[2]),
-        scene.on(metric_labels[3]),
-    )
-    g1_label, g2_label = scene.on(metric_labels[4]), scene.on(metric_labels[5])
-    loss_num = scene.on(loss_num)
-    train_num = scene.on(train_num)
-    test_num = scene.on(test_num)
-    g1_num = scene.on(g1_num)
-    g2_num = scene.on(g2_num)
-    weight_slot_label = scene.on(weight_slot_label)
-    grad_slot_label = scene.on(grad_slot_label)
-    plus_label = scene.on(plus_label)
-    next_weight_label = scene.on(next_weight_label)
+        # During update the actual W1 map and the actual accumulated gradient map
+        # move into these slots. The gradient then slides onto W1 while W1 morphs
+        # to the next epoch boundary.
+        weight_slot_label = Math(
+            "W_(1,e)", font_size=17, color=CYAN, opacity=0, z_index=16
+        )
+        grad_slot_label = Math(
+            "- eta G_(1,e)", font_size=17, color=PURPLE, opacity=0, z_index=16
+        )
+        plus_label = Text("+", font_size=23, color=WHITE, opacity=0, z_index=16)
+        next_weight_label = Math(
+            "W_(1,e+1)", font_size=17, color=YELLOW, opacity=0, z_index=16
+        )
+        weight_slot_label.place(anchor=BOTTOM, at=Vec2(WEIGHT_SLOT_CENTER.x, 1.73))
+        grad_slot_label.place(anchor=BOTTOM, at=Vec2(GRADIENT_SLOT_CENTER.x, 1.73))
+        plus_label.place(anchor=BOTTOM, at=Vec2(-4.00, 2.48))
+        next_weight_label.place(anchor=BOTTOM, at=Vec2(WEIGHT_SLOT_CENTER.x, 1.73))
 
-    # Reuse the same formula and metric panels for all eight epochs. No result
-    # metric is visible before the corresponding computation has happened.
-    with scene.parallel():
-        result_handles = (pred_label, conf_label, pred_num, conf_num)
-        summary_handles = (loss_label, train_label, test_label, loss_num, train_num, test_num)
-        gradient_metric_handles = (g1_label, g2_label, g1_num, g2_num)
+        self._initial_items = (
+            pixels,
+            weight_filters,
+            gradient_filters,
+            hidden,
+            output,
+            bars,
+            f_input_filter,
+            f_filter_hidden,
+            f_w2,
+            b_w2,
+            b_hidden_filter,
+            b_filter_input,
+            title,
+            subtitle,
+            input_label,
+            filters_label,
+            hidden_label,
+            output_label,
+            *filter_numbers,
+            *digit_labels,
+            metrics_frame,
+            metrics_title,
+            *metric_labels,
+            epoch_num,
+            loss_num,
+            train_num,
+            test_num,
+            g1_num,
+            g2_num,
+            sample_label,
+            true_label,
+            pred_label,
+            conf_label,
+            true_num,
+            pred_num,
+            conf_num,
+            graph_frame,
+            graph_title,
+            loss_curve,
+            train_curve,
+            test_curve,
+            loss_legend,
+            acc_legend,
+            formula_frame,
+            forward_formula,
+            backward_formula,
+            update_formula,
+            weight_slot_label,
+            grad_slot_label,
+            plus_label,
+            next_weight_label,
+        )
+        self._weight_filters = weight_filters
+        self._gradient_filters = gradient_filters
+        self._gradient_tile_objects = gradient_tile_objects
+        self._metric_labels = metric_labels
+        self._forward_formula = forward_formula
+        self._backward_formula = backward_formula
+        self._update_formula = update_formula
+        self._pred_label = pred_label
+        self._conf_label = conf_label
+        self._pred_num = pred_num
+        self._conf_num = conf_num
+        self._loss_num = loss_num
+        self._train_num = train_num
+        self._test_num = test_num
+        self._g1_num = g1_num
+        self._g2_num = g2_num
+        self._weight_slot_label = weight_slot_label
+        self._grad_slot_label = grad_slot_label
+        self._plus_label = plus_label
+        self._next_weight_label = next_weight_label
 
-        for epoch in range(EPOCHS):
-            start = INTRO_END + epoch * EPOCH_DURATION
+    def construct(self) -> None:
+        scene = self
+        visual = self.visual
+        weight_filters = self._weight_filters
+        gradient_filters = self._gradient_filters
+        gradient_tile_objects = self._gradient_tile_objects
+        metric_labels = self._metric_labels
+        forward_formula = self._forward_formula
+        backward_formula = self._backward_formula
+        update_formula = self._update_formula
+        pred_label = self._pred_label
+        conf_label = self._conf_label
+        pred_num = self._pred_num
+        conf_num = self._conf_num
+        loss_num = self._loss_num
+        train_num = self._train_num
+        test_num = self._test_num
+        g1_num = self._g1_num
+        g2_num = self._g2_num
+        weight_slot_label = self._weight_slot_label
+        grad_slot_label = self._grad_slot_label
+        plus_label = self._plus_label
+        next_weight_label = self._next_weight_label
 
-            forward_formula.fade_in(duration=0.12, at=start)
-            forward_formula.fade_out(duration=0.12, at=start + FORWARD_LOCAL_END - 0.12)
+        scene.add(*self._initial_items)
 
-            # Prediction and confidence only appear once the forward wave has
-            # physically reached the output layer. They disappear at reset.
-            for handle in result_handles:
-                handle.opacity(to=1.0, duration=0.12, at=start + 1.12)
-                handle.opacity(to=0.0, duration=0.10, at=start + UPDATE_LOCAL_END)
+        forward_formula = scene.on(forward_formula)
+        backward_formula = scene.on(backward_formula)
+        update_formula = scene.on(update_formula)
+        weight_filters = scene.on(weight_filters)
+        gradient_filters = scene.on(gradient_filters)
+        gradient_tiles = [scene.on(tile) for tile in gradient_tile_objects]
+        pred_label = scene.on(pred_label)
+        conf_label = scene.on(conf_label)
+        pred_num = scene.on(pred_num)
+        conf_num = scene.on(conf_num)
+        loss_label, train_label, test_label = (
+            scene.on(metric_labels[1]),
+            scene.on(metric_labels[2]),
+            scene.on(metric_labels[3]),
+        )
+        g1_label, g2_label = scene.on(metric_labels[4]), scene.on(metric_labels[5])
+        loss_num = scene.on(loss_num)
+        train_num = scene.on(train_num)
+        test_num = scene.on(test_num)
+        g1_num = scene.on(g1_num)
+        g2_num = scene.on(g2_num)
+        weight_slot_label = scene.on(weight_slot_label)
+        grad_slot_label = scene.on(grad_slot_label)
+        plus_label = scene.on(plus_label)
+        next_weight_label = scene.on(next_weight_label)
 
-            # Forward is complete: move the actual W1 map out of the network and
-            # keep it visible as the left operand of W + (-eta G).
-            weight_filters.transform(
-                to=WEIGHT_SLOT_TRANSFORM, duration=0.34, at=start + FORWARD_LOCAL_END
+        # Reuse the same formula and metric panels for all eight epochs. No result
+        # metric is visible before the corresponding computation has happened.
+        with scene.parallel():
+            result_handles = (pred_label, conf_label, pred_num, conf_num)
+            summary_handles = (
+                loss_label,
+                train_label,
+                test_label,
+                loss_num,
+                train_num,
+                test_num,
             )
-            weight_slot_label.opacity(to=1.0, duration=0.16, at=start + FORWARD_LOCAL_END + 0.12)
+            gradient_metric_handles = (g1_label, g2_label, g1_num, g2_num)
 
-            backward_formula.fade_in(duration=0.12, at=start + FORWARD_LOCAL_END)
-            backward_formula.fade_out(duration=0.12, at=start + BACKWARD_LOCAL_END - 0.12)
-            # Reveal the eight retained gradient tiles in reverse hidden-neuron
-            # order as the backward wave reaches W1.
-            for order, tile in enumerate(reversed(gradient_tiles)):
-                tile.opacity(
-                    to=1.0,
-                    duration=0.18,
-                    at=start + FORWARD_LOCAL_END + 0.50 + 0.065 * order,
+            for epoch in range(EPOCHS):
+                start = INTRO_END + epoch * EPOCH_DURATION
+
+                forward_formula.fade_in(duration=0.12, at=start)
+                forward_formula.fade_out(
+                    duration=0.12, at=start + FORWARD_LOCAL_END - 0.12
                 )
-            for handle in gradient_metric_handles:
-                handle.opacity(to=1.0, duration=0.16, at=start + FORWARD_LOCAL_END + 0.36)
-                handle.opacity(to=0.0, duration=0.12, at=start + UPDATE_LOCAL_END)
 
-            # Backward is complete. Shrink the real accumulated gradient into a
-            # second slot, then slide it onto W1 to make the addition literal.
-            gradient_filters.transform(
-                to=GRADIENT_SLOT_TRANSFORM, duration=0.24, at=start + BACKWARD_LOCAL_END
-            )
-            grad_slot_label.opacity(to=1.0, duration=0.14, at=start + BACKWARD_LOCAL_END + 0.08)
-            plus_label.opacity(to=1.0, duration=0.14, at=start + BACKWARD_LOCAL_END + 0.08)
-            gradient_filters.transform(
-                to=WEIGHT_SLOT_TRANSFORM, duration=0.28, at=start + BACKWARD_LOCAL_END + 0.24
-            )
-            grad_slot_label.opacity(to=0.0, duration=0.16, at=start + BACKWARD_LOCAL_END + 0.27)
-            plus_label.opacity(to=0.0, duration=0.16, at=start + BACKWARD_LOCAL_END + 0.27)
+                # Prediction and confidence only appear once the forward wave has
+                # physically reached the output layer. They disappear at reset.
+                for handle in result_handles:
+                    handle.opacity(to=1.0, duration=0.12, at=start + 1.12)
+                    handle.opacity(to=0.0, duration=0.10, at=start + UPDATE_LOCAL_END)
 
-            update_formula.fade_in(duration=0.12, at=start + BACKWARD_LOCAL_END)
-            update_formula.fade_out(duration=0.12, at=start + UPDATE_LOCAL_END - 0.12)
-            weight_slot_label.opacity(to=0.0, duration=0.14, at=start + STACK_LOCAL_END)
-            next_weight_label.opacity(to=1.0, duration=0.14, at=start + STACK_LOCAL_END)
-            # W_e -> W_e+1 is an ordinary retained batch transition: the two
-            # complete endpoint batches are packed once and interpolated in Zig.
-            weight_filters.batch(
-                to=visual._static_weight_filters(epoch + 1),
-                duration=UPDATE_LOCAL_END - STACK_LOCAL_END,
-                at=start + STACK_LOCAL_END,
-            )
-            # As W_e morphs to W_e+1, the overlaid -eta G fades into it.
-            gradient_filters.opacity(to=0.0, duration=0.58, at=start + STACK_LOCAL_END)
+                # Forward is complete: move the actual W1 map out of the network and
+                # keep it visible as the left operand of W + (-eta G).
+                weight_filters.transform(
+                    to=WEIGHT_SLOT_TRANSFORM,
+                    duration=0.34,
+                    at=start + FORWARD_LOCAL_END,
+                )
+                weight_slot_label.opacity(
+                    to=1.0, duration=0.16, at=start + FORWARD_LOCAL_END + 0.12
+                )
 
-            # Epoch statistics only become visible after the update is complete.
-            for handle in summary_handles:
-                handle.opacity(to=1.0, duration=0.12, at=start + UPDATE_LOCAL_END - 0.06)
-                if epoch < EPOCHS - 1:
-                    handle.opacity(to=0.0, duration=0.10, at=start + EPOCH_DURATION - 0.12)
-
-            # Return the newly updated W1 map to the network for the next epoch.
-            weight_filters.transform(to=Transform2D(), duration=0.40, at=start + UPDATE_LOCAL_END)
-            gradient_filters.transform(to=Transform2D(), duration=0.30, at=start + UPDATE_LOCAL_END)
-            if epoch < EPOCHS - 1:
-                # While the parent group is fully transparent, switch all eight
-                # retained tiles to the next epoch in zero-duration BatchClips
-                # and reset their individual reveals.
-                switch_at = start + UPDATE_LOCAL_END + 0.31
-                for i, tile in enumerate(gradient_tiles):
-                    tile.opacity(to=0.0, duration=0.0, at=switch_at)
-                    tile.batch(
-                        to=visual._gradient_filter_tile(epoch + 1, i),
-                        duration=0.0,
-                        at=switch_at,
+                backward_formula.fade_in(duration=0.12, at=start + FORWARD_LOCAL_END)
+                backward_formula.fade_out(
+                    duration=0.12, at=start + BACKWARD_LOCAL_END - 0.12
+                )
+                # Reveal the eight retained gradient tiles in reverse hidden-neuron
+                # order as the backward wave reaches W1.
+                for order, tile in enumerate(reversed(gradient_tiles)):
+                    tile.opacity(
+                        to=1.0,
+                        duration=0.18,
+                        at=start + FORWARD_LOCAL_END + 0.50 + 0.065 * order,
                     )
-                gradient_filters.opacity(to=1.0, duration=0.0, at=switch_at + 0.01)
-            next_weight_label.opacity(to=0.0, duration=0.12, at=start + UPDATE_LOCAL_END + 0.12)
+                for handle in gradient_metric_handles:
+                    handle.opacity(
+                        to=1.0, duration=0.16, at=start + FORWARD_LOCAL_END + 0.36
+                    )
+                    handle.opacity(to=0.0, duration=0.12, at=start + UPDATE_LOCAL_END)
 
-        # Inference uses the final trained weights and repeats the same reveal: no
-        # probability/prediction is shown before the forward wave reaches output.
-        forward_formula.fade_in(duration=0.15, at=TRAIN_END)
-        forward_formula.fade_out(duration=0.15, at=INFERENCE_END - 0.15)
-        for segment in range(4):
-            start = TRAIN_END + 2.0 * segment
-            for handle in result_handles:
-                handle.opacity(to=1.0, duration=0.12, at=start + 1.12)
-                handle.opacity(to=0.0, duration=0.10, at=start + 1.90)
+                # Backward is complete. Shrink the real accumulated gradient into a
+                # second slot, then slide it onto W1 to make the addition literal.
+                gradient_filters.transform(
+                    to=GRADIENT_SLOT_TRANSFORM,
+                    duration=0.24,
+                    at=start + BACKWARD_LOCAL_END,
+                )
+                grad_slot_label.opacity(
+                    to=1.0, duration=0.14, at=start + BACKWARD_LOCAL_END + 0.08
+                )
+                plus_label.opacity(
+                    to=1.0, duration=0.14, at=start + BACKWARD_LOCAL_END + 0.08
+                )
+                gradient_filters.transform(
+                    to=WEIGHT_SLOT_TRANSFORM,
+                    duration=0.28,
+                    at=start + BACKWARD_LOCAL_END + 0.24,
+                )
+                grad_slot_label.opacity(
+                    to=0.0, duration=0.16, at=start + BACKWARD_LOCAL_END + 0.27
+                )
+                plus_label.opacity(
+                    to=0.0, duration=0.16, at=start + BACKWARD_LOCAL_END + 0.27
+                )
 
-    scene.wait(FINAL_END - scene.duration)
-    return scene
+                update_formula.fade_in(duration=0.12, at=start + BACKWARD_LOCAL_END)
+                update_formula.fade_out(
+                    duration=0.12, at=start + UPDATE_LOCAL_END - 0.12
+                )
+                weight_slot_label.opacity(
+                    to=0.0, duration=0.14, at=start + STACK_LOCAL_END
+                )
+                next_weight_label.opacity(
+                    to=1.0, duration=0.14, at=start + STACK_LOCAL_END
+                )
+                # W_e -> W_e+1 is an ordinary retained batch transition: the two
+                # complete endpoint batches are packed once and interpolated in Zig.
+                weight_filters.batch(
+                    to=visual._static_weight_filters(epoch + 1),
+                    duration=UPDATE_LOCAL_END - STACK_LOCAL_END,
+                    at=start + STACK_LOCAL_END,
+                )
+                # As W_e morphs to W_e+1, the overlaid -eta G fades into it.
+                gradient_filters.opacity(
+                    to=0.0, duration=0.58, at=start + STACK_LOCAL_END
+                )
+
+                # Epoch statistics only become visible after the update is complete.
+                for handle in summary_handles:
+                    handle.opacity(
+                        to=1.0, duration=0.12, at=start + UPDATE_LOCAL_END - 0.06
+                    )
+                    if epoch < EPOCHS - 1:
+                        handle.opacity(
+                            to=0.0, duration=0.10, at=start + EPOCH_DURATION - 0.12
+                        )
+
+                # Return the newly updated W1 map to the network for the next epoch.
+                weight_filters.transform(
+                    to=Transform2D(), duration=0.40, at=start + UPDATE_LOCAL_END
+                )
+                gradient_filters.transform(
+                    to=Transform2D(), duration=0.30, at=start + UPDATE_LOCAL_END
+                )
+                if epoch < EPOCHS - 1:
+                    # While the parent group is fully transparent, switch all eight
+                    # retained tiles to the next epoch in zero-duration BatchClips
+                    # and reset their individual reveals.
+                    switch_at = start + UPDATE_LOCAL_END + 0.31
+                    for i, tile in enumerate(gradient_tiles):
+                        tile.opacity(to=0.0, duration=0.0, at=switch_at)
+                        tile.batch(
+                            to=visual._gradient_filter_tile(epoch + 1, i),
+                            duration=0.0,
+                            at=switch_at,
+                        )
+                    gradient_filters.opacity(to=1.0, duration=0.0, at=switch_at + 0.01)
+                next_weight_label.opacity(
+                    to=0.0, duration=0.12, at=start + UPDATE_LOCAL_END + 0.12
+                )
+
+            # Inference uses the final trained weights and repeats the same reveal: no
+            # probability/prediction is shown before the forward wave reaches output.
+            forward_formula.fade_in(duration=0.15, at=TRAIN_END)
+            forward_formula.fade_out(duration=0.15, at=INFERENCE_END - 0.15)
+            for segment in range(4):
+                start = TRAIN_END + 2.0 * segment
+                for handle in result_handles:
+                    handle.opacity(to=1.0, duration=0.12, at=start + 1.12)
+                    handle.opacity(to=0.0, duration=0.10, at=start + 1.90)
+
+        scene.wait(FINAL_END - scene.duration)
 
 
 def _prepare_training_result(*, verbose: bool = False) -> TrainingResult:
@@ -1445,11 +1638,6 @@ def _prepare_training_result(*, verbose: bool = False) -> TrainingResult:
     result = train_with_epoch_trace(X_train, y_train, X_test, y_test)
     del X_train, y_train, X_test, y_test
     return result
-
-
-def build_scene() -> Scene:
-    """Complete default MNIST demo used by `zanim preview/render`."""
-    return _build_scene(_prepare_training_result())
 
 
 def random_access_probe(scene: Scene) -> None:
@@ -1498,7 +1686,9 @@ def benchmark_dict(
         },
         "render": {
             "seconds": render_seconds,
-            "effective_fps": None if render_seconds is None else frame_count / render_seconds,
+            "effective_fps": None
+            if render_seconds is None
+            else frame_count / render_seconds,
             "output": str(output),
         },
     }
@@ -1513,7 +1703,9 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--fps", type=int, default=60)
     parser.add_argument(
-        "--dry-run", action="store_true", help="train/build/probe without encoding video"
+        "--dry-run",
+        action="store_true",
+        help="train/build/probe without encoding video",
     )
     args = parser.parse_args()
 
@@ -1523,7 +1715,8 @@ def main() -> None:
         f"epoch_trace={result.trace.memory_bytes / (1024 * 1024):.2f} MiB "
         f"train_acc={result.final_train_accuracy:.4f} test_acc={result.final_test_accuracy:.4f}"
     )
-    scene = _build_scene(result)
+    scene = MnistTraining(result)
+    scene._run_authoring_hooks()
     random_access_probe(scene)
     print("random-access probe: OK")
 

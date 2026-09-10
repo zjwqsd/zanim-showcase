@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from math import cos, sin, tau
-from typing import Callable
 
 from zanim import Camera3D, Canvas, Color, Easing, Rectangle, Scene, Transform3D, Vec3
 from zanim.mesh3d import MeshObject3D, TriangleMesh
@@ -15,7 +15,7 @@ NormalFn = Callable[[float, float], Vec3]
 
 
 class _Grid:
-    __slots__ = ("nu", "nv", "points", "normals", "periodic_v")
+    __slots__ = ("normals", "nu", "nv", "periodic_v", "points")
 
     def __init__(
         self,
@@ -79,7 +79,8 @@ def _checker_meshes(grid: _Grid) -> tuple[TriangleMesh, TriangleMesh]:
             out_n.append(grid.normals[index])
         out_i.extend((base, base + 2, base + 1, base + 1, base + 2, base + 3))
     return tuple(
-        TriangleMesh(tuple(vertices[k]), tuple(normals[k]), tuple(indices[k])) for k in range(2)
+        TriangleMesh(tuple(vertices[k]), tuple(normals[k]), tuple(indices[k]))
+        for k in range(2)
     )  # type: ignore[return-value]
 
 
@@ -209,7 +210,9 @@ def _torus_grid() -> _Grid:
 def _cylinder_grid() -> _Grid:
     radius, height = 0.82, 2.15
     return _Grid(
-        lambda u, v: Vec3(radius * cos(tau * u), height * (v - 0.5), radius * sin(tau * u)),
+        lambda u, v: Vec3(
+            radius * cos(tau * u), height * (v - 0.5), radius * sin(tau * u)
+        ),
         lambda u, v: Vec3(cos(tau * u), 0, sin(tau * u)),
         nu=28,
         nv=9,
@@ -233,57 +236,79 @@ def _cone_grid() -> _Grid:
     )
 
 
-def _style_objects(grid: _Grid, style_name: str, transform: Transform3D) -> list[MeshObject3D]:
+def _style_objects(
+    grid: _Grid, style_name: str, transform: Transform3D
+) -> list[MeshObject3D]:
     if style_name == "checker":
         a, b = _checker_meshes(grid)
         return [
-            MeshObject3D(a, transform=transform, color=Color(42, 100, 205), opacity=0.0),
-            MeshObject3D(b, transform=transform, color=Color(105, 177, 255), opacity=0.0),
+            MeshObject3D(
+                a, transform=transform, color=Color(42, 100, 205), opacity=0.0
+            ),
+            MeshObject3D(
+                b, transform=transform, color=Color(105, 177, 255), opacity=0.0
+            ),
         ]
     if style_name == "wire":
         return [
             MeshObject3D(
-                _wire_mesh(grid), transform=transform, color=Color(104, 178, 255), opacity=0.0
+                _wire_mesh(grid),
+                transform=transform,
+                color=Color(104, 178, 255),
+                opacity=0.0,
             )
         ]
     if style_name == "smooth":
         return [
             MeshObject3D(
-                _smooth_mesh(grid), transform=transform, color=Color(88, 166, 242), opacity=0.0
+                _smooth_mesh(grid),
+                transform=transform,
+                color=Color(88, 166, 242),
+                opacity=0.0,
             )
         ]
     if style_name == "dots":
         return [
             MeshObject3D(
-                _dot_mesh(grid), transform=transform, color=Color(125, 188, 255), opacity=0.0
+                _dot_mesh(grid),
+                transform=transform,
+                color=Color(125, 188, 255),
+                opacity=0.0,
             )
         ]
     raise ValueError(style_name)
 
 
-def build_three_d_shapes_example() -> Scene:
-    canvas = Canvas(width=1920, height=1080, unit_size=135)
-    scene = Scene(canvas=canvas, fps=30)
-    scene.camera3d = Camera3D(
-        position=Vec3(0, 0, 15),
-        target=Vec3(),
-        up=Vec3(0, 1, 0),
-        orthographic_height=8.0,
-        layer_z_index=0,
-    )
+class ThreeDShapesExample(Scene):
+    def __init__(self) -> None:
+        super().__init__(
+            canvas=Canvas(width=1920, height=1080, unit_size=135),
+            fps=30,
+            camera3d=Camera3D(
+                position=Vec3(0, 0, 15),
+                target=Vec3(),
+                up=Vec3(0, 1, 0),
+                orthographic_height=8.0,
+                layer_z_index=0,
+            ),
+        )
 
-    # Match JAnim's four dark sub-scene backgrounds and quadrant composition.
-    panel_w = canvas.width / canvas.unit_size / 2
-    panel_h = canvas.height / canvas.unit_size / 2
-    centers = (
-        Vec3(-panel_w / 2, panel_h / 2, 0),
-        Vec3(panel_w / 2, panel_h / 2, 0),
-        Vec3(-panel_w / 2, -panel_h / 2, 0),
-        Vec3(panel_w / 2, -panel_h / 2, 0),
-    )
-    backgrounds = (Color(0, 0, 34), Color(0, 0, 51), Color(0, 0, 51), Color(0, 0, 34))
-    for center, color in zip(centers, backgrounds):
-        scene.add(
+    def setup(self) -> None:
+        panel_w = self.canvas.width / self.canvas.unit_size / 2
+        panel_h = self.canvas.height / self.canvas.unit_size / 2
+        self.centers = (
+            Vec3(-panel_w / 2, panel_h / 2, 0),
+            Vec3(panel_w / 2, panel_h / 2, 0),
+            Vec3(-panel_w / 2, -panel_h / 2, 0),
+            Vec3(panel_w / 2, -panel_h / 2, 0),
+        )
+        backgrounds = (
+            Color(0, 0, 34),
+            Color(0, 0, 51),
+            Color(0, 0, 51),
+            Color(0, 0, 34),
+        )
+        self.panels = [
             Rectangle(
                 panel_w + 0.01,
                 panel_h + 0.01,
@@ -291,39 +316,41 @@ def build_three_d_shapes_example() -> Scene:
                 fill=color,
                 z_index=-10,
             )
-        )
+            for center, color in zip(self.centers, backgrounds)
+        ]
 
-    styles = ("checker", "wire", "smooth", "dots")
-    grids = (_torus_grid(), _cylinder_grid(), _cone_grid())
-
-    scheduled = []
-    for shape_index, grid in enumerate(grids):
-        start = shape_index * DURATION_PER_SHAPE
-        for style_name, center in zip(styles, centers):
-            base = (
-                Transform3D.translation(center.x, center.y, 0)
-                @ Transform3D.rotation_x(-0.38)
-                @ Transform3D.rotation_y(0.45)
-            )
-            for obj in _style_objects(grid, style_name, base):
-                obj.opacity = 0.0
-                obj = scene.add(obj)
-                scheduled.append((obj, center, start))
-
-    with scene.parallel():
-        for obj, center, start in scheduled:
-            obj.fade_in(duration=0.12, at=start)
-            obj.transform_function(
-                lambda a, c=center: (
-                    Transform3D.translation(c.x, c.y, 0)
-                    @ Transform3D.rotation_z(tau * a)
-                    @ Transform3D.rotation_x(tau * a - 0.38)
+        styles = ("checker", "wire", "smooth", "dots")
+        grids = (_torus_grid(), _cylinder_grid(), _cone_grid())
+        self.scheduled = []
+        for shape_index, grid in enumerate(grids):
+            start = shape_index * DURATION_PER_SHAPE
+            for style_name, center in zip(styles, self.centers):
+                base = (
+                    Transform3D.translation(center.x, center.y, 0)
+                    @ Transform3D.rotation_x(-0.38)
                     @ Transform3D.rotation_y(0.45)
-                ),
-                duration=DURATION_PER_SHAPE,
-                easing=Easing.LINEAR,
-                at=start,
-            )
-            obj.fade_out(duration=0.12, at=start + DURATION_PER_SHAPE - 0.12)
+                )
+                for obj in _style_objects(grid, style_name, base):
+                    obj.opacity = 0.0
+                    self.scheduled.append((obj, center, start))
 
-    return scene
+    def construct(self) -> None:
+        self.add(*self.panels)
+        scheduled = [
+            (self.add(obj), center, start) for obj, center, start in self.scheduled
+        ]
+        with self.parallel():
+            for obj, center, start in scheduled:
+                obj.fade_in(duration=0.12, at=start)
+                obj.transform_function(
+                    lambda a, c=center: (
+                        Transform3D.translation(c.x, c.y, 0)
+                        @ Transform3D.rotation_z(tau * a)
+                        @ Transform3D.rotation_x(tau * a - 0.38)
+                        @ Transform3D.rotation_y(0.45)
+                    ),
+                    duration=DURATION_PER_SHAPE,
+                    easing=Easing.LINEAR,
+                    at=start,
+                )
+                obj.fade_out(duration=0.12, at=start + DURATION_PER_SHAPE - 0.12)

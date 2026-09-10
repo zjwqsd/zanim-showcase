@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import math
 
-from PIL import Image as PILImage, ImageChops, ImageDraw
+from PIL import Image as PILImage
+from PIL import ImageChops, ImageDraw
 from zanim import Canvas, Color, Easing, Group, Scene, Square, Transform2D, Vec2
 from zanim.raster import RasterFrame, RasterObject2D, RasterSource, SceneRasterSource
 
@@ -45,12 +46,13 @@ class _EffectSource(RasterSource):
 
 
 class GradientSource(_EffectSource):
-    def frame_at(self, t: float) -> RasterFrame:
+    def frame_at(self, source_time: float) -> RasterFrame:
+        t = source_time
         frame = self.source.frame_at(t)
         if t < 2:
             return frame
         image = PILImage.frombuffer(
-            "RGBA", (self.width, self.height), frame.rgba, "raw", "RGBA", 0, 1
+            "RGBA", (self.width, self.height), bytes(frame.rgba), "raw", "RGBA", 0, 1
         )
         r, g, b, a = image.split()
         vertical = PILImage.linear_gradient("L").resize((self.width, self.height))
@@ -59,16 +61,21 @@ class GradientSource(_EffectSource):
         )
         g = ImageChops.multiply(g, horizontal)
         b = ImageChops.multiply(b, vertical)
-        return RasterFrame(self.width, self.height, PILImage.merge("RGBA", (r, g, b, a)).tobytes())
+        return RasterFrame(
+            self.width,
+            self.height,
+            bytearray(PILImage.merge("RGBA", (r, g, b, a)).tobytes()),
+        )
 
 
 class GlitchSource(_EffectSource):
-    def frame_at(self, t: float) -> RasterFrame:
+    def frame_at(self, source_time: float) -> RasterFrame:
+        t = source_time
         frame = self.source.frame_at(t)
         if t < 4:
             return frame
         image = PILImage.frombuffer(
-            "RGBA", (self.width, self.height), frame.rgba, "raw", "RGBA", 0, 1
+            "RGBA", (self.width, self.height), bytes(frame.rgba), "raw", "RGBA", 0, 1
         )
         r, g, b, a = image.split()
         offset = round(math.sin(t) * 0.02 * self.width)
@@ -86,18 +93,23 @@ class GlitchSource(_EffectSource):
         rs = ImageChops.multiply(rs, lines)
         bs = ImageChops.multiply(bs, lines)
         return RasterFrame(
-            self.width, self.height, PILImage.merge("RGBA", (rs, g, bs, alpha)).tobytes()
+            self.width,
+            self.height,
+            bytearray(PILImage.merge("RGBA", (rs, g, bs, alpha)).tobytes()),
         )
 
 
-def build_frame_effect_example() -> Scene:
-    even = GradientSource(SceneRasterSource(_grid_scene(list(range(0, 49, 2)))))
-    odd = GlitchSource(SceneRasterSource(_grid_scene(list(range(1, 49, 2)))))
-    sc = Scene(canvas=Canvas(width=1920, height=1080, unit_size=135), fps=30)
-    e = RasterObject2D(even, width=FRAME_W, height=FRAME_H)
-    o = RasterObject2D(odd, width=FRAME_W, height=FRAME_H)
-    e, o = sc.add(e, o)
-    with sc.parallel():
-        e.media(duration=8)
-        o.media(duration=8)
-    return sc
+class FrameEffectExample(Scene):
+    def setup(self) -> None:
+        self.canvas = Canvas(width=1920, height=1080, unit_size=135)
+        self.fps = 30
+        even = GradientSource(SceneRasterSource(_grid_scene(list(range(0, 49, 2)))))
+        odd = GlitchSource(SceneRasterSource(_grid_scene(list(range(1, 49, 2)))))
+        self.even = RasterObject2D(even, width=FRAME_W, height=FRAME_H)
+        self.odd = RasterObject2D(odd, width=FRAME_W, height=FRAME_H)
+
+    def construct(self) -> None:
+        e, o = self.add(self.even, self.odd)
+        with self.parallel():
+            e.media(duration=8)
+            o.media(duration=8)

@@ -17,7 +17,7 @@ These are deliberately not part of the step-by-step tutorial. They are larger en
 - `neural_network.py` visualizes forward/backward signal propagation with dense batch geometry.
 - `mnist_training.py` trains a real NumPy 784→8→10 MLP and visualizes eight epochs, exact weights/gradients, metrics and inference. It is also a useful performance stress test.
 
-Every official extra also exposes the same default `build_scene() -> Scene` entry as the tutorial, so the generic product commands work uniformly:
+Every official extra exposes one `Scene` subclass with `setup()` and `construct()`, so the generic product commands work uniformly:
 
 ```bash
 zanim preview examples/extras/fourier_draw.py

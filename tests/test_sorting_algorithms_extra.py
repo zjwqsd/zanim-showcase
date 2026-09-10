@@ -4,7 +4,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "examples" / "extras" / "sorting_algorithms.py"
-SPEC = importlib.util.spec_from_file_location("zanim_sorting_algorithms_extra", MODULE_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "zanim_sorting_algorithms_extra", MODULE_PATH
+)
 assert SPEC is not None and SPEC.loader is not None
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -26,7 +28,9 @@ class SortingAlgorithmsExtraTests(unittest.TestCase):
             self.assertTrue(trace.steps)
             self.assertEqual(trace.steps[-1].values, expected, trace.name)
             for step in trace.steps:
-                self.assertEqual(tuple(sorted(step.values)), expected, (trace.name, step.kind))
+                self.assertEqual(
+                    tuple(sorted(step.values)), expected, (trace.name, step.kind)
+                )
 
     def test_traces_expose_comparisons_and_moves(self):
         initial = MODULE.random_permutation(12, 19)
@@ -51,7 +55,10 @@ class SortingAlgorithmsExtraTests(unittest.TestCase):
         self.assertNotEqual(state_a.starts[2].x, state_b.starts[2].x)
 
     def test_single_algorithm_scene_builds_and_evaluates_random_access(self):
-        scene, initial, traces = MODULE._build_scene(n=8, seed=7, algorithm="quick")
+        scene = MODULE.SortingAlgorithms(
+            n=8, seed=7, algorithm="quick"
+        )._run_authoring_hooks()
+        initial, traces = scene.initial, scene.traces
         self.assertEqual(len(initial), 8)
         self.assertEqual(len(traces), 1)
         self.assertGreater(scene.duration, 0)

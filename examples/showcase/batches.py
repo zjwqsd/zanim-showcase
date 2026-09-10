@@ -1,4 +1,4 @@
-"""Lesson 08: dense primitive data with BatchObject2D and batch transitions."""
+"""Lesson 08: dense immutable batch values with Scene-owned batch transitions."""
 
 from __future__ import annotations
 
@@ -41,20 +41,24 @@ def line_state(phase: float) -> LineSet:
     return LineSet(tuple(starts), tuple(ends), tuple(colors), tuple(widths))
 
 
-scene = Scene(canvas=Canvas(1280, 720, 90), fps=60)
-title = Text("600 primitives, two batch objects", font_size=31, opacity=0)
-title.place(anchor=TOP, at=scene.frame.top + 0.35 * DOWN)
-dots = BatchObject2D(circle_state(0.0), z_index=2)
-lines = BatchObject2D(line_state(0.0), z_index=0)
-lines, dots, title = scene.add(lines, dots, title)
-title.fade_in(duration=0.6)
+class Batches(Scene):
+    def setup(self) -> None:
+        self.canvas = Canvas(1280, 720, 90)
+        self.fps = 60
 
-with scene.parallel(duration=2):
-    dots.batch(to=circle_state(0.33))
-    lines.batch(to=line_state(0.55))
-with scene.parallel(duration=2):
-    dots.batch(to=circle_state(0.68))
-    lines.batch(to=line_state(1.0))
-scene.wait(0.4)
+        self.title = Text("600 primitives, two batch objects", font_size=31, opacity=0)
+        self.title.place(anchor=TOP, at=self.frame.top + 0.35 * DOWN)
+        self.dots = BatchObject2D(circle_state(0.0), z_index=2)
+        self.lines = BatchObject2D(line_state(0.0), z_index=0)
 
-scene.preview()
+    def construct(self) -> None:
+        lines, dots, title = self.add(self.lines, self.dots, self.title)
+        title.fade_in(duration=0.6)
+
+        with self.parallel(duration=2):
+            dots.batch(to=circle_state(0.33))
+            lines.batch(to=line_state(0.55))
+        with self.parallel(duration=2):
+            dots.batch(to=circle_state(0.68))
+            lines.batch(to=line_state(1.0))
+        self.wait(0.4)

@@ -20,18 +20,21 @@ MODULES = (
     "compositing",
     "three_d",
     "kinematics",
+    "infinite_space",
 )
 
 
 class ShowcaseCurriculumTests(unittest.TestCase):
-    def test_every_lesson_is_a_source_aware_bare_script(self):
+    def test_every_lesson_is_source_aware(self):
         for name in MODULES:
             with self.subTest(name=name):
                 path = ROOT / "examples" / "showcase" / f"{name}.py"
                 text = path.read_text(encoding="utf-8")
                 self.assertNotIn("@preview_source", text)
-                self.assertNotIn("def build_scene", text)
-                self.assertIn("scene = Scene(", text)
+                self.assertNotIn("build_scene", text)
+                self.assertRegex(text, r"class \w+\(Scene\):")
+                self.assertIn("def setup(self)", text)
+                self.assertIn("def construct(self)", text)
 
                 scene = _load_scene(path)
                 try:
@@ -40,7 +43,6 @@ class ShowcaseCurriculumTests(unittest.TestCase):
                     assert source is not None
                     self.assertTrue(source.object_names)
                     self.assertGreaterEqual(len(scene._registry), 1)
-                    # Animated lessons should expose scheduler-recorded actions.
                     if scene._timeline.clips:
                         self.assertTrue(
                             any(

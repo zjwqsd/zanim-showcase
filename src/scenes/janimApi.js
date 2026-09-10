@@ -459,7 +459,7 @@ async function rotatingPie(canvas) {
   })
   const pie = new Group(sectors)
   scene.add(pie)
-  const base = sectors[0].transform
+  const base = scene.authoredState(sectors[0]).transform
   scene.parallel((api) => {
     api.transformFunction(pie, (a) => T(0, 0, TAU * a), { duration: 5, easing: Easing.LINEAR })
     api.transformFunction(sectors[0], (a) => T(base.tx + Math.sin(PI * a) / Math.SQRT2, base.ty + Math.sin(PI * a) / Math.SQRT2), { duration: 2, easing: Easing.LINEAR, at: 2 })

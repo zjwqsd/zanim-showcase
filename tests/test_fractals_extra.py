@@ -57,7 +57,7 @@ class FractalsExtraTests(unittest.TestCase):
             self.assertAlmostEqual(max(width, height), 5.0, places=12)
 
     def test_single_section_scene_builds_and_evaluates(self):
-        scene = MODULE._build_scene(section="koch")
+        scene = MODULE.Fractals(section="koch")._run_authoring_hooks()
         self.assertGreater(scene.duration, 0)
         scene.evaluate(0.0)
         scene.evaluate(scene.duration / 2)

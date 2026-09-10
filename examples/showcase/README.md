@@ -2,7 +2,7 @@
 
 This directory is the recommended way to learn Zanim. Each lesson is a small complete scene, and the ordering follows the framework's mental model rather than renderer internals.
 
-Every lesson uses the product-default syntax: ordinary top-level Python with a `scene` variable. There is no `main()`, `build_scene()` wrapper or decorator.
+Every lesson uses the product-default class syntax: one `Scene` subclass with `setup()` and `construct()`. There is no builder function or decorator.
 
 The lessons also use the built-in palette (`BLUE`, `GREEN`, `RED`, `WHITE`, `MUTED`, etc.) and angle constants (`PI`, `TAU`, `DEGREES`) instead of redefining common values in every file. `Color(...)` is still used where a scene needs a deliberately custom color.
 
@@ -17,7 +17,7 @@ zanim preview examples/showcase/basics.py
 | # | File | Learn this first |
 |---:|---|---|
 | 01 | `basics.py` | declare → layout → `Scene.add()` → bound handles → animate; style, groups and Preview |
-| 02 | `state_model.py` | object lifetime is `[add, remove)`; fade/create are explicit state changes, not hidden `add()` behavior |
+| 02 | `state_model.py` | raw initial definition vs Scene-owned authored head; lifetime is `[add, remove)` |
 | 03 | `layout.py` | `Frame`, anchors, `place()`, `Row`/`Column`/`Grid`, one-time layout vs animated layout |
 | 04 | `timeline.py` | sequential clips, `parallel()`, relative `at`, easing, transform functions and transient interpolation |
 | 05 | `transforms.py` | the difference between `LOCAL`, `PARENT`, `WORLD`; nested frames and `Camera2D` |
@@ -26,7 +26,7 @@ zanim preview examples/showcase/basics.py
 | 08 | `batches.py` | hundreds/thousands of primitives with `BatchObject2D`; batch transitions without object explosion |
 | 09 | `media.py` | image/GIF/video/audio on the same absolute-time timeline, looping and source offsets |
 | 10 | `compositing.py` | offscreen `SceneRasterSource`, `AlphaMaskSource`, feathering and raster composition |
-| 11 | `three_d.py` | `Camera3D`, meshes, surfaces, SO(3), `Transform3D`, and ordinary 2D overlays in one Scene |
+| 11 | `three_d.py` | temporal `Camera3D`, meshes, surfaces, SO(3), `Transform3D`, and 2D overlays in one Scene |
 | 12 | `kinematics.py` | capstone: nested `Group` frames, SE(2), function transforms and robot-style forward kinematics |
 | 13 | `infinite_space.py` | linear algebra on native unbounded `InfiniteGrid`/`InfiniteLine`, synchronized with finite reference geometry |
 
@@ -34,10 +34,10 @@ zanim preview examples/showcase/basics.py
 
 ### 01–03: authoring state
 
-Do not think of Zanim as a sequence of imperative drawing commands. Objects are declared and laid out first; `Scene.add()` establishes temporal lifetime; Timeline operations then describe state as a function of absolute time.
+Raw objects are declaration/layout values. `Scene.add()` captures their initial state and establishes temporal lifetime. Bound handles then address the Scene-owned authored head, while Timeline evaluation reconstructs state at any absolute time. The raw object is never rewritten by later animation.
 
 ```text
-declare → layout → add → animate
+raw declaration → one-time layout → Scene.add() → bound authored head → evaluate(t)
 ```
 
 ### 04–05: time and space

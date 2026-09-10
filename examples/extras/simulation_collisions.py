@@ -1,4 +1,5 @@
 """Global Simulation state driving a bounded 2D elastic-collision scene."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -52,7 +53,8 @@ def initial_world(seed: int = 7) -> World:
         for _attempt in range(1000):
             position = Vec2(rng.uniform(-limit, limit), rng.uniform(-limit, limit))
             if all(
-                (position.x - other.position.x) ** 2 + (position.y - other.position.y) ** 2
+                (position.x - other.position.x) ** 2
+                + (position.y - other.position.y) ** 2
                 > (2.0 * BALL_RADIUS + 0.10) ** 2
                 for other in bodies
             ):
@@ -146,44 +148,44 @@ def step_world(world: World, dt: float) -> None:
                 )
 
 
-def build_scene() -> Scene:
-    scene = Scene(canvas=Canvas(1280, 720, 100), fps=60)
-    simulation = Simulation(
-        initial_world(),
-        step_world,
-        hz=SIM_HZ,
-        checkpoint_interval=0.5,
-    )
-
-    arena = Square(
-        2.0 * HALF_SIZE,
-        fill=Color(18, 22, 31),
-        stroke=Color(105, 116, 137),
-        stroke_width=0.045,
-    )
-    palette = (BLUE, GREEN, RED, YELLOW, ORANGE, PURPLE, PINK, CYAN, WHITE)
-    balls = [
-        Circle(
-            BALL_RADIUS,
-            fill=palette[i % len(palette)],
-            stroke=Color(235, 238, 245),
-            stroke_width=0.018,
-            z_index=1,
+class SimulationCollisions(Scene):
+    def setup(self) -> None:
+        self.canvas = Canvas(1280, 720, 100)
+        self.fps = 60
+        self.simulation = Simulation(
+            initial_world(), step_world, hz=SIM_HZ, checkpoint_interval=0.5
         )
-        for i in range(BALL_COUNT)
-    ]
-
-    scene.add(arena, *balls)
-    for index, ball in enumerate(balls):
-        scene.bind(
-            ball,
-            simulation,
-            position=lambda world, index=index: world.bodies[index].position,
+        self.arena = Square(
+            2.0 * HALF_SIZE,
+            fill=Color(18, 22, 31),
+            stroke=Color(105, 116, 137),
+            stroke_width=0.045,
         )
+        palette = (BLUE, GREEN, RED, YELLOW, ORANGE, PURPLE, PINK, CYAN, WHITE)
+        self.balls = [
+            Circle(
+                BALL_RADIUS,
+                fill=palette[i % len(palette)],
+                stroke=Color(235, 238, 245),
+                stroke_width=0.018,
+                z_index=1,
+            )
+            for i in range(BALL_COUNT)
+        ]
 
-    scene.wait(DURATION)
-    return scene
+    def construct(self) -> None:
+        self.add(self.arena, *self.balls)
+        for index, ball in enumerate(self.balls):
+            self.bind(
+                ball,
+                self.simulation,
+                position=lambda world, index=index: world.bodies[index].position,
+            )
+
+        self.wait(DURATION)
 
 
 if __name__ == "__main__":
-    build_scene().preview()
+    scene = SimulationCollisions()
+    scene._run_authoring_hooks()
+    scene.preview()

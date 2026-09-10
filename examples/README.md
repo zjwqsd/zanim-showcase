@@ -2,7 +2,7 @@
 
 The examples have two jobs and are kept separate on purpose:
 
-- [`showcase/`](showcase/) is the executable tutorial. Read it in order; every file is a plain top-level Python scene using only public Zanim authoring APIs; no `main()`, builder function or decorator is required.
+- [`showcase/`](showcase/) is the executable tutorial. Read it in order; every primary scene is a `Scene` subclass with `setup()` and `construct()` using only public Zanim authoring APIs; no builder function or decorator is required.
 - [`extras/`](extras/) contains complete, heavier animations that show what the framework can do after the tutorial concepts are familiar.
 
 `janim_api/` remains a regression/reference suite for reproducing visible JAnim API-demonstration effects. It is not part of the learning path and does not define Zanim's API design.
