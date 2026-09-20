@@ -838,20 +838,20 @@ async function threeDShapesExample(canvas) {
   return scene
 }
 
-export const janimApiScenes = [
-  { id: 'janim-hello', title: 'JAnim · Hello', source: 'janim_api/suite.py · HelloJAnimExample', width: 1920, height: 1080, builder: helloJAnim },
-  { id: 'janim-basic', title: 'JAnim · Basic animation', source: 'janim_api/suite.py · BasicAnimationExample', width: 1920, height: 1080, builder: basicAnimation },
-  { id: 'janim-text', title: 'JAnim · Text', source: 'janim_api/suite.py · TextExample', width: 1920, height: 1080, builder: textExample, note: 'Text reveal timing follows the Python example.' },
-  { id: 'janim-typst', title: 'JAnim · Typst', source: 'janim_api/suite.py · TypstExample', width: 1920, height: 1080, builder: typstExample },
-  { id: 'janim-colorize', title: 'JAnim · Typst colorize', source: 'janim_api/suite.py · TypstColorizeExample', width: 1920, height: 1080, builder: typstColorize },
-  { id: 'janim-pi', title: 'JAnim · Animating π', source: 'janim_api/suite.py · AnimatingPiExample', width: 1920, height: 1080, builder: animatingPi, note: 'The browser rebuilds the 100-glyph VectorDocument and applies the same piecewise color, affine, exp and wave maps at absolute scene time.' },
-  { id: 'janim-plane', title: 'JAnim · Number plane', source: 'janim_api/suite.py · NumberPlaneExample', width: 1920, height: 1080, builder: numberPlane },
-  { id: 'janim-updater', title: 'JAnim · Updater', source: 'janim_api/suite.py · UpdaterExample', width: 1920, height: 1080, builder: updaterExample },
-  { id: 'janim-arrow', title: 'JAnim · Arrow pointing', source: 'janim_api/suite.py · ArrowPointingExample', width: 1920, height: 1080, builder: arrowPointing },
-  { id: 'janim-combine', title: 'JAnim · Combine updaters', source: 'janim_api/suite.py · CombineUpdatersExample', width: 1920, height: 1080, builder: combineUpdaters },
-  { id: 'janim-pie', title: 'JAnim · Rotating pie', source: 'janim_api/suite.py · RotatingPieExample', width: 1920, height: 1080, builder: rotatingPie },
-  { id: 'janim-marked', title: 'JAnim · Marked item', source: 'janim_api/suite.py · MarkedItemExample', width: 1920, height: 1080, builder: markedItem },
-  { id: 'janim-frame-effect', title: 'JAnim · Frame effect', source: 'janim_api/frame_effect_example.py', width: 1920, height: 1080, builder: frameEffect, note: 'Recreated with the public CustomObject2D Canvas API: identical 8 s rotation and effect onset times, browser-native channel/scanline compositing.' },
-  { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim_api/mask_example.py', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages, original timing, boolean masks, and stage-two feathering are preserved.' },
-  { id: 'janim-3d-shapes', title: 'JAnim · 3D shapes', source: 'janim_api/three_d_shapes_example.py · ThreeDShapesExample', width: 1920, height: 1080, builder: threeDShapesExample, note: 'Real WASM depth rasterization using the same camera/projection conventions as Native Zanim; torus, cylinder and cone keep the original 3 × 4 s timing.' },
+export const janimScenes = [
+  { id: 'janim-hello', title: 'JAnim · Hello', source: 'janim/suite.py · HelloJAnimExample', width: 1920, height: 1080, builder: helloJAnim },
+  { id: 'janim-basic', title: 'JAnim · Basic animation', source: 'janim/suite.py · BasicAnimationExample', width: 1920, height: 1080, builder: basicAnimation },
+  { id: 'janim-text', title: 'JAnim · Text', source: 'janim/suite.py · TextExample', width: 1920, height: 1080, builder: textExample, note: 'Text reveal timing follows the Python example.' },
+  { id: 'janim-typst', title: 'JAnim · Typst', source: 'janim/suite.py · TypstExample', width: 1920, height: 1080, builder: typstExample },
+  { id: 'janim-colorize', title: 'JAnim · Typst colorize', source: 'janim/suite.py · TypstColorizeExample', width: 1920, height: 1080, builder: typstColorize },
+  { id: 'janim-pi', title: 'JAnim · Animating π', source: 'janim/suite.py · AnimatingPiExample', width: 1920, height: 1080, builder: animatingPi, note: 'The browser rebuilds the 100-glyph VectorDocument and applies the same piecewise color, affine, exp and wave maps at absolute scene time.' },
+  { id: 'janim-plane', title: 'JAnim · Number plane', source: 'janim/suite.py · NumberPlaneExample', width: 1920, height: 1080, builder: numberPlane },
+  { id: 'janim-updater', title: 'JAnim · Updater', source: 'janim/suite.py · UpdaterExample', width: 1920, height: 1080, builder: updaterExample },
+  { id: 'janim-arrow', title: 'JAnim · Arrow pointing', source: 'janim/suite.py · ArrowPointingExample', width: 1920, height: 1080, builder: arrowPointing },
+  { id: 'janim-combine', title: 'JAnim · Combine updaters', source: 'janim/suite.py · CombineUpdatersExample', width: 1920, height: 1080, builder: combineUpdaters },
+  { id: 'janim-pie', title: 'JAnim · Rotating pie', source: 'janim/suite.py · RotatingPieExample', width: 1920, height: 1080, builder: rotatingPie },
+  { id: 'janim-marked', title: 'JAnim · Marked item', source: 'janim/suite.py · MarkedItemExample', width: 1920, height: 1080, builder: markedItem },
+  { id: 'janim-frame-effect', title: 'JAnim · Frame effect', source: 'janim/frame_effect_example.py', width: 1920, height: 1080, builder: frameEffect, note: 'Recreated with the public CustomObject2D Canvas API: identical 8 s rotation and effect onset times, browser-native channel/scanline compositing.' },
+  { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim/mask_example.py', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages, original timing, boolean masks, and stage-two feathering are preserved.' },
+  { id: 'janim-3d-shapes', title: 'JAnim · 3D shapes', source: 'janim/three_d_shapes_example.py · ThreeDShapesExample', width: 1920, height: 1080, builder: threeDShapesExample, note: 'Real WASM depth rasterization using the same camera/projection conventions as Native Zanim; torus, cylinder and cone keep the original 3 × 4 s timing.' },
 ]

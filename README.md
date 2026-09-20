@@ -1,10 +1,10 @@
-# Zanim Showcase & Examples
+# Zanim Showcase & Docs
 
-Standalone showcase and example repository for Zanim. The core Zanim repository contains runtime code and tests only; executable examples live here.
+Standalone Chinese documentation, live Example Gallery, and example repository for Zanim. The core Zanim repository contains runtime code and tests; executable teaching examples live here.
 
-## Web showcase
+## Documentation site
 
-This Vue + Vite site installs a packed `@zanim/web` from `vendor/` and rebuilds the Python examples with public Web APIs.
+The Vue + Vite site is modeled after the Manim Community documentation layout: hierarchical docs navigation, concise Chinese tutorials, and a live Example Gallery. Gallery output is rendered by `@zanim/web`; videos are not used as substitutes for Zanim scenes.
 
 ```bash
 npm install
@@ -18,7 +18,7 @@ npm run build
 npm run preview
 ```
 
-The site currently includes core 2D/timeline/layout examples, interactive linear algebra, external media, Fourier/fractal/complex examples, JAnim effect-parity scenes and real WASM 3D.
+The Gallery covers every suitable Python example in this repository, excluding only the intentionally long-running real MNIST training and MIDI piano programs. It includes core 2D/timeline/layout, algorithms, simulation, compositing, Fourier/fractals/complex math, JAnim-inspired reference scenes, and real WASM 3D.
 
 Web formulas use `zanim()` from `@zanim/web/vite`. `vite dev` / `vite build` automatically invoke local Typst and emit SVG assets; the production browser never downloads a Typst compiler. Provide Typst through `ZANIM_TYPST`, project `.tools/typst`, `PATH`, or the plugin option.
 
@@ -32,7 +32,7 @@ The original Zanim Python tutorial/examples are under:
 examples/
 ├── showcase/
 ├── extras/
-├── janim_api/
+├── janim/
 └── assets/
 ```
 
@@ -48,4 +48,4 @@ This separation is intentional: examples can grow as teaching material without a
 
 ## Toolchain
 
-Node 18 is supported by this tutorial, so it currently uses Vite 5 rather than the newest create-vite toolchain.
+GitHub Pages deployment is defined in `.github/workflows/pages.yml`. The site is published at `https://zjwqsd.github.io/zanim-showcase/`.

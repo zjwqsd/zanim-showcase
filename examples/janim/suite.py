@@ -46,7 +46,7 @@ from .mask_example import MaskExample
 from .three_d_shapes_example import ThreeDShapesExample
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT_DIR = ROOT / "media" / "janim_api"
+OUT_DIR = ROOT / "media" / "janim"
 CANVAS = Canvas(width=1920, height=1080, unit_size=135)
 BG = Color(14, 17, 24)
 WHITE = Color(238, 241, 247)
@@ -94,8 +94,9 @@ def star_points(outer=1.0, inner=0.45, count=5, phase=PI / 2):
 
 
 def square_polygon(
-    side: float, transform: Transform2D = Transform2D()
+    side: float, transform: Transform2D | None = None
 ) -> PolygonGeometry:
+    transform = transform or Transform2D()
     h = side / 2
     return PolygonGeometry(
         tuple(
@@ -129,8 +130,9 @@ def triangle_polygon(center: Vec2, radius: float, phase=PI / 2) -> PolygonGeomet
 
 
 def sector_polygon(
-    start: float, sweep: float, radius: float, center=Vec2(), samples=30
+    start: float, sweep: float, radius: float, center=None, samples=30
 ) -> PolygonGeometry:
+    center = center or Vec2()
     return PolygonGeometry(
         (
             center,
@@ -658,7 +660,7 @@ class ArrowPointingExample(Scene):
             a = TAU * max(0, min(1, t / 4))
             return Vec2(2 - 2 * math.cos(a), -2 * math.sin(a))
 
-        dot1, dot2 = sc.add(self.dot1, self.dot2)
+        _dot1, dot2 = sc.add(self.dot1, self.dot2)
         dot2.transform_function(
             lambda a: affine2d(
                 position=(2 - 2 * math.cos(TAU * a), -2 * math.sin(TAU * a))

@@ -1,199 +1,182 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { deferred, scenes } from './scenes/index.js'
-import InteractiveLinearAlgebra from './components/InteractiveLinearAlgebra.vue'
+import DocPage from './components/DocPage.vue'
+import GalleryPage from './components/GalleryPage.vue'
+import { galleryGroups, galleryItems } from './docs/catalog.js'
+import { navGroups, pageFor, pages } from './docs/content.js'
 
-const canvas = ref(null)
-const activeId = ref(scenes[0].id)
-const loading = ref(false)
-const error = ref('')
-const playing = ref(false)
-const currentTime = ref(0)
-const duration = ref(0)
-let currentScene = null
-let raf = 0
+const route = ref('/')
+const routeAnchor = ref('')
+const search = ref('')
+const mobileOpen = ref(false)
+const theme = ref('light')
 
-const active = computed(() => scenes.find((item) => item.id === activeId.value) ?? scenes[0])
-const aspect = computed(() => `${active.value.width} / ${active.value.height}`)
-const progress = computed(() => duration.value > 0 ? currentTime.value / duration.value : 0)
+function parseHash() {
+  const raw = location.hash.slice(1) || '/'
+  const [path, anchor = ''] = raw.split('#')
+  route.value = pages[path] || path === '/gallery' ? path : '/'
+  routeAnchor.value = anchor
+  mobileOpen.value = false
+  nextTick(() => {
+    if (anchor) document.getElementById(anchor)?.scrollIntoView({ block: 'start' })
+    else window.scrollTo({ top: 0 })
+  })
+}
 
-async function loadScene(id) {
-  if (loading.value && id === activeId.value) return
-  activeId.value = id
-  loading.value = true
-  playing.value = false
-  error.value = ''
-  currentTime.value = 0
-  duration.value = 0
-  if (currentScene) {
-    currentScene.destroy()
-    currentScene = null
+function navigate(path) {
+  if (/^https?:\/\//.test(path)) {
+    window.open(path, '_blank', 'noopener,noreferrer')
+    return
   }
-  await nextTick()
-  try {
-    const item = scenes.find((entry) => entry.id === id)
-    if (item.interactive) return
-    currentScene = await item.builder(canvas.value)
-    duration.value = currentScene.duration
-    currentScene.seek(0)
-  } catch (err) {
-    console.error(err)
-    error.value = err?.stack || String(err)
-  } finally {
-    loading.value = false
-  }
+  location.hash = path
 }
 
-function togglePlay() {
-  if (!currentScene || loading.value) return
-  if (playing.value) {
-    currentScene.pause()
-    playing.value = false
-  } else {
-    if (currentScene.time >= currentScene.duration - 1e-4) currentScene.seek(0)
-    currentScene.play({ loop: true, from: currentScene.time })
-    playing.value = true
-  }
-}
-
-function restart() {
-  if (!currentScene) return
-  currentScene.pause()
-  currentScene.seek(0)
-  currentTime.value = 0
-  playing.value = false
-}
-
-function seek(event) {
-  if (!currentScene) return
-  const t = Number(event.target.value)
-  currentScene.seek(t)
-  currentTime.value = t
-}
-
-function tick() {
-  if (currentScene) currentTime.value = currentScene.time
-  raf = requestAnimationFrame(tick)
-}
-
-onMounted(async () => {
-  await loadScene(activeId.value)
-  tick()
+const activePage = computed(() => pageFor(route.value))
+const tocItems = computed(() => {
+  if (route.value === '/gallery') return galleryGroups.map((group) => [group.id, group.title])
+  return (activePage.value.sections ?? []).map((section) => [section.id, section.title])
 })
 
-onBeforeUnmount(() => {
-  cancelAnimationFrame(raf)
-  currentScene?.destroy()
+const searchResults = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return []
+  const result = []
+  for (const [path, page] of Object.entries(pages)) {
+    const haystack = [page.title, page.lead, ...(page.sections ?? []).map((x) => x.title)].join(' ').toLowerCase()
+    if (haystack.includes(q)) result.push({ path, title: page.title, kind: '文档' })
+  }
+  for (const item of galleryItems) {
+    const haystack = [item.titleZh, item.description, item.source, item.categoryTitle].join(' ').toLowerCase()
+    if (haystack.includes(q)) result.push({ path: `/gallery#${item.id}`, title: item.titleZh, kind: item.categoryTitle })
+  }
+  return result.slice(0, 12)
 })
+
+function chooseSearch(path) {
+  search.value = ''
+  navigate(path)
+}
+
+function scrollToc(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function backTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function applyTheme(value) {
+  theme.value = value
+  document.documentElement.dataset.theme = value
+  localStorage.setItem('zanim-docs-theme', value)
+}
+
+function toggleTheme() {
+  applyTheme(theme.value === 'light' ? 'dark' : 'light')
+}
+
+onMounted(() => {
+  const saved = localStorage.getItem('zanim-docs-theme')
+  const preferred = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  applyTheme(saved ?? preferred)
+  parseHash()
+  addEventListener('hashchange', parseHash)
+})
+
+onBeforeUnmount(() => removeEventListener('hashchange', parseHash))
 </script>
 
 <template>
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="mark">Z</div>
-        <div>
-          <strong>Zanim Web Study</strong>
-          <span>Vue + Vite downstream project</span>
+  <div class="docs-site">
+    <header class="mobile-header">
+      <button class="mobile-menu-button" @click="mobileOpen = !mobileOpen" aria-label="打开文档导航">☰</button>
+      <a href="#/" class="mobile-brand">Zanim 文档</a>
+      <button class="theme-button mobile-theme" @click="toggleTheme" :aria-label="theme === 'light' ? '切换深色模式' : '切换浅色模式'">
+        {{ theme === 'light' ? '◐' : '◑' }}
+      </button>
+    </header>
+
+    <aside class="docs-sidebar" :class="{ open: mobileOpen }">
+      <div class="sidebar-brand">
+        <a href="#/" class="brand-title">Zanim</a>
+        <span>v0.7.0rc1</span>
+      </div>
+
+      <div class="sidebar-search">
+        <span>⌕</span>
+        <input v-model="search" placeholder="搜索文档" aria-label="搜索文档" />
+        <div v-if="searchResults.length" class="search-results">
+          <button v-for="result in searchResults" :key="result.path" @click="chooseSearch(result.path)">
+            <span>{{ result.title }}</span>
+            <small>{{ result.kind }}</small>
+          </button>
         </div>
       </div>
 
-      <div class="summary">
-        <strong>{{ scenes.length }}</strong>
-        <span>semantic ports</span>
-        <i></i>
-        <strong>{{ deferred.length }}</strong>
-        <span>deferred</span>
-      </div>
-
-      <nav class="scene-list">
-        <button
-          v-for="item in scenes"
-          :key="item.id"
-          :class="{ active: item.id === activeId }"
-          @click="loadScene(item.id)"
-        >
-          <span class="scene-index">{{ String(scenes.indexOf(item) + 1).padStart(2, '0') }}</span>
-          <span class="scene-copy">
-            <strong>{{ item.title }}</strong>
-            <small>{{ item.source }}</small>
-          </span>
-        </button>
+      <nav class="docs-nav">
+        <section v-for="group in navGroups" :key="group.title">
+          <h2>{{ group.title }}</h2>
+          <template v-for="[path, label] in group.items" :key="path">
+            <a
+              v-if="/^https?:\/\//.test(path)"
+              :href="path"
+              target="_blank"
+              rel="noreferrer"
+            >{{ label }}</a>
+            <a
+              v-else
+              href="#"
+              :class="{ current: route === path }"
+              @click.prevent="navigate(path)"
+            >{{ label }}</a>
+          </template>
+        </section>
       </nav>
 
-      <details class="deferred">
-        <summary>Deferred on purpose</summary>
-        <div v-for="([name, reason]) in deferred" :key="name" class="deferred-item">
-          <strong>{{ name }}</strong>
-          <span>{{ reason }}</span>
-        </div>
-      </details>
+      <div class="sidebar-footer">
+        <a href="https://github.com/zjwqsd/zanim" target="_blank" rel="noreferrer">GitHub</a>
+        <button class="theme-button" @click="toggleTheme">
+          {{ theme === 'light' ? '深色模式' : '浅色模式' }}
+        </button>
+      </div>
     </aside>
 
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <p>{{ active.interactive ? 'Zanim Web interaction lab' : 'Python example → TypeScript authoring' }}</p>
-          <h1>{{ active.title }}</h1>
+    <div v-if="mobileOpen" class="sidebar-scrim" @click="mobileOpen = false"></div>
+
+    <main class="docs-main">
+      <div class="docs-topbar">
+        <div class="breadcrumbs">
+          <a href="#/" @click.prevent="navigate('/')">Zanim</a>
+          <span>/</span>
+          <strong>{{ route === '/gallery' ? 'Example Gallery' : activePage.title }}</strong>
         </div>
-        <div class="badges">
-          <span>{{ active.interactive ? 'pointer-driven' : 'public API only' }}</span>
-          <span>{{ active.interactive ? 'retained Scene' : '@zanim/web 0.0.2' }}</span>
+        <div class="topbar-links">
+          <a href="https://github.com/zjwqsd/zanim" target="_blank" rel="noreferrer">GitHub ↗</a>
+          <a href="https://zjwqsd.github.io/zanim/" target="_blank" rel="noreferrer">项目主页 ↗</a>
         </div>
-      </header>
+      </div>
 
-      <InteractiveLinearAlgebra v-if="active.interactive === 'linear-algebra'" />
+      <div class="docs-content">
+        <GalleryPage v-if="route === '/gallery'" :on-navigate="navigate" />
+        <DocPage v-else :page="activePage" :navigate="navigate" />
 
-      <template v-else>
-        <section class="stage-card">
-          <div class="stage" :style="{ aspectRatio: aspect }">
-            <canvas ref="canvas"></canvas>
-            <div v-if="loading" class="overlay"><div class="spinner"></div><span>building scene</span></div>
-            <div v-if="error" class="overlay error"><strong>Scene failed</strong><pre>{{ error }}</pre></div>
-          </div>
-
-          <div class="controls">
-            <button class="play" :disabled="loading || !!error" @click="togglePlay">
-              {{ playing ? 'Pause' : 'Play' }}
-            </button>
-            <button class="restart" :disabled="loading || !!error" @click="restart">Restart</button>
-            <input
-              type="range"
-              min="0"
-              :max="Math.max(duration, 0.001)"
-              step="0.001"
-              :value="currentTime"
-              :disabled="loading || !!error"
-              @input="seek"
-            />
-            <span class="time">{{ currentTime.toFixed(2) }} / {{ duration.toFixed(2) }} s</span>
-          </div>
-          <div class="progress"><i :style="{ width: `${progress * 100}%` }"></i></div>
-        </section>
-
-        <section class="info-grid">
-          <article>
-            <span>Reference</span>
-            <strong>{{ active.source }}</strong>
-            <p>The TypeScript scene was reconstructed from the Python example's authored objects, timeline offsets, durations, coordinate frames and procedural formulas.</p>
-          </article>
-          <article>
-            <span>Canvas</span>
-            <strong>{{ active.width }} × {{ active.height }}</strong>
-            <p>World scale follows the Python canvas ratio. The browser canvas is responsive while preserving the scene aspect ratio.</p>
-          </article>
-          <article>
-            <span>Policy</span>
-            <strong>No frontend demo source reused</strong>
-            <p>Only the installed package API and Python examples are used as references. Unsupported scenes stay deferred instead of being approximated cosmetically.</p>
-          </article>
-          <article v-if="active.note">
-            <span>Implementation note</span>
-            <strong>Static-site constraint</strong>
-            <p>{{ active.note }}</p>
-          </article>
-        </section>
-      </template>
+        <footer class="content-footer">
+          <p>Zanim 文档 · MIT License · pre-1.0</p>
+          <p>Showcase 页面中的动画均由 Zanim Web runtime 实时渲染。</p>
+        </footer>
+      </div>
     </main>
+
+    <aside class="page-toc">
+      <div class="toc-inner">
+        <strong>本页目录</strong>
+        <button
+          v-for="[id, title] in tocItems"
+          :key="id"
+          @click="scrollToc(id)"
+        >{{ title }}</button>
+        <a href="#" @click.prevent="backTop">返回顶部 ↑</a>
+      </div>
+    </aside>
   </div>
 </template>
