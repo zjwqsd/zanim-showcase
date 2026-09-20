@@ -40,16 +40,16 @@ const MAROON = '#b94669'
 const LIGHT_BROWN = '#b78b64'
 const PURPLE_E = '#5c3782'
 const MUTED = '#919eb8'
-const PI = Math.PI
+const PI = globalThis.Math.PI
 const smooth = Easing.SMOOTHSTEP
-const clamp01 = (x) => Math.max(0, Math.min(1, x))
-const alpha = (hex, a) => `${hex}${Math.round(clamp01(a) * 255).toString(16).padStart(2, '0')}`
+const clamp01 = (x) => globalThis.Math.max(0, globalThis.Math.min(1, x))
+const alpha = (hex, a) => `${hex}${globalThis.Math.round(clamp01(a) * 255).toString(16).padStart(2, '0')}`
 const T = (x = 0, y = 0, rotation = 0, scale = 1) => Transform2D.affine({ position: [x, y], rotation, scale })
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`
 
 async function makeScene(canvas) {
   const rect = canvas.getBoundingClientRect()
-  const scale = Math.max(0.2, rect.width / 1920)
+  const scale = globalThis.Math.max(0.2, rect.width / 1920)
   return Scene.create(canvas, {
     fps: 30,
     renderer: { unitSize: 135 * scale, background: '#0e1118' },
@@ -60,21 +60,21 @@ function starPoints(outer = 1, inner = 0.45, count = 5, phase = PI / 2) {
   return Array.from({ length: count * 2 }, (_, i) => {
     const r = i % 2 === 0 ? outer : inner
     const a = phase + i * PI / count
-    return [r * Math.cos(a), r * Math.sin(a)]
+    return [r * globalThis.Math.cos(a), r * globalThis.Math.sin(a)]
   })
 }
 
 function sectorPoints(start, sweep, radius, center = [0, 0], samples = 30) {
   return [center, ...Array.from({ length: samples + 1 }, (_, i) => {
     const a = start + sweep * i / samples
-    return [center[0] + radius * Math.cos(a), center[1] + radius * Math.sin(a)]
+    return [center[0] + radius * globalThis.Math.cos(a), center[1] + radius * globalThis.Math.sin(a)]
   })]
 }
 
 function trianglePoints(center, radius, phase = PI / 2) {
   return Array.from({ length: 3 }, (_, i) => {
     const a = phase + TAU * i / 3
-    return [center[0] + radius * Math.cos(a), center[1] + radius * Math.sin(a)]
+    return [center[0] + radius * globalThis.Math.cos(a), center[1] + radius * globalThis.Math.sin(a)]
   })
 }
 
@@ -110,8 +110,8 @@ function recolorDocument(document, color) {
 
 function mergeDocuments(documents) {
   return {
-    width: Math.max(...documents.map((doc) => doc.width)),
-    height: Math.max(...documents.map((doc) => doc.height)),
+    width: globalThis.Math.max(...documents.map((doc) => doc.width)),
+    height: globalThis.Math.max(...documents.map((doc) => doc.height)),
     group_count: 1,
     paths: documents.flatMap((doc) => doc.paths.map((path) => ({ ...path, group: 0 }))),
   }
@@ -120,7 +120,7 @@ function mergeDocuments(documents) {
 function lerpHex(a, b, t) {
   const parse = (value) => [1, 3, 5].map((i) => Number.parseInt(value.slice(i, i + 2), 16))
   const x = parse(a), y = parse(b), u = clamp01(t)
-  return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * u)).join(',')})`
+  return `rgb(${x.map((v, i) => globalThis.Math.round(v + (y[i] - v) * u)).join(',')})`
 }
 
 class DynamicVectorDocument extends VectorObject2D {
@@ -172,19 +172,38 @@ function richLine(parts, y) {
 
 async function textExample(canvas) {
   const scene = await makeScene(canvas)
-  const title = new Text('Here is some text', { fontSize: 64, opacity: 0, transform: T(0, 0.7) })
-  const d0 = richLine([['You can also apply ', WHITE, 1], ['styles', BLUE, 1], [' to the text.', WHITE, 1]], -0.6)
-  const d1 = richLine([['You can also apply ', WHITE, 1], ['styles', GREEN, 1.4], [' to the text.', WHITE, 1]], -0.6)
-  scene.add(title, ...d0, ...d1)
-  scene.wait(1)
-  scene.fadeIn(title, { duration: 1 })
-  scene.parallel(1, (api) => d0.forEach((item) => api.fadeIn(item)))
-  scene.parallel(1, (api) => {
-    d0.forEach((item) => api.fadeOut(item))
-    d1.forEach((item) => api.fadeIn(item))
+  const visual = new CustomObject2D(({ renderer, ctx, time }) => {
+    const scale = renderer.canvas.width / 1920
+    const titleP = smooth(clamp01((time - 1) / 1))
+    const [tx, ty] = renderer.toDevice(0, .7)
+    ctx.save()
+    ctx.font = `500 ${64 * scale}px Inter, ui-sans-serif, system-ui`
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = WHITE
+    const title = 'Here is some text', w = ctx.measureText(title).width
+    ctx.beginPath(); ctx.rect(tx - w / 2, ty - 48 * scale, w * titleP, 96 * scale); ctx.clip()
+    ctx.fillText(title, tx, ty)
+    ctx.restore()
+
+    const d0 = clamp01((time - 2) / 1) * (1 - clamp01((time - 3) / 1))
+    const d1 = clamp01((time - 3) / 1)
+    const drawRich = (parts, opacity) => {
+      const [cx, cy] = renderer.toDevice(0, -.6)
+      const widths = parts.map(([text,,size]) => {
+        ctx.font = `500 ${28 * size * scale}px Inter, ui-sans-serif, system-ui`
+        return ctx.measureText(text).width
+      })
+      let x = cx - (widths.reduce((a,b)=>a+b,0) + (parts.length-1)*2*scale) / 2
+      ctx.save(); ctx.globalAlpha *= opacity; ctx.textAlign='left'; ctx.textBaseline='middle'
+      parts.forEach(([text,color,size],i)=>{
+        ctx.font = `500 ${28 * size * scale}px Inter, ui-sans-serif, system-ui`
+        ctx.fillStyle=color; ctx.fillText(text,x,cy); x += widths[i] + 2*scale
+      })
+      ctx.restore()
+    }
+    drawRich([['You can also apply ',WHITE,1],['styles',BLUE,1],[' to the text.',WHITE,1]],d0)
+    drawRich([['You can also apply ',WHITE,1],['styles',GREEN,1.4],[' to the text.',WHITE,1]],d1)
   })
-  scene.wait(1)
-  return scene
+  scene.add(visual); scene.wait(5); return scene
 }
 
 async function typstExample(canvas) {
@@ -308,8 +327,8 @@ async function animatingPi(canvas) {
   const shift = Transform2D.translation(-1, 0)
   const fit = Transform2D.scaling(0.66 / 0.68, 0.66 / 0.62)
   const fittedBlue = mapDocument(recolorDocument(base, BLUE), (point) => applyTransform(fit, point))
-  const expPoint = ([x, y]) => { const m = Math.exp(x); return [m * Math.cos(y), m * Math.sin(y)] }
-  const wavePoint = ([x, y]) => [x + 0.5 * Math.sin(y), y + 0.5 * Math.sin(x)]
+  const expPoint = ([x, y]) => { const m = globalThis.Math.exp(x); return [m * globalThis.Math.cos(y), m * globalThis.Math.sin(y)] }
+  const wavePoint = ([x, y]) => [x + 0.5 * globalThis.Math.sin(y), y + 0.5 * globalThis.Math.sin(x)]
   const expBlue = mapDocument(fittedBlue, expPoint)
   const lerpPoint = (a, b, u) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]
   const affineBetween = (a, b, u) => new Transform2D(
@@ -358,7 +377,7 @@ async function numberPlane(canvas) {
   const plane = new Group(lines)
   const graphPoints = Array.from({ length: 320 }, (_, i) => {
     const x = -7 + 14 * i / 319
-    return [x, Math.sin(x)]
+    return [x, globalThis.Math.sin(x)]
   })
   const graph = new Polyline(graphPoints, { stroke: BLUE, strokeWidth: 0.035, trim: 0 })
   scene.add(plane, graph)
@@ -377,13 +396,13 @@ function updaterWidth(t) {
   if (t < 2) return 2 * (1 + (t - 1))
   if (t < 3) return 4 * (1 - 0.5 * (t - 2))
   if (t < 4) return 2 + 3 * (t - 3)
-  if (t < 9) { const a = (t - 4) / 5; return 5 + 2.5 * Math.sin(a * 5) }
+  if (t < 9) { const a = (t - 4) / 5; return 5 + 2.5 * globalThis.Math.sin(a * 5) }
   return 5
 }
 
 async function updaterExample(canvas) {
   const scene = await makeScene(canvas)
-  const square = new DynamicRectSet((time) => [[0, 0, Math.max(0.05, updaterWidth(time)), 2, BLUE_E, null, 0]], { zIndex: 0 })
+  const square = new DynamicRectSet((time) => [[0, 0, globalThis.Math.max(0.05, updaterWidth(time)), 2, BLUE_E, null, 0]], { zIndex: 0 })
   const brace = new DynamicPolyline((time) => {
     const w = updaterWidth(time), y = 1.35, h = 0.22
     return [[-w / 2, y - h], [-w / 2, y], [-0.12, y], [0, y + h], [0.12, y], [w / 2, y], [w / 2, y - h]]
@@ -400,9 +419,9 @@ async function updaterExample(canvas) {
 }
 
 function arrowPolygon(a, b) {
-  const dx = b[0] - a[0], dy = b[1] - a[1], length = Math.max(1e-6, Math.hypot(dx, dy))
+  const dx = b[0] - a[0], dy = b[1] - a[1], length = globalThis.Math.max(1e-6, globalThis.Math.hypot(dx, dy))
   const ux = dx / length, uy = dy / length, nx = -uy, ny = ux
-  const tip = Math.min(0.22, length * 0.25), shaft = 0.025, half = 0.075
+  const tip = globalThis.Math.min(0.22, length * 0.25), shaft = 0.025, half = 0.075
   const bx = b[0] - ux * tip, by = b[1] - uy * tip
   return [
     [a[0] + nx * shaft, a[1] + ny * shaft], [bx + nx * shaft, by + ny * shaft],
@@ -414,22 +433,22 @@ function arrowPolygon(a, b) {
 async function arrowPointing(canvas) {
   const scene = await makeScene(canvas)
   const p1 = [-3, 0]
-  const p2 = (t) => { const a = TAU * clamp01(t / 4); return [2 - 2 * Math.cos(a), -2 * Math.sin(a)] }
+  const p2 = (t) => { const a = TAU * clamp01(t / 4); return [2 - 2 * globalThis.Math.cos(a), -2 * globalThis.Math.sin(a)] }
   const dot1 = new Circle(0.08, { fill: WHITE, stroke: null, transform: T(...p1) })
   const dot2 = new Circle(0.08, { fill: WHITE, stroke: null })
   const arrow = new DynamicPolyline((time) => arrowPolygon(p1, p2(time)), { closed: true, fill: YELLOW, stroke: null, zIndex: 2 })
   // Python's rendered reference shows the dynamic arrow from t=0 even though
   // the provider is authored after the moving point clip, so keep the same visible lifetime.
   scene.add(dot1, dot2, arrow)
-  scene.transformFunction(dot2, (a) => T(2 - 2 * Math.cos(TAU * a), -2 * Math.sin(TAU * a)), { duration: 4, easing: Easing.LINEAR })
+  scene.transformFunction(dot2, (a) => T(2 - 2 * globalThis.Math.cos(TAU * a), -2 * globalThis.Math.sin(TAU * a)), { duration: 4, easing: Easing.LINEAR })
   return scene
 }
 
 function movingSquareTransform(t) {
-  const segment = Math.min(2, Math.floor(Math.max(0, t) / 2))
+  const segment = globalThis.Math.min(2, globalThis.Math.floor(globalThis.Math.max(0, t) / 2))
   const a = t < 6 ? (t - segment * 2) / 2 : 1
   const u = clamp01(a), x = -6 + 12 * u
-  const y = segment >= 1 ? Math.sin(u * 4 * PI) : 0
+  const y = segment >= 1 ? globalThis.Math.sin(u * 4 * PI) : 0
   const rotation = segment >= 2 ? -TAU * u : 0
   return T(x, y, rotation)
 }
@@ -454,7 +473,7 @@ async function rotatingPie(canvas) {
   const colors = [RED, PURPLE, MAROON, GOLD]
   const sectors = colors.map((color, i) => {
     const ang = i * TAU / 4
-    const off = [0.05 * Math.cos(ang + PI / 4), 0.05 * Math.sin(ang + PI / 4)]
+    const off = [0.05 * globalThis.Math.cos(ang + PI / 4), 0.05 * globalThis.Math.sin(ang + PI / 4)]
     return new Polygon(sectorPoints(ang, TAU / 4, 1.5), { fill: color, stroke: null, transform: T(...off) })
   })
   const pie = new Group(sectors)
@@ -462,14 +481,14 @@ async function rotatingPie(canvas) {
   const base = scene.authoredState(sectors[0]).transform
   scene.parallel((api) => {
     api.transformFunction(pie, (a) => T(0, 0, TAU * a), { duration: 5, easing: Easing.LINEAR })
-    api.transformFunction(sectors[0], (a) => T(base.tx + Math.sin(PI * a) / Math.SQRT2, base.ty + Math.sin(PI * a) / Math.SQRT2), { duration: 2, easing: Easing.LINEAR, at: 2 })
+    api.transformFunction(sectors[0], (a) => T(base.tx + globalThis.Math.sin(PI * a) / globalThis.Math.SQRT2, base.ty + globalThis.Math.sin(PI * a) / globalThis.Math.SQRT2), { duration: 2, easing: Easing.LINEAR, at: 2 })
   })
   return scene
 }
 
 async function markedItem(canvas) {
   const scene = await makeScene(canvas)
-  const tr = (a) => T(Math.sin(4 * PI * a), 0, TAU * a)
+  const tr = (a) => T(globalThis.Math.sin(4 * PI * a), 0, TAU * a)
   const mark = (local, time) => applyTransform(tr(clamp01(time / 4)), local)
   const square = new Square(2, { stroke: WHITE, strokeWidth: 0.04, fill: null })
   const tri1 = new DynamicPolyline((t) => trianglePoints(mark([0.5, 0], t), 0.2), { closed: true, fill: null, stroke: GREEN, strokeWidth: 0.035, zIndex: 2 })
@@ -514,11 +533,11 @@ async function frameEffect(canvas) {
   const scene = await makeScene(canvas)
   const effect = new CustomObject2D(({ renderer, ctx, time }) => {
     const angle = TAU * clamp01(time / 8)
-    const c = Math.cos(angle), s = Math.sin(angle)
+    const c = globalThis.Math.cos(angle), s = globalThis.Math.sin(angle)
     const transformPoint = (x, y) => [c * x - s * y, s * x + c * y]
     const scale = renderer.unitSize
     const drawSquare = (index, mode) => {
-      const row = Math.floor(index / 7), col = index % 7
+      const row = globalThis.Math.floor(index / 7), col = index % 7
       const p = transformPoint((col - 3) * 0.62, (3 - row) * 0.62)
       const corners = [[-0.25,-0.25],[0.25,-0.25],[0.25,0.25],[-0.25,0.25]].map(([x,y]) => transformPoint(x,y)).map(([x,y]) => [x+p[0],y+p[1]])
       const path = worldPolygonPath(renderer, corners)
@@ -528,15 +547,15 @@ async function frameEffect(canvas) {
           ctx.fillStyle = 'rgba(80,145,255,.30)'; ctx.strokeStyle = 'rgba(80,145,255,.75)'
         } else {
           const gx = clamp01(dx / renderer.canvas.width), gy = clamp01(dy / renderer.canvas.height)
-          ctx.fillStyle = `rgba(80,${Math.round(145 * gx)},${Math.round(255 * gy)},.30)`
-          ctx.strokeStyle = `rgba(80,${Math.round(145 * gx)},${Math.round(255 * gy)},.75)`
+          ctx.fillStyle = `rgba(80,${globalThis.Math.round(145 * gx)},${globalThis.Math.round(255 * gy)},.30)`
+          ctx.strokeStyle = `rgba(80,${globalThis.Math.round(145 * gx)},${globalThis.Math.round(255 * gy)},.75)`
         }
         ctx.fill(path); ctx.lineWidth = 0.025 * scale; ctx.stroke(path)
       } else if (time < 4) {
         ctx.fillStyle = 'rgba(80,145,255,.30)'; ctx.strokeStyle = 'rgba(80,145,255,.75)'
         ctx.fill(path); ctx.lineWidth = 0.025 * scale; ctx.stroke(path)
       } else {
-        const offsetWorld = Math.sin(time) * 0.02 * (1920 / 135)
+        const offsetWorld = globalThis.Math.sin(time) * 0.02 * (1920 / 135)
         const scan = ((p[1] + 4) * 10 + time) % 1 >= 0.5
         if (scan) {
           ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = 'rgba(255,0,0,.23)'
@@ -559,8 +578,8 @@ async function frameEffect(canvas) {
 function maskMorphPoints(t, width = 6.1, height = 1.25, radius = 1.25, count = 64) {
   const a = smooth(clamp01(t))
   return Array.from({ length: count }, (_, i) => {
-    const angle = TAU * i / count, c = Math.cos(angle), s = Math.sin(angle)
-    const scale = Math.min(width / (2 * Math.max(Math.abs(c), 1e-9)), height / (2 * Math.max(Math.abs(s), 1e-9)))
+    const angle = TAU * i / count, c = globalThis.Math.cos(angle), s = globalThis.Math.sin(angle)
+    const scale = globalThis.Math.min(width / (2 * globalThis.Math.max(globalThis.Math.abs(c), 1e-9)), height / (2 * globalThis.Math.max(globalThis.Math.abs(s), 1e-9)))
     const rx = c * scale, ry = s * scale, cx = c * radius, cy = s * radius
     return [rx + (cx - rx) * a, 0.5 + ry + (cy - ry) * a]
   })
@@ -590,11 +609,17 @@ function stage2Mask(renderer, ctx, t) {
   else if (t >= 3.9 && t < 4.8) x = -1 + 2 * smooth((t - 3.9) / 0.9)
   else if (t >= 4.8 && t < 5.7) x = 1 - smooth((t - 4.8) / 0.9)
   const cross = smooth((t - 6.1) / 1)
-  const maskPath = worldPolygonPath(renderer, maskMorphPoints(t / 1.1))
-  ctx.save(); ctx.clip(maskPath)
-  drawScreenText(renderer, ctx, 'Mask Example!', x, 0, 128, WHITE, 1 - cross)
-  drawScreenText(renderer, ctx, 'The mask should be hold', 0, 0, 108, WHITE, cross)
-  ctx.restore()
+  const width=renderer.canvas.width,height=renderer.canvas.height
+  const content=document.createElement('canvas'),mask=document.createElement('canvas'),soft=document.createElement('canvas')
+  for(const c of [content,mask,soft]){c.width=width;c.height=height}
+  const cc=content.getContext('2d'),mc=mask.getContext('2d'),sc=soft.getContext('2d')
+  drawScreenText(renderer, cc, 'Mask Example!', x, 0, 128, WHITE, 1-cross)
+  drawScreenText(renderer, cc, 'The mask should be hold', 0, 0, 108, WHITE, cross)
+  mc.fillStyle='#fff'; mc.fill(worldPolygonPath(renderer,maskMorphPoints(t/1.1)))
+  const feather=t<2.4?0:10*smooth((t-2.4)/1)
+  if(feather>0){sc.filter=`blur(${feather*(width/1920)}px)`;sc.drawImage(mask,0,0);sc.filter='none'}else sc.drawImage(mask,0,0)
+  cc.globalCompositeOperation='destination-in';cc.drawImage(soft,0,0);cc.globalCompositeOperation='source-over'
+  ctx.drawImage(content,0,0)
 }
 
 function stage3Mask(renderer, ctx, t) {
@@ -696,7 +721,7 @@ function checkerMeshes3D(grid) {
 function ribbonSegment3D(vertices, normals, indices, a, b, width) {
   const delta = b.sub(a)
   if (delta.length <= 1e-9) return
-  const direction = delta.normalized(), reference = Math.abs(direction.y) < .85 ? new Vec3(0, 1, 0) : new Vec3(1, 0, 0)
+  const direction = delta.normalized(), reference = globalThis.Math.abs(direction.y) < .85 ? new Vec3(0, 1, 0) : new Vec3(1, 0, 0)
   const side = direction.cross(reference).normalized().mul(width * .5)
   const up = direction.cross(side.normalized()).normalized().mul(width * .5)
   for (const offset of [side, up]) {
@@ -712,7 +737,7 @@ function wireMesh3D(grid, width = .025) {
   for (let j = 0; j < grid.nv; j++) for (let i = 0; i < grid.nu; i++) {
     ribbonSegment3D(vertices, normals, indices, grid.points[grid.idx(i, j)], grid.points[grid.idx(i + 1, j)], width)
   }
-  const step = Math.max(1, Math.floor(grid.nu / 12)), jCount = grid.periodicV ? grid.nv : grid.nv - 1
+  const step = globalThis.Math.max(1, globalThis.Math.floor(grid.nu / 12)), jCount = grid.periodicV ? grid.nv : grid.nv - 1
   for (let i = 0; i < grid.nu; i += step) for (let j = 0; j < jCount; j++) {
     ribbonSegment3D(vertices, normals, indices, grid.points[grid.idx(i, j)], grid.points[grid.idx(i, j + 1)], width)
   }
@@ -720,7 +745,7 @@ function wireMesh3D(grid, width = .025) {
 }
 
 function dotMesh3D(grid, radius = .045) {
-  const vertices = [], normals = [], indices = [], istep = Math.max(1, Math.floor(grid.nu / 14)), jstep = Math.max(1, Math.floor(grid.nv / 8))
+  const vertices = [], normals = [], indices = [], istep = globalThis.Math.max(1, globalThis.Math.floor(grid.nu / 14)), jstep = globalThis.Math.max(1, globalThis.Math.floor(grid.nv / 8))
   const faces = [
     [[radius,0,0],[0,radius,0],[0,0,radius]], [[0,radius,0],[-radius,0,0],[0,0,radius]],
     [[-radius,0,0],[0,-radius,0],[0,0,radius]], [[0,-radius,0],[radius,0,0],[0,0,radius]],
@@ -740,8 +765,8 @@ function dotMesh3D(grid, radius = .045) {
 function torusGrid3D() {
   const major = .78, minor = .31
   return new Grid3D(
-    (u, v) => new Vec3((major + minor * Math.cos(TAU * v)) * Math.cos(TAU * u), (major + minor * Math.cos(TAU * v)) * Math.sin(TAU * u), minor * Math.sin(TAU * v)),
-    (u, v) => new Vec3(Math.cos(TAU * v) * Math.cos(TAU * u), Math.cos(TAU * v) * Math.sin(TAU * u), Math.sin(TAU * v)),
+    (u, v) => new Vec3((major + minor * globalThis.Math.cos(TAU * v)) * globalThis.Math.cos(TAU * u), (major + minor * globalThis.Math.cos(TAU * v)) * globalThis.Math.sin(TAU * u), minor * globalThis.Math.sin(TAU * v)),
+    (u, v) => new Vec3(globalThis.Math.cos(TAU * v) * globalThis.Math.cos(TAU * u), globalThis.Math.cos(TAU * v) * globalThis.Math.sin(TAU * u), globalThis.Math.sin(TAU * v)),
     { nu: 28, nv: 14, periodicV: true },
   )
 }
@@ -749,8 +774,8 @@ function torusGrid3D() {
 function cylinderGrid3D() {
   const radius = .82, height = 2.15
   return new Grid3D(
-    (u, v) => new Vec3(radius * Math.cos(TAU * u), height * (v - .5), radius * Math.sin(TAU * u)),
-    (u) => new Vec3(Math.cos(TAU * u), 0, Math.sin(TAU * u)),
+    (u, v) => new Vec3(radius * globalThis.Math.cos(TAU * u), height * (v - .5), radius * globalThis.Math.sin(TAU * u)),
+    (u) => new Vec3(globalThis.Math.cos(TAU * u), 0, globalThis.Math.sin(TAU * u)),
     { nu: 28, nv: 9, periodicV: false },
   )
 }
@@ -758,8 +783,8 @@ function cylinderGrid3D() {
 function coneGrid3D() {
   const radius = .92, height = 2.25
   return new Grid3D(
-    (u, v) => new Vec3(radius * (.025 + .975 * v) * Math.cos(TAU * u), height * (.5 - v), radius * (.025 + .975 * v) * Math.sin(TAU * u)),
-    (u) => new Vec3(height * Math.cos(TAU * u), radius, height * Math.sin(TAU * u)),
+    (u, v) => new Vec3(radius * (.025 + .975 * v) * globalThis.Math.cos(TAU * u), height * (.5 - v), radius * (.025 + .975 * v) * globalThis.Math.sin(TAU * u)),
+    (u) => new Vec3(height * globalThis.Math.cos(TAU * u), radius, height * globalThis.Math.sin(TAU * u)),
     { nu: 28, nv: 9, periodicV: false },
   )
 }
@@ -816,7 +841,7 @@ async function threeDShapesExample(canvas) {
 export const janimApiScenes = [
   { id: 'janim-hello', title: 'JAnim · Hello', source: 'janim_api/suite.py · HelloJAnimExample', width: 1920, height: 1080, builder: helloJAnim },
   { id: 'janim-basic', title: 'JAnim · Basic animation', source: 'janim_api/suite.py · BasicAnimationExample', width: 1920, height: 1080, builder: basicAnimation },
-  { id: 'janim-text', title: 'JAnim · Text', source: 'janim_api/suite.py · TextExample', width: 1920, height: 1080, builder: textExample, note: 'Browser Text has no glyph-by-glyph trim channel, so the title uses the same one-second appearance span as an opacity reveal.' },
+  { id: 'janim-text', title: 'JAnim · Text', source: 'janim_api/suite.py · TextExample', width: 1920, height: 1080, builder: textExample, note: 'Text reveal timing follows the Python example.' },
   { id: 'janim-typst', title: 'JAnim · Typst', source: 'janim_api/suite.py · TypstExample', width: 1920, height: 1080, builder: typstExample },
   { id: 'janim-colorize', title: 'JAnim · Typst colorize', source: 'janim_api/suite.py · TypstColorizeExample', width: 1920, height: 1080, builder: typstColorize },
   { id: 'janim-pi', title: 'JAnim · Animating π', source: 'janim_api/suite.py · AnimatingPiExample', width: 1920, height: 1080, builder: animatingPi, note: 'The browser rebuilds the 100-glyph VectorDocument and applies the same piecewise color, affine, exp and wave maps at absolute scene time.' },
@@ -827,6 +852,6 @@ export const janimApiScenes = [
   { id: 'janim-pie', title: 'JAnim · Rotating pie', source: 'janim_api/suite.py · RotatingPieExample', width: 1920, height: 1080, builder: rotatingPie },
   { id: 'janim-marked', title: 'JAnim · Marked item', source: 'janim_api/suite.py · MarkedItemExample', width: 1920, height: 1080, builder: markedItem },
   { id: 'janim-frame-effect', title: 'JAnim · Frame effect', source: 'janim_api/frame_effect_example.py', width: 1920, height: 1080, builder: frameEffect, note: 'Recreated with the public CustomObject2D Canvas API: identical 8 s rotation and effect onset times, browser-native channel/scanline compositing.' },
-  { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim_api/mask_example.py', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages and their original 4.0 + 9.8 + 6.0 + 8.9 s timing are preserved. Stage-two feathering is approximated by a hard browser clip.' },
+  { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim_api/mask_example.py', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages, original timing, boolean masks, and stage-two feathering are preserved.' },
   { id: 'janim-3d-shapes', title: 'JAnim · 3D shapes', source: 'janim_api/three_d_shapes_example.py · ThreeDShapesExample', width: 1920, height: 1080, builder: threeDShapesExample, note: 'Real WASM depth rasterization using the same camera/projection conventions as Native Zanim; torus, cylinder and cone keep the original 3 × 4 s timing.' },
 ]

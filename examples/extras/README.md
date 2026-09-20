@@ -14,6 +14,7 @@ These are deliberately not part of the step-by-step tutorial. They are larger en
 - `simulation_collisions.py` uses one fixed-step global `Simulation` and binds multiple circles to its shared elastic-collision state.
 - `rubiks_cube.py` builds an articulated 3D Rubik's Cube from `Group3D` cubies and animates a scramble followed by its exact reverse solve.
 - `electric_field.py` uses the generic `VectorField` object to show a planar Coulomb field as sampled vectors and integrated field lines.
+- `neural_forward_pass.py` faithfully ports the 10-second Manim forward-pass demo: the same seeded 72-point cloud is driven through `W1 x + b1`, `tanh`, a 2→2→2 network, weighted signal pulses, and softmax output on one random-access timeline.
 - `neural_network.py` visualizes forward/backward signal propagation with dense batch geometry.
 - `mnist_training.py` trains a real NumPy 784→8→10 MLP and visualizes eight epochs, exact weights/gradients, metrics and inference. It is also a useful performance stress test.
 
@@ -28,6 +29,7 @@ zanim preview examples/extras/sorting_algorithms.py
 zanim preview examples/extras/modular_multiplication.py
 zanim preview examples/extras/de_casteljau.py
 zanim preview examples/extras/complex_mapping.py
+zanim preview examples/extras/neural_forward_pass.py
 zanim preview examples/extras/midi_piano.py
 zanim preview examples/extras/neural_network.py
 zanim preview examples/extras/mnist_training.py
@@ -44,6 +46,7 @@ uv run python examples/extras/sorting_algorithms.py --n 24 --seed 23
 uv run python examples/extras/modular_multiplication.py --points 240 --end 12
 uv run python examples/extras/de_casteljau.py --duration 7
 uv run python examples/extras/complex_mapping.py --output media/extras/complex_mapping.mp4
+uv run python examples/extras/neural_forward_pass.py
 uv run python examples/extras/midi_piano.py path/to/song.mid
 uv run python examples/extras/midi_piano.py path/to/song.mid --synth soundfont
 uv run python examples/extras/midi_piano.py path/to/song.mid --synth builtin

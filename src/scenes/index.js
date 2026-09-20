@@ -1,3 +1,4 @@
+import { neuralForwardPass } from './neuralForwardPass.js'
 import { janimApiScenes } from './janimApi.js'
 import {
   Arrow,
@@ -63,9 +64,9 @@ import {
 
 const T = (x = 0, y = 0, rotation = 0, scale = 1, shear = [0, 0]) =>
   Transform2D.affine({ position: [x, y], rotation, scale, shear })
-const clamp01 = (x) => Math.max(0, Math.min(1, x))
+const clamp01 = (x) => globalThis.Math.max(0, globalThis.Math.min(1, x))
 const smooth = Easing.SMOOTHSTEP
-const alpha = (hex, a) => `${hex.slice(0, 7)}${Math.round(a).toString(16).padStart(2, '0')}`
+const alpha = (hex, a) => `${hex.slice(0, 7)}${globalThis.Math.round(a).toString(16).padStart(2, '0')}`
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`
 
 function vectorColorCSS(value) {
@@ -89,7 +90,7 @@ function webVectorDocument(raw) {
 
 async function makeScene(canvas, spec) {
   const rect = canvas.getBoundingClientRect()
-  const scale = Math.max(0.2, rect.width / spec.width)
+  const scale = globalThis.Math.max(0.2, rect.width / spec.width)
   return Scene.create(canvas, {
     fps: spec.fps ?? 60,
     renderer: { unitSize: spec.unitSize * scale, background: '#080b12' },
@@ -115,10 +116,10 @@ function circleItems(count, phase = 0) {
     const u = i / count
     const angle = TAU * (u * 5 + phase)
     const radius = 0.8 + 3 * u
-    const dot = 0.025 + 0.055 * (0.5 + 0.5 * Math.sin(5 * TAU * u + phase * TAU * 2))
-    const r = Math.round(70 + 170 * u)
-    const g = Math.round(145 + 70 * (1 - u))
-    items.push([radius * Math.cos(angle), radius * Math.sin(angle), dot, `rgba(${r},${g},255,.86)`])
+    const dot = 0.025 + 0.055 * (0.5 + 0.5 * globalThis.Math.sin(5 * TAU * u + phase * TAU * 2))
+    const r = globalThis.Math.round(70 + 170 * u)
+    const g = globalThis.Math.round(145 + 70 * (1 - u))
+    items.push([radius * globalThis.Math.cos(angle), radius * globalThis.Math.sin(angle), dot, `rgba(${r},${g},255,.86)`])
   }
   return items
 }
@@ -130,8 +131,8 @@ function radialLines(count, phase = 0) {
     const a = TAU * u
     const b = a + phase * PI
     items.push([
-      2 * Math.cos(a), 2 * Math.sin(a), 3.5 * Math.cos(b), 3.5 * Math.sin(b),
-      `rgba(100,${Math.round(140 + 100 * u)},255,.39)`, 0.006,
+      2 * globalThis.Math.cos(a), 2 * globalThis.Math.sin(a), 3.5 * globalThis.Math.cos(b), 3.5 * globalThis.Math.sin(b),
+      `rgba(100,${globalThis.Math.round(140 + 100 * u)},255,.39)`, 0.006,
     ])
   }
   return items
@@ -252,7 +253,7 @@ async function timeline(canvas) {
   scene.fadeIn(title, { duration: 0.7 })
   const middleCenter = scene.authoredCenter(middle)
   scene.parallel((api) => {
-    api.transformFunction(left, (a) => T(origin.x, origin.y + 0.55 * Math.sin(4 * PI * a), TAU * a), { duration: 3, easing: Easing.LINEAR })
+    api.transformFunction(left, (a) => T(origin.x, origin.y + 0.55 * globalThis.Math.sin(4 * PI * a), TAU * a), { duration: 3, easing: Easing.LINEAR })
     api.affine(middle, { position: [middleCenter.x, middleCenter.y], rotation: PI, scale: 1.35, duration: 1.1, at: 0.35 })
     api.style(middle, { to: { fill: alpha(GREEN, 80), stroke: GREEN, width: 0.045, worldStroke: true }, duration: 1, at: 1.45 })
     api.interpolate(source, target, { duration: 2.2, at: 0.5 })
@@ -314,9 +315,9 @@ async function kinematics(canvas) {
   scene.add(joint1); scene.wait(0.6)
   const h1 = scene.authoredState(joint1).transform, h2 = scene.authoredState(joint2).transform, h3 = scene.authoredState(joint3).transform
   scene.parallel(6, (api) => {
-    api.transformFunction(joint1, (a) => h1.mul(Transform2D.rotation(0.75 * Math.sin(TAU * a))))
-    api.transformFunction(joint2, (a) => h2.mul(Transform2D.rotation(-0.9 * Math.sin(TAU * a + 0.8))))
-    api.transformFunction(joint3, (a) => h3.mul(Transform2D.translation(0.65 * (0.5 - 0.5 * Math.cos(TAU * a)), 0)))
+    api.transformFunction(joint1, (a) => h1.mul(Transform2D.rotation(0.75 * globalThis.Math.sin(TAU * a))))
+    api.transformFunction(joint2, (a) => h2.mul(Transform2D.rotation(-0.9 * globalThis.Math.sin(TAU * a + 0.8))))
+    api.transformFunction(joint3, (a) => h3.mul(Transform2D.translation(0.65 * (0.5 - 0.5 * globalThis.Math.cos(TAU * a)), 0)))
   })
   scene.wait(0.5)
   return scene
@@ -426,14 +427,14 @@ async function sampleClosedSvgContour(url, count = 768) {
 
 function fourierDft(samples) {
   const n = samples.length
-  const half = Math.floor(n / 2)
+  const half = globalThis.Math.floor(n / 2)
   const terms = []
   for (let k = 0; k < n; k++) {
     let re = 0, im = 0
     for (let index = 0; index < n; index++) {
       const [x, y] = samples[index]
       const angle = -TAU * k * index / n
-      const c = Math.cos(angle), s = Math.sin(angle)
+      const c = globalThis.Math.cos(angle), s = globalThis.Math.sin(angle)
       re += x * c - y * s
       im += x * s + y * c
     }
@@ -447,14 +448,14 @@ function dominantFourierTerms(terms, count = 36) {
   const nonDc = terms
     .filter((term) => term.frequency !== 0)
     .sort((a, b) => {
-      const ra = Math.hypot(a.re, a.im), rb = Math.hypot(b.re, b.im)
-      if (Math.abs(rb - ra) > 1e-15) return rb - ra
-      const abs = Math.abs(a.frequency) - Math.abs(b.frequency)
+      const ra = globalThis.Math.hypot(a.re, a.im), rb = globalThis.Math.hypot(b.re, b.im)
+      if (globalThis.Math.abs(rb - ra) > 1e-15) return rb - ra
+      const abs = globalThis.Math.abs(a.frequency) - globalThis.Math.abs(b.frequency)
       return abs || a.frequency - b.frequency
     })
   const selected = nonDc.slice(0, count - (dc ? 1 : 0))
   selected.sort((a, b) => {
-    const abs = Math.abs(a.frequency) - Math.abs(b.frequency)
+    const abs = globalThis.Math.abs(a.frequency) - globalThis.Math.abs(b.frequency)
     if (abs) return abs
     const ap = a.frequency > 0 ? 0 : 1, bp = b.frequency > 0 ? 0 : 1
     return ap - bp
@@ -518,12 +519,12 @@ function hilbertGridPoint(order, index) {
   const side = 1 << order
   let x = 0, y = 0, d = index, scale = 1
   while (scale < side) {
-    const rx = 1 & Math.floor(d / 2), ry = 1 & (d ^ rx)
+    const rx = 1 & globalThis.Math.floor(d / 2), ry = 1 & (d ^ rx)
     if (ry === 0) {
       if (rx === 1) { x = scale - 1 - x; y = scale - 1 - y }
       ;[x, y] = [y, x]
     }
-    x += scale * rx; y += scale * ry; d = Math.floor(d / 4); scale *= 2
+    x += scale * rx; y += scale * ry; d = globalThis.Math.floor(d / 4); scale *= 2
   }
   return [x, y]
 }
@@ -545,7 +546,7 @@ async function hilbert(canvas) {
   scene.parallel((api) => { api.create(curve, { duration: 1 }); api.fadeIn(title, { duration: 0.55 }); api.fadeIn(label, { duration: 0.55 }) })
   scene.wait(0.42)
   for (let order = 2; order <= 6; order++) {
-    const next = new Polyline(hilbertPoints(order), { stroke: colors[order - 1], strokeWidth: Math.max(0.018, 0.052 - 0.006 * (order - 1)) })
+    const next = new Polyline(hilbertPoints(order), { stroke: colors[order - 1], strokeWidth: globalThis.Math.max(0.018, 0.052 - 0.006 * (order - 1)) })
     curve = scene.replace(curve, next, { duration: 1.15 })
     const nextLabel = new Text(`order ${order} · ${4 ** order} vertices`, { fontSize: 21, color: MUTED, opacity: 0, transform: T(0, -4.25), zIndex: 10 })
     scene.add(nextLabel)
@@ -558,20 +559,20 @@ async function hilbert(canvas) {
 
 function fitPoints(points, side = 7) {
   const xs = points.map((p) => p[0]), ys = points.map((p) => p[1])
-  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
-  const scale = side / Math.max(x1 - x0, y1 - y0), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2
+  const x0 = globalThis.Math.min(...xs), x1 = globalThis.Math.max(...xs), y0 = globalThis.Math.min(...ys), y1 = globalThis.Math.max(...ys)
+  const scale = side / globalThis.Math.max(x1 - x0, y1 - y0), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2
   return points.map(([x, y]) => [(x - cx) * scale, (y - cy) * scale])
 }
 function orientChord(points) {
-  const a = points[0], b = points.at(-1), rot = -Math.atan2(b[1] - a[1], b[0] - a[0]), c = Math.cos(rot), s = Math.sin(rot)
+  const a = points[0], b = points.at(-1), rot = -globalThis.Math.atan2(b[1] - a[1], b[0] - a[0]), c = globalThis.Math.cos(rot), s = globalThis.Math.sin(rot)
   return points.map(([x, y]) => [c*x - s*y, s*x + c*y])
 }
 function koch(order) {
-  const h = Math.sqrt(3)/2
+  const h = globalThis.Math.sqrt(3)/2
   let pts = [[-0.5,-h/3],[0.5,-h/3],[0,2*h/3],[-0.5,-h/3]]
   for (let k=0;k<order;k++) {
     const out=[]
-    for(let i=0;i<pts.length-1;i++) { const a=pts[i],b=pts[i+1],dx=(b[0]-a[0])/3,dy=(b[1]-a[1])/3,p1=[a[0]+dx,a[1]+dy], p3=[a[0]+2*dx,a[1]+2*dy]; const c=Math.cos(-PI/3),s=Math.sin(-PI/3),p2=[p1[0]+dx*c-dy*s,p1[1]+dx*s+dy*c]; out.push(a,p1,p2,p3) } out.push(pts.at(-1)); pts=out
+    for(let i=0;i<pts.length-1;i++) { const a=pts[i],b=pts[i+1],dx=(b[0]-a[0])/3,dy=(b[1]-a[1])/3,p1=[a[0]+dx,a[1]+dy], p3=[a[0]+2*dx,a[1]+2*dy]; const c=globalThis.Math.cos(-PI/3),s=globalThis.Math.sin(-PI/3),p2=[p1[0]+dx*c-dy*s,p1[1]+dx*s+dy*c]; out.push(a,p1,p2,p3) } out.push(pts.at(-1)); pts=out
   }
   return fitPoints(pts)
 }
@@ -579,7 +580,7 @@ function arrowhead(order) {
   let word='A'
   for(let k=0;k<order;k++) word=[...word].map((ch)=>ch==='A'?'B-A-B':ch==='B'?'A+B+A':ch).join('')
   let ang=0,x=0,y=0; const pts=[[0,0]]
-  for(const ch of word){ if(ch==='A'||ch==='B'){x+=Math.cos(ang);y+=Math.sin(ang);pts.push([x,y])} else if(ch==='+')ang+=PI/3;else if(ch==='-')ang-=PI/3 }
+  for(const ch of word){ if(ch==='A'||ch==='B'){x+=globalThis.Math.cos(ang);y+=globalThis.Math.sin(ang);pts.push([x,y])} else if(ch==='+')ang+=PI/3;else if(ch==='-')ang-=PI/3 }
   return fitPoints(orientChord(pts))
 }
 function dragon(order) {
@@ -608,15 +609,15 @@ async function fractals(canvas) {
     scene.add(curve,title,subtitle,label)
     scene.parallel((api)=>{api.create(curve,{duration:.65});api.fadeIn(title,{duration:.42});api.fadeIn(subtitle,{duration:.48,at:.08});api.fadeIn(label,{duration:.42,at:.08})})
     scene.wait(.38)
-    for(let o=first+1;o<=last;o++){curve=scene.replace(curve,new Polyline(gen(o),{stroke:color,strokeWidth:Math.max(.018,.052-.003*Math.max(0,o-first))}),{duration:.78});const nl=new Text(`order ${o} · ${gen(o).length-1} segments`,{fontSize:20,color:YELLOW,opacity:0,transform:T(0,-4.28),zIndex:10});scene.add(nl);scene.parallel(.16,(api)=>{api.fadeOut(label);api.fadeIn(nl)});scene.remove(label);label=nl;scene.wait(.16)}
+    for(let o=first+1;o<=last;o++){curve=scene.replace(curve,new Polyline(gen(o),{stroke:color,strokeWidth:globalThis.Math.max(.018,.052-.003*globalThis.Math.max(0,o-first))}),{duration:.78});const nl=new Text(`order ${o} · ${gen(o).length-1} segments`,{fontSize:20,color:YELLOW,opacity:0,transform:T(0,-4.28),zIndex:10});scene.add(nl);scene.parallel(.16,(api)=>{api.fadeOut(label);api.fadeIn(nl)});scene.remove(label);label=nl;scene.wait(.16)}
     scene.wait(.38);scene.parallel(.32,(api)=>{api.fadeOut(curve);api.fadeOut(title);api.fadeOut(subtitle);api.fadeOut(label)});scene.remove(curve,title,subtitle,label)
   }
   scene.wait(.35)
   return scene
 }
 
-function circlePoint(index, count, radius=3.35){const a=TAU*index/count;return [radius*Math.cos(a),radius*Math.sin(a)]}
-function modularItems(count,k){const out=[];for(let i=0;i<count;i++){const u=i/count,a=circlePoint(i,count),b=circlePoint(k*i,count),r=Math.round(105+70*(.5+.5*Math.sin(TAU*u))),g=Math.round(150+70*(.5+.5*Math.sin(TAU*u+2.094))),bb=Math.round(205+45*(.5+.5*Math.sin(TAU*u+4.189)));out.push([a[0],a[1],b[0],b[1],`rgba(${r},${g},${Math.min(255,bb)},.57)`,.012])}return out}
+function circlePoint(index, count, radius=3.35){const a=TAU*index/count;return [radius*globalThis.Math.cos(a),radius*globalThis.Math.sin(a)]}
+function modularItems(count,k){const out=[];for(let i=0;i<count;i++){const u=i/count,a=circlePoint(i,count),b=circlePoint(k*i,count),r=globalThis.Math.round(105+70*(.5+.5*globalThis.Math.sin(TAU*u))),g=globalThis.Math.round(150+70*(.5+.5*globalThis.Math.sin(TAU*u+2.094))),bb=globalThis.Math.round(205+45*(.5+.5*globalThis.Math.sin(TAU*u+4.189)));out.push([a[0],a[1],b[0],b[1],`rgba(${r},${g},${globalThis.Math.min(255,bb)},.57)`,.012])}return out}
 
 async function modularMultiplication(canvas){
   const scene=await makeScene(canvas,{width:1280,height:960,unitSize:100});const n=240,k=new ScalarValue(0);scene.addValue(k)
@@ -668,9 +669,9 @@ async function mathShowcase(canvas) {
   const progress = new ScalarValue(0)
   scene.addValue(progress)
 
-  const f = (x) => 1.2 + 0.5 * Math.sin(1.2 * x) + 0.055 * x * x
-  const lo = (t) => -2.6 + 0.7 * Math.sin(0.9 * t)
-  const hi = (t) => 1.5 + 0.8 * Math.sin(1.1 * t + 0.8)
+  const f = (x) => 1.2 + 0.5 * globalThis.Math.sin(1.2 * x) + 0.055 * x * x
+  const lo = (t) => -2.6 + 0.7 * globalThis.Math.sin(0.9 * t)
+  const hi = (t) => 1.5 + 0.8 * globalThis.Math.sin(1.1 * t + 0.8)
   const map = (x, y) => [-4 + (x / 8) * 9, -0.8 + ((y - 1.4) / 3.6) * 5.5]
   const integralValue = (time) => {
     let a = lo(time), b = hi(time), sign = 1
@@ -689,7 +690,7 @@ async function mathShowcase(canvas) {
     const a = map(x, -0.4), b = map(x, 3.2)
     gridItems.push([a[0], a[1], b[0], b[1], 'rgba(85,95,116,.255)', 0.01])
   }
-  for (let y = 0; y <= 3.0 + 1e-12; y += 0.5) if (Math.abs(y) > 1e-12) {
+  for (let y = 0; y <= 3.0 + 1e-12; y += 0.5) if (globalThis.Math.abs(y) > 1e-12) {
     const a = map(-4, y), b = map(4, y)
     gridItems.push([a[0], a[1], b[0], b[1], 'rgba(85,95,116,.255)', 0.01])
   }
@@ -720,7 +721,7 @@ async function mathShowcase(canvas) {
   const integralNumber = new DynamicNumber((time) => integralValue(time), { digits: 3, fontSize: 25, color: '#ffdc91', transform: T(5.35, 1.47), zIndex: 8 })
 
   const matrixItems = (time) => {
-    const tick = Math.max(0, Math.min(matrixTicks.length - 1, Math.floor(Math.max(0, time - 0.4) * 3)))
+    const tick = globalThis.Math.max(0, globalThis.Math.min(matrixTicks.length - 1, globalThis.Math.floor(globalThis.Math.max(0, time - 0.4) * 3)))
     const { a, b, c } = matrixTicks[tick]
     const items = []
     const emitMatrix = (matrix, cx, color, cell = 0.48) => {
@@ -770,11 +771,12 @@ export const scenes = [
   { id:'bezier', title:'De Casteljau', source:'extras/de_casteljau.py', width:1280, height:960, builder:deCasteljau },
   { id:'mandelbrot', title:'Mandelbrot + Julia', source:'extras/mandelbrot_julia.py', width:1280, height:720, builder:mandelbrotJulia },
   { id:'complex', title:'Complex mapping', source:'extras/complex_mapping.py', width:1280, height:960, builder:complexMapping },
+  { id:'neural-forward', title:'Neural forward pass', source:'extras/neural_forward_pass.py', width:1920, height:1080, builder:neuralForwardPass, note:'Faithful 10 s port of the uploaded Manim demo: identical point cloud, weights, sample, nonlinear geometry and signal timing.' },
   ...janimApiScenes,
 ]
 
 export const deferred = [
   ['Red-black tree', 'discrete insertion/fix-up event trace needs a faithful port rather than a cosmetic imitation'],
   ['Sorting algorithms', 'same reason: event trace and settled/active states should be ported exactly'],
-  ['Neural network / MNIST / MIDI', 'specialized assets and event/data pipelines deferred'],
+  ['MNIST training / MIDI', 'specialized assets and event/data pipelines deferred'],
 ]
