@@ -74,37 +74,54 @@ function render() {
   renderMs.value = scene.stats.renderMs
 }
 
+function setRetainedState(object, patch) {
+  if (!scene || !object) return
+  const base = scene.initial.get(object.id) ?? scene.authoredState(object)
+  const next = { ...base, ...patch }
+  if (patch.style) next.style = { ...(base.style ?? {}), ...patch.style }
+  scene.initial.set(object.id, next)
+  scene.authored.set(object.id, { ...next })
+}
+
+function setRetainedTransform(object, transform) {
+  setRetainedState(object, { transform })
+}
+
+function setRetainedOpacity(object, opacity) {
+  setRetainedState(object, { opacity })
+}
+
 function updateHandles() {
   if (!handleX) return
   const invZoom = 1 / view.zoom
-  handleX.transform = Transform2D.translation(matrix.xx, matrix.yx).mul(Transform2D.scaling(invZoom))
-  handleY.transform = Transform2D.translation(matrix.xy, matrix.yy).mul(Transform2D.scaling(invZoom))
-  labelX.transform = Transform2D.translation(matrix.xx + 0.18 / view.zoom, matrix.yx + 0.23 / view.zoom)
-  labelY.transform = Transform2D.translation(matrix.xy + 0.18 / view.zoom, matrix.yy + 0.23 / view.zoom)
+  setRetainedTransform(handleX, Transform2D.translation(matrix.xx, matrix.yx).mul(Transform2D.scaling(invZoom)))
+  setRetainedTransform(handleY, Transform2D.translation(matrix.xy, matrix.yy).mul(Transform2D.scaling(invZoom)))
+  setRetainedTransform(labelX, Transform2D.translation(matrix.xx + 0.18 / view.zoom, matrix.yx + 0.23 / view.zoom))
+  setRetainedTransform(labelY, Transform2D.translation(matrix.xy + 0.18 / view.zoom, matrix.yy + 0.23 / view.zoom))
 }
 
 function applyMatrix() {
   if (!scene) return
   const t = matrixTransform()
-  transformedGrid.transform = t
-  transformedX.transform = t
-  transformedY.transform = t
-  basisArrowX.transform = t
-  basisArrowY.transform = t
-  transformedSquare.transform = t
-  transformedShape.transform = t
-  transformedGrid.opacity = 1
-  transformedSquare.fill = determinant.value < 0 ? 'rgba(255,151,92,.20)' : 'rgba(96,166,255,.18)'
-  transformedSquare.stroke = Math.abs(determinant.value) < 0.015 ? '#ffd669' : (determinant.value < 0 ? '#ff975c' : '#72d7ff')
-  originalShape.opacity = options.original && options.shape ? 0.24 : 0
-  transformedShape.opacity = options.shape ? 1 : 0
+  for (const object of [transformedGrid, transformedX, transformedY, basisArrowX, basisArrowY, transformedSquare, transformedShape]) {
+    setRetainedTransform(object, t)
+  }
+  setRetainedOpacity(transformedGrid, 1)
+  setRetainedState(transformedSquare, {
+    style: {
+      fill: determinant.value < 0 ? 'rgba(255,151,92,.20)' : 'rgba(96,166,255,.18)',
+      stroke: Math.abs(determinant.value) < 0.015 ? '#ffd669' : (determinant.value < 0 ? '#ff975c' : '#72d7ff'),
+    },
+  })
+  setRetainedOpacity(originalShape, options.original && options.shape ? 0.24 : 0)
+  setRetainedOpacity(transformedShape, options.shape ? 1 : 0)
   updateHandles()
   render()
 }
 
 function applyView() {
   if (!scene) return
-  scene.camera.transform = cameraTransform()
+  setRetainedTransform(scene.camera, cameraTransform())
   updateHandles()
   render()
 }
@@ -240,7 +257,7 @@ function onWheel(event) {
 
 function toggleOriginal() {
   const originalObjects = scene.objects.filter((object) => object.__originalReference)
-  for (const object of originalObjects) object.opacity = options.original ? object.__baseOpacity : 0
+  for (const object of originalObjects) setRetainedOpacity(object, options.original ? object.__baseOpacity : 0)
   applyMatrix()
 }
 
@@ -274,8 +291,6 @@ onMounted(async () => {
 
   basisArrowX = new Arrow([0, 0], [1, 0], { stroke: '#f55c69', width: 4, zIndex: 5 })
   basisArrowY = new Arrow([0, 0], [0, 1], { stroke: '#52cd96', width: 4, zIndex: 5 })
-  basisArrowX.transform = matrixTransform()
-  basisArrowY.transform = matrixTransform()
 
   handleX = new Circle(0.105, { fill: '#f55c69', stroke: '#fff2f4', strokeWidth: 0.025, zIndex: 12 })
   handleY = new Circle(0.105, { fill: '#52cd96', stroke: '#effff7', strokeWidth: 0.025, zIndex: 12 })

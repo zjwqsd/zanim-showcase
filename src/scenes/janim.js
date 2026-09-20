@@ -851,7 +851,7 @@ export const janimScenes = [
   { id: 'janim-combine', title: 'JAnim · Combine updaters', source: 'janim/suite.py · CombineUpdatersExample', width: 1920, height: 1080, builder: combineUpdaters },
   { id: 'janim-pie', title: 'JAnim · Rotating pie', source: 'janim/suite.py · RotatingPieExample', width: 1920, height: 1080, builder: rotatingPie },
   { id: 'janim-marked', title: 'JAnim · Marked item', source: 'janim/suite.py · MarkedItemExample', width: 1920, height: 1080, builder: markedItem },
-  { id: 'janim-frame-effect', title: 'JAnim · Frame effect', source: 'janim/frame_effect_example.py', width: 1920, height: 1080, builder: frameEffect, note: 'Recreated with the public CustomObject2D Canvas API: identical 8 s rotation and effect onset times, browser-native channel/scanline compositing.' },
+  { id: 'janim-frame-effect', title: 'JAnim · Frame effect', source: 'janim/frame_effect_example.py · FrameEffectExample', width: 1920, height: 1080, builder: frameEffect, note: 'Recreated with the public CustomObject2D Canvas API: identical 8 s rotation and effect onset times, browser-native channel/scanline compositing.' },
   { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim/mask_example.py', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages, original timing, boolean masks, and stage-two feathering are preserved.' },
   { id: 'janim-3d-shapes', title: 'JAnim · 3D shapes', source: 'janim/three_d_shapes_example.py · ThreeDShapesExample', width: 1920, height: 1080, builder: threeDShapesExample, note: 'Real WASM depth rasterization using the same camera/projection conventions as Native Zanim; torus, cylinder and cone keep the original 3 × 4 s timing.' },
 ]

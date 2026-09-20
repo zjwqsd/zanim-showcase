@@ -15,6 +15,7 @@ const error = ref('')
 const playing = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
+const muted = ref(true)
 let scene = null
 let observer = null
 let raf = 0
@@ -29,7 +30,8 @@ async function build() {
     scene = await props.item.builder(canvas.value)
     duration.value = scene.duration
     scene.seek(0)
-    if (visible && props.autoplay) {
+    applyMuted(true)
+    if (!props.item.static && visible && props.autoplay) {
       scene.play({ loop: true, from: 0 })
       playing.value = true
     }
@@ -40,6 +42,22 @@ async function build() {
     loading.value = false
   }
 }
+
+function applyMuted(value) {
+  muted.value = value
+  if (!scene) return
+  for (const object of scene.objects ?? []) {
+    if (object?._mediaKind === 'audio') {
+      if (object.__galleryGain == null) object.__galleryGain = object.gain
+      object.gain = value ? 0 : object.__galleryGain
+      if (object._element) object._element.muted = value
+    } else if (object?._mediaKind === 'video' && object._element) {
+      object._element.muted = value
+    }
+  }
+}
+
+function toggleMuted() { applyMuted(!muted.value) }
 
 function playPause() {
   if (!scene || loading.value || error.value) return
@@ -85,7 +103,7 @@ onMounted(() => {
     visible = entry.isIntersecting
     if (entry.isIntersecting) {
       await build()
-      if (scene && props.autoplay && !playing.value) {
+      if (scene && !props.item.static && props.autoplay && !playing.value) {
         scene.play({ loop: true, from: scene.time })
         playing.value = true
       }
@@ -122,7 +140,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div class="live-controls">
+      <div v-if="!item.static" class="live-controls">
         <button :disabled="!scene || !!error" @click="playPause">{{ playing ? '暂停' : '播放' }}</button>
         <button :disabled="!scene || !!error" @click="restart">重播</button>
         <input
@@ -135,6 +153,7 @@ onBeforeUnmount(() => {
           @input="seek"
         />
         <span>{{ currentTime.toFixed(2) }} / {{ duration.toFixed(2) }} s</span>
+        <button v-if="item.hasAudio" :disabled="!scene || !!error" @click="toggleMuted">{{ muted ? '开启声音' : '静音' }}</button>
       </div>
     </template>
   </div>

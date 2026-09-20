@@ -1,15 +1,22 @@
 <script setup>
 import CodeTabs from './CodeTabs.vue'
 import LiveScene from './LiveScene.vue'
-import { galleryById } from '../docs/catalog.js'
+import { scenes } from '../scenes/index.js'
+import { javascriptSource, pythonSource } from '../docs/sources.js'
 
 defineProps({
   page: { type: Object, required: true },
   navigate: { type: Function, required: true },
 })
 
+const sceneById = new Map(scenes.map((item) => [item.id, item]))
+
 function isExternal(url) {
   return /^https?:\/\//.test(url)
+}
+
+function sceneItem(id) {
+  return sceneById.get(id) ?? null
 }
 </script>
 
@@ -49,9 +56,27 @@ function isExternal(url) {
         max-height="18rem"
       />
 
+      <template v-if="section.demo && sceneItem(section.demo)">
+        <div class="tutorial-demo-head">
+          <span :class="['tutorial-demo-badge', sceneItem(section.demo).static ? 'is-static' : 'is-timeline']">
+            {{ sceneItem(section.demo).static ? '静态 Scene · 无时间线' : '时间轴示例' }}
+          </span>
+          <span>{{ sceneItem(section.demo).title }}</span>
+        </div>
+
+        <LiveScene :item="sceneItem(section.demo)" compact />
+
+        <CodeTabs
+          v-if="section.demoCode !== false"
+          :python="pythonSource(sceneItem(section.demo))"
+          :js="javascriptSource(sceneItem(section.demo))"
+          max-height="30rem"
+        />
+      </template>
+
       <LiveScene
-        v-if="section.scene && galleryById.get(section.scene)"
-        :item="galleryById.get(section.scene)"
+        v-else-if="section.scene && sceneItem(section.scene)"
+        :item="sceneItem(section.scene)"
         compact
       />
 

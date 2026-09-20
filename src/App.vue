@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import DocPage from './components/DocPage.vue'
 import GalleryPage from './components/GalleryPage.vue'
-import { galleryGroups, galleryItems } from './docs/catalog.js'
+import { galleryCollections, galleryItems } from './docs/catalog.js'
 import { navGroups, pageFor, pages } from './docs/content.js'
 
 const route = ref('/')
@@ -18,8 +18,10 @@ function parseHash() {
   routeAnchor.value = anchor
   mobileOpen.value = false
   nextTick(() => {
-    if (anchor) document.getElementById(anchor)?.scrollIntoView({ block: 'start' })
-    else window.scrollTo({ top: 0 })
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (anchor) document.getElementById(anchor)?.scrollIntoView({ block: 'start' })
+      else window.scrollTo({ top: 0 })
+    }))
   })
 }
 
@@ -33,7 +35,7 @@ function navigate(path) {
 
 const activePage = computed(() => pageFor(route.value))
 const tocItems = computed(() => {
-  if (route.value === '/gallery') return galleryGroups.map((group) => [group.id, group.title])
+  if (route.value === '/gallery') return galleryCollections.map((collection) => ['collection-' + collection.id, collection.title])
   return (activePage.value.sections ?? []).map((section) => [section.id, section.title])
 })
 

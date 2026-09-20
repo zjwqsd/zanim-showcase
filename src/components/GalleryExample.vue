@@ -8,10 +8,10 @@ defineProps({ item: { type: Object, required: true } })
 
 <template>
   <article :id="item.id" class="gallery-example">
-    <h3>
+    <h4>
       <span class="heading-anchor" aria-hidden="true">#</span>
-      示例：{{ item.titleZh }}
-    </h3>
+      {{ item.titleZh }}
+    </h4>
     <p class="gallery-description">{{ item.description }}</p>
 
     <LiveScene :item="item" />
@@ -28,8 +28,9 @@ defineProps({ item: { type: Object, required: true } })
     />
 
     <p class="example-source-links">
-      <a v-if="githubPythonUrl(item)" :href="githubPythonUrl(item)" target="_blank" rel="noreferrer">Python 源文件 ↗</a>
-      <a :href="githubWebUrl(item)" target="_blank" rel="noreferrer">Web 实现 ↗</a>
+      <a v-if="item.upstreamUrl" :href="item.upstreamUrl" target="_blank" rel="noreferrer">官方示例 ↗</a>
+      <a v-if="githubPythonUrl(item)" :href="githubPythonUrl(item)" target="_blank" rel="noreferrer">完整 Python 源文件 ↗</a>
+      <a :href="githubWebUrl(item)" target="_blank" rel="noreferrer">完整 Web 源文件 ↗</a>
     </p>
 
     <p class="references">

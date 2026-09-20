@@ -1,3 +1,6 @@
+import { tutorialScenes } from './tutorial.js'
+import { createDynamicMatrixProduct } from './mathMatrices.js'
+import { manimScenes } from './manim.js'
 import { neuralForwardPass } from './neuralForwardPass.js'
 import { janimScenes } from './janim.js'
 import {
@@ -666,7 +669,6 @@ async function complexMapping(canvas){
 
 async function mathShowcase(canvas) {
   const scene = await makeScene(canvas, { width: 1920, height: 1080, unitSize: 105 })
-  const matrixTicks = await fetch(asset('math-matrices.json')).then((r) => r.json())
   const formulaSource = 'f(x) = 1.2 + 0.5 sin(1.2 x) + 0.055 x^2'
   const integralSource = 'integral_a^b f(x) dif x'
   const formula = new ZMath(formulaSource, { fontSize: 30, color: '#f0f2f8', transform: T(3.7, 2.35) })
@@ -728,24 +730,7 @@ async function mathShowcase(canvas) {
   const upperNumber = new DynamicNumber((time) => hi(time), { digits: 1, fontSize: 20, color: '#52dcb4', transform: T(2.78, 2.18), zIndex: 8 })
   const integralNumber = new DynamicNumber((time) => integralValue(time), { digits: 3, fontSize: 25, color: '#ffdc91', transform: T(5.35, 1.47), zIndex: 8 })
 
-  const matrixItems = (time) => {
-    const tick = globalThis.Math.max(0, globalThis.Math.min(matrixTicks.length - 1, globalThis.Math.floor(globalThis.Math.max(0, time - 0.4) * 3)))
-    const { a, b, c } = matrixTicks[tick]
-    const items = []
-    const emitMatrix = (matrix, cx, color, cell = 0.48) => {
-      for (let r = 0; r < 2; r++) for (let col = 0; col < 2; col++) {
-        items.push([cx + (col - 0.5) * cell, -0.94 - r * 0.50, String(matrix[r][col]), color, 31, 500])
-      }
-      items.push([cx - 0.64, -1.19, '[', MUTED, 50, 300], [cx + 0.64, -1.19, ']', MUTED, 50, 300])
-    }
-    emitMatrix(a, 1.95, WHITE)
-    items.push([2.93, -1.19, '×', MUTED, 27, 400])
-    emitMatrix(b, 3.78, WHITE)
-    items.push([4.75, -1.19, '=', MUTED, 27, 400])
-    emitMatrix(c, 5.72, '#ffb166', 0.55)
-    return items
-  }
-  const matrices = new DynamicTextSet(matrixItems, { fontFamily: 'ui-monospace, SFMono-Regular, monospace', zIndex: 9 })
+  const matrices = await createDynamicMatrixProduct({ transform: T(3.85, -1.15), zIndex: 9 })
 
   const progressNumber = new DynamicNumber(progress, { digits: 1, suffix: '%', fontSize: 23, color: '#ffdc91', transform: T(5.05, -3.25) })
   const progressLabel = new Text('ScalarValue → DynamicNumber', { fontSize: 18, color: '#96a2bc', transform: T(3.65, -2.95) })
@@ -770,7 +755,7 @@ export const scenes = [
   { id:'infinite', title:'Infinite linear algebra', source:'showcase/infinite_space.py', width:1280, height:720, builder:infiniteSpace },
   { id:'interactive-linear', title:'Interactive linear algebra', source:'Web interaction lab', width:1280, height:720, interactive:'linear-algebra', note:'Pointer-driven retained Scene state; no authored timeline.' },
   { id:'math', title:'Math + dynamic geometry', source:'showcase/math.py', width:1920, height:1080, builder:mathShowcase, note:'Math is precompiled to SVG automatically by @zanim/web/vite; the production browser only loads the generated vector asset.' },
-  { id:'media', title:'External media', source:'showcase/media.py', width:1280, height:720, builder:media },
+  { id:'media', title:'External media', source:'showcase/media.py', width:1280, height:720, builder:media, hasAudio:true },
   { id:'vectors', title:'Vector document', source:'showcase/vectors.py', width:1280, height:720, builder:vectors },
   { id:'fourier', title:'Fourier drawing', source:'extras/fourier_draw.py', width:1920, height:1080, builder:fourierDraw, note:'The browser fetches assets/fourier_heart.svg, samples the closed path, computes the DFT, and feeds FourierEpicycles directly.' },
   { id:'hilbert', title:'Hilbert curve', source:'extras/hilbert_curve.py', width:1280, height:960, builder:hilbert },
@@ -789,5 +774,7 @@ export const scenes = [
   { id:'three-d', title:'3D Scene', source:'showcase/three_d.py', width:1280, height:720, builder:threeDShowcaseScene },
   { id:'neural-forward-demo', title:'Neural forward demo', source:'extras/neural_forward_demo.py', width:1920, height:1080, builder:neuralForwardPass, note:'Alternative Python implementation of the same 10-second forward-pass visual study.' },
   { id:'neural-forward', title:'Neural forward pass', source:'extras/neural_forward_pass.py', width:1920, height:1080, builder:neuralForwardPass, note:'Faithful 10 s port of the uploaded Manim demo: identical point cloud, weights, sample, nonlinear geometry and signal timing.' },
+  ...tutorialScenes,
+  ...manimScenes,
   ...janimScenes,
 ]
