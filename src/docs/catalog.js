@@ -64,9 +64,9 @@ const manimZh = {
   'manim-logo': ['ManimCELogo', '复刻 Manim Community Logo 的基础几何组合。'],
   'manim-brace': ['BraceAnnotation', '线段、端点与 brace 风格标注。'],
   'manim-vector': ['VectorArrow', '坐标平面、向量和端点标签。'],
-  'manim-gradient': ['GradientImageFromArray', '用批量矩形重现数组生成的灰度渐变。'],
+  'manim-gradient': ['GradientImageFromArray', '用真实栅格图像重现数组生成的灰度渐变。'],
   'manim-boolean': ['BooleanOperations', '用重叠几何展示 Intersection / Union / Difference / Exclusion 的视觉语义。'],
-  'manim-point-shapes': ['PointMovingOnShapes', '点依次沿直线、圆与折线路径运动。'],
+  'manim-point-shapes': ['PointMovingOnShapes', '点先平移到圆周，随后沿圆运动，并绕指定点旋转。'],
   'manim-moving-around': ['MovingAround', '组合平移、旋转与缩放。'],
   'manim-angle': ['MovingAngle', '标量驱动的动态射线和角度弧。'],
   'manim-dots': ['MovingDots', '两个动态点与实时更新的连接线。'],
@@ -143,18 +143,19 @@ const janimGroups = [
   { id: 'janim-3d', title: '3D', intro: 'Torus / Cylinder / Cone 的多种显示风格。', ids: ['janim-3d-shapes'] },
 ]
 
+export const manimCollection = {
+  id: 'manim',
+  title: 'Manim Example Gallery 复刻',
+  intro: '按 Manim Community v0.21.0 官方 Example Gallery 的五个分区整理，共 27 个条目；用 Zanim Web runtime 重新实现对应视觉目标。',
+  groups: manimGroups,
+}
+
 export const galleryCollections = [
   {
     id: 'zanim',
     title: 'Zanim 原生示例',
     intro: 'Zanim 自己设计的教程型与能力型 examples，优先展示状态模型、绝对时间、批量几何、数学可视化和 3D。',
     groups: zanimGroups,
-  },
-  {
-    id: 'manim',
-    title: 'Manim Example Gallery 复刻',
-    intro: '按 Manim Community v0.21.0 官方 Example Gallery 的五个分区整理，共 27 个条目；用 Zanim Web runtime 重新实现对应视觉目标。',
-    groups: manimGroups,
   },
   {
     id: 'janim',
@@ -164,7 +165,9 @@ export const galleryCollections = [
   },
 ]
 
-export const galleryGroups = galleryCollections.flatMap((collection) =>
+const catalogCollections = [...galleryCollections, manimCollection]
+
+export const galleryGroups = catalogCollections.flatMap((collection) =>
   collection.groups.map((group) => ({ ...group, collection: collection.id, collectionTitle: collection.title })),
 )
 

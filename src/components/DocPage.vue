@@ -25,6 +25,34 @@ function sceneItem(id) {
     <h1>{{ page.title }}</h1>
     <p v-if="page.lead" class="lead">{{ page.lead }}</p>
 
+    <nav v-if="page.quickLinks" class="home-route-grid" aria-label="Quick links">
+      <template v-for="item in page.quickLinks" :key="item.url">
+        <a
+          v-if="isExternal(item.url)"
+          class="home-route-card"
+          :href="item.url"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span class="home-route-meta">{{ item.meta }}</span>
+          <strong>{{ item.title }}</strong>
+          <p>{{ item.body }}</p>
+          <span class="home-route-arrow">↗</span>
+        </a>
+        <a
+          v-else
+          class="home-route-card"
+          href="#"
+          @click.prevent="navigate(item.url)"
+        >
+          <span class="home-route-meta">{{ item.meta }}</span>
+          <strong>{{ item.title }}</strong>
+          <p>{{ item.body }}</p>
+          <span class="home-route-arrow">→</span>
+        </a>
+      </template>
+    </nav>
+
     <section v-for="section in page.sections" :id="section.id" :key="section.id" class="doc-section">
       <h2>
         <span class="heading-anchor" aria-hidden="true">#</span>

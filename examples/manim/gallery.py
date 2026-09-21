@@ -1,345 +1,1235 @@
 """Zanim ports of Manim Community v0.21.0 Example Gallery.
 
-Shared helpers stay at module scope so the showcase can display each Scene body
-without repeating imports and boilerplate.
+Zanim style is kept intentionally: setup() owns object construction and layout;
+construct() only authors lifetime and timeline behavior.
 """
+
 from __future__ import annotations
 from math import cos, sin, pi
+from pathlib import Path
 
-from zanim import (
-    BLUE, CYAN, GREEN, ORANGE, PINK, PURPLE, RED, WHITE, YELLOW, TAU, PI, WORLD, Color,
-    Arrow, Box3D, Camera3D, Canvas, Circle, Easing, Group, InfiniteGrid,
-    Line, Polygon, Polyline, Rectangle, Scene, Square, Text, Transform3D,
-    Vec2, Vec3, affine2d,
-)
+from zanim import *
 
 CANVAS = Canvas(1280, 720, 90)
+MANIM_ASSETS = Path(__file__).resolve().parents[2] / "public" / "assets" / "manim"
 
-def header(title):
-    return Text(title, font_size=31, transform=affine2d(position=(0, 3.25)))
 
 def dot(x, y, color=WHITE, radius=0.09):
     return Circle(radius, position=(x, y), fill=color, stroke=None)
 
+
 def path(points, color=CYAN, width=0.03, trim=1.0):
     return Polyline(tuple(Vec2(*p) for p in points), stroke=color, stroke_width=width, trim=trim)
 
+
+def Rotating(obj, *, about_point, run_time=1.0):
+    """Manim-gallery compatibility helper; not part of Zanim's public API."""
+    return obj.rotate(
+        by=TAU,
+        about=about_point,
+        duration=run_time,
+        easing=Easing.LINEAR,
+    )
+
+
 class ManimCELogo(Scene):
     def setup(self):
-        self.canvas = CANVAS
-        self.parts = (
-            Circle(1.08, position=(-1.2, -0.15), fill=Color(135,194,165), stroke=None),
-            Square(2.0, position=(0.05, 0.86), fill=Color(82,88,147), stroke=None),
-            Polygon((Vec2(0, -1.05), Vec2(1.25, 1), Vec2(-1.25, 1)),
-                    position=(1.2, -0.12), fill=Color(224,122,95), stroke=None),
-            Text("M", font_size=102, color=Color(236,230,226),
-                 transform=affine2d(position=(-1.62, 0.6))),
+        self.canvas = Canvas(1280, 720, 90, background=Color(236, 230, 226))
+        logo_green = Color(135, 194, 165)
+        logo_blue = Color(82, 88, 147)
+        logo_red = Color(224, 122, 95)
+        logo_black = Color(52, 52, 52)
+
+        ds_m = Math(
+            "bb(M)",
+            font_size=250,
+            color=logo_black,
+            transform=affine2d(position=(-2.25, 1.5), scale=(1, 1.04)),
         )
+        circle = Circle(1, fill=logo_green, stroke=logo_green)
+        circle.shift(-1, 0)
+        square = Square(2, fill=logo_blue, stroke=logo_blue)
+        square.shift(0, 1)
+        triangle = RegularPolygon(3, 1, fill=logo_red, stroke=logo_red)
+        triangle.shift(1, 0)
+
+        self.logo = Group([triangle, square, circle, ds_m])
+        self.logo.shift(-self.logo.center.x, -self.logo.center.y)
+
     def construct(self):
-        self.add(header("ManimCELogo"), *self.parts)
-        self.wait(4)
+        self.add(self.logo)
+
 
 class BraceAnnotation(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.line = Line((-2.8, -1.15), (2.7, 1.2), stroke=ORANGE, stroke_width=0.05)
-        self.brace = Text("⏞", font_size=78, transform=affine2d(position=(0, -1.18), rotation=0.42))
-        self.label = Text("Horizontal distance", font_size=21, transform=affine2d(position=(0, -1.75)))
+        a, b = Vec2(-2, -1), Vec2(2, 1)
+        self.line = Line(a, b, stroke=ORANGE)
+
+        line_direction = (b - a).normalized()
+        normal = Vec2(-line_direction.y, line_direction.x)
+        self.lower = Brace(self.line)
+        self.upper = Brace(self.line, direction=normal)
+
+        lower_label = self.lower.label_point()
+        upper_label = self.upper.label_point()
+        self.label = Math('"Horizontal distance"', transform=affine2d(position=(lower_label.x, lower_label.y)))
+        self.tex = Math('x - x_1', transform=affine2d(position=(upper_label.x, upper_label.y)))
+        self.dot1 = Dot(a)
+        self.dot2 = Dot(b)
+
     def construct(self):
-        self.add(header("BraceAnnotation"), self.line, dot(-2.8, -1.15, BLUE), dot(2.7, 1.2, GREEN), self.brace, self.label)
-        self.wait(4)
+        self.add(self.line, self.dot1, self.dot2, self.lower, self.upper, self.label, self.tex)
+
 
 class VectorArrow(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.grid = InfiniteGrid(step=0.5, color=BLUE.with_alpha(40), stroke_width=0.012)
-        self.arrow = Arrow(Vec2(0, 0), Vec2(2.5, 2), color=BLUE)
+        self.plane = NumberPlane()
+        self.origin = Dot(ORIGIN)
+        self.arrow = Arrow(ORIGIN, (2, 2), buff=0)
+        self.origin_text = Text("(0, 0)").next_to(self.origin, DOWN)
+        self.tip_text = Text("(2, 2)").next_to(self.arrow.end, RIGHT)
+
     def construct(self):
-        self.add(header("VectorArrow"), self.grid, dot(0, 0), self.arrow)
-        self.wait(4)
+        self.add(self.plane, self.origin, self.arrow, self.origin_text, self.tip_text)
+
 
 class GradientImageFromArray(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.bars = []
-        for i in range(96):
-            v = round(255 * i / 95)
-            self.bars.append(Rectangle(0.07, 3.6, position=(-3.3 + i * 0.07, -0.1), fill=Color(v, v, v, 255), stroke=None))
-        self.border = Rectangle(6.7, 3.7, fill=None, stroke=GREEN, stroke_width=0.045)
+        self.image = Image(MANIM_ASSETS / "gradient.png", width=4)
+        self.border = SurroundingRectangle(self.image, color=GREEN)
+
     def construct(self):
-        self.add(header("GradientImageFromArray"), Group(self.bars), self.border)
-        self.wait(4)
+        self.add(self.image, self.border)
+
 
 class BooleanOperations(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.left_a = Circle(1.45, position=(-3.75, -0.05), fill=BLUE.with_alpha(90), stroke=BLUE, opacity=0)
-        self.left_b = Circle(1.45, position=(-2.15, -0.05), fill=RED.with_alpha(86), stroke=RED, opacity=0)
-        self.source_label = Text("Boolean Operation", font_size=23, opacity=0, transform=affine2d(position=(-2.95, 2.05)))
-        self.results = []
-        for name, x, y, color in (("Intersection",2.1,1.45,GREEN),("Union",4.45,1.45,ORANGE),("Difference",2.1,-1.25,PINK),("Exclusion",4.45,-1.25,YELLOW)):
-            a = Circle(0.58, position=(x-.24,y), fill=color.with_alpha(66), stroke=color, opacity=0)
-            b = Circle(0.58, position=(x+.24,y), fill=color.with_alpha(46), stroke=color, opacity=0)
-            label = Text(name, font_size=16, color=color, opacity=0, transform=affine2d(position=(x,y+.9)))
-            self.results.append((a,b,label))
+
+        manim_blue = Color(88, 196, 221)
+        manim_red = Color(252, 98, 85)
+        manim_green = Color(131, 193, 103)
+        manim_orange = Color(255, 134, 47)
+        manim_yellow = Color(247, 217, 111)
+        manim_pink = Color(209, 71, 189)
+
+        self.ellipse1 = Ellipse(
+            2,
+            2.5,
+            position=(-4, 0),
+            fill=manim_blue.with_alpha(128),
+            stroke=manim_blue,
+            stroke_width=10 / 90,
+            opacity=0,
+        )
+        self.ellipse2 = Ellipse(
+            2,
+            2.5,
+            position=(-2, 0),
+            fill=manim_red.with_alpha(128),
+            stroke=manim_red,
+            stroke_width=10 / 90,
+            opacity=0,
+        )
+
+        self.title = Text('Boolean Operation', font_size=34, opacity=0, transform=affine2d(position=(-3, 3.15)))
+        title_bounds = self.title.bounds()
+        self.underline = Line(
+            (title_bounds.left, title_bounds.bottom - 0.05),
+            (title_bounds.right, title_bounds.bottom - 0.05),
+            stroke=WHITE,
+            opacity=0,
+        )
+
+        self.intersection = Intersection(self.ellipse1, self.ellipse2, color=manim_green, fill_opacity=0.5)
+        self.union = Union(self.ellipse1, self.ellipse2, color=manim_orange, fill_opacity=0.5)
+        self.exclusion = Exclusion(self.ellipse1, self.ellipse2, color=manim_yellow, fill_opacity=0.5)
+        self.difference = Difference(self.ellipse1, self.ellipse2, color=manim_pink, fill_opacity=0.5)
+
+        self.intersection_text = Text(
+            "Intersection",
+            font_size=23,
+            opacity=0,
+            transform=affine2d(position=(5, 3.43)),
+        )
+        self.union_text = Text('Union', font_size=23, opacity=0, transform=affine2d(position=(5, 1.29)))
+        self.exclusion_text = Text('Exclusion', font_size=23, opacity=0, transform=affine2d(position=(5, -1.11)))
+        self.difference_text = Text(
+            "Difference",
+            font_size=23,
+            opacity=0,
+            transform=affine2d(position=(2.5, 1.29)),
+        )
+
     def construct(self):
-        self.add(header("BooleanOperations"), self.left_a, self.left_b, self.source_label, *(o for row in self.results for o in row))
-        left_a, left_b, source_label = self.on(self.left_a), self.on(self.left_b), self.on(self.source_label)
-        with self.parallel(duration=.85):
-            left_a.fade_in(); left_b.fade_in(at=.08); source_label.fade_in(at=.16)
-        self.wait(.2)
-        for a,b,label in self.results:
-            a, b, label = self.on(a), self.on(b), self.on(label)
-            with self.parallel(duration=.62):
-                a.fade_in(); b.fade_in(at=.08); label.fade_in(at=.18)
-            self.wait(.15)
-        with self.parallel(duration=.55):
-            left_a.scale(by=.78,frame=WORLD); left_b.scale(by=.78,frame=WORLD)
-        with self.parallel(duration=.35):
-            left_a.rotate(by=-.18,frame=WORLD); left_b.rotate(by=.18,frame=WORLD)
-        self.wait(.55)
+        ellipse1, ellipse2, title, underline = self.add(self.ellipse1, self.ellipse2, self.title, self.underline)
+        with self.parallel(duration=1):
+            ellipse1.fade_in()
+            ellipse2.fade_in()
+            title.fade_in()
+            underline.fade_in()
+
+        intersection = self.add(self.intersection)
+        intersection.affine(position=(5, 2.5), scale=0.25, duration=1)
+        intersection_text = self.add(self.intersection_text)
+        intersection_text.fade_in(duration=1)
+
+        union = self.add(self.union)
+        union.affine(position=(5, 0.15), scale=0.30, duration=1)
+        union_text = self.add(self.union_text)
+        union_text.fade_in(duration=1)
+
+        exclusion = self.add(self.exclusion)
+        exclusion.affine(position=(5, -2.25), scale=0.30, duration=1)
+        exclusion_text = self.add(self.exclusion_text)
+        exclusion_text.fade_in(duration=1)
+
+        difference = self.add(self.difference)
+        difference.affine(position=(2.5, 0.15), scale=0.30, duration=1)
+        difference_text = self.add(self.difference_text)
+        difference_text.fade_in(duration=1)
+
 
 class PointMovingOnShapes(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.circle = Circle(1.35, stroke=GREEN, fill=None)
-        self.marker = dot(-4.7, -1.1, YELLOW, .12)
+        self.circle = Circle(1, stroke=BLUE, scale=0)
+        self.dot = Dot()
+        self.line = Line((3, 0), (5, 0))
+
     def construct(self):
-        marker = self.add(self.marker)
-        self.add(header("PointMovingOnShapes"), Line((-4.7,-1.1),(-2.7,1.1),stroke=BLUE), self.circle)
-        marker.move(by=(2.0,2.2), frame=WORLD, duration=1)
-        marker.transform_function(lambda a: affine2d(position=(1.35*cos(TAU*a),1.35*sin(TAU*a))), duration=2, easing=Easing.LINEAR)
-        marker.transform_function(lambda a: affine2d(position=(3.5+cos(TAU*a),-.25+sin(TAU*a))), duration=2, easing=Easing.LINEAR)
-        self.wait(.5)
+        dot, line, circle = self.add(self.dot, self.line, self.circle)
+
+        circle.affine(position=(0, 0), scale=1, duration=1, easing=Easing.SMOOTH)
+        dot.move(by=RIGHT, frame=WORLD, duration=1, easing=Easing.SMOOTH)
+        dot.move_along(circle, duration=2, easing=Easing.LINEAR)
+        Rotating(dot, about_point=(2, 0), run_time=1.5)
+        self.wait()
+
 
 class MovingAround(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.square = Square(1.5, fill=BLUE.with_alpha(160), stroke=BLUE)
+        blue = Color(88, 196, 221)
+        self.orange = Color(255, 134, 47)
+        self.square = Square(2, fill=blue, stroke=blue)
+
     def construct(self):
-        square = self.add(self.square); self.add(header("MovingAround"))
-        square.move(by=(-2.8,.4), frame=WORLD, duration=1)
-        square.paint(fill=ORANGE.with_alpha(180), stroke=ORANGE, duration=1)
-        square.scale(by=.3, frame=WORLD, duration=1)
-        square.rotate(by=.4, frame=WORLD, duration=1)
+        square = self.add(self.square)
+        square.move(by=(-1, 0), frame=WORLD)
+        square.paint(fill=self.orange, stroke=Color(88, 196, 221))
+        square.scale(by=0.3, frame=WORLD)
+        square.rotate(by=0.4, frame=WORLD)
+
 
 class MovingAngle(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.ray = Line((-3.4,0),(-3.4+5.1*cos(110*pi/180),5.1*sin(110*pi/180)),stroke=BLUE,stroke_width=.045)
-        self.theta = Text("θ",font_size=28,color=YELLOW,transform=affine2d(position=(-2.48,.62)))
+        self.center = Vec2(-1, 0)
+        self.theta_value = ScalarValue(110 * pi / 180)
+
+        def ray_geometry(time):
+            angle = self.theta_value.value_at(time)
+            return Line(
+                self.center,
+                (
+                    self.center.x + 2 * cos(angle),
+                    self.center.y + 2 * sin(angle),
+                ),
+            ).geometry
+
+        def arc_geometry(time):
+            angle = self.theta_value.value_at(time)
+            return Arc(0.5, 0, angle).geometry
+
+        self.base = Line((-1, 0), (1, 0), stroke=WHITE)
+        self.ray = DynamicGeometryObject2D(ray_geometry, style=Style.outline(WHITE))
+        self.arc = DynamicGeometryObject2D(
+            arc_geometry,
+            style=Style.outline(WHITE),
+            transform=affine2d(position=(self.center.x, self.center.y)),
+        )
+
+        initial = 110 * pi / 180
+        q = initial * 0.5
+        self.theta = Math(
+            "theta",
+            transform=affine2d(
+                position=(
+                    self.center.x + 0.8 * cos(q),
+                    self.center.y + 0.8 * sin(q),
+                )
+            ),
+        )
+        self.theta_red = Math("theta", color=RED)
+
+    def _theta_transform(self, start_angle, end_angle):
+        def provider(alpha):
+            angle = start_angle + (end_angle - start_angle) * alpha
+            q = angle * 0.5
+            return affine2d(
+                position=(
+                    self.center.x + 0.8 * cos(q),
+                    self.center.y + 0.8 * sin(q),
+                )
+            )
+
+        return provider
+
     def construct(self):
-        ray,theta = self.add(self.ray,self.theta)
-        self.add(header("MovingAngle"),Line((-3.4,0),(3.4,0),stroke=WHITE))
-        self.wait(.5)
-        ray.rotate(by=-70*pi/180, about=Vec2(-3.4,0), duration=1)
-        ray.rotate(by=140*pi/180, about=Vec2(-3.4,0), duration=1)
-        theta.opacity(to=.45, duration=.25); theta.opacity(to=1, duration=.25)
-        ray.rotate(by=170*pi/180, about=Vec2(-3.4,0), duration=1.2)
+        tracker = self.add(self.theta_value)
+        ray, arc, theta = self.add(self.ray, self.arc, self.theta)
+        self.add(self.base)
+
+        self.wait()
+
+        with self.parallel(duration=1):
+            tracker.value(to=40 * pi / 180)
+            theta.transform_function(self._theta_transform(110 * pi / 180, 40 * pi / 180))
+
+        with self.parallel(duration=1):
+            tracker.value(to=180 * pi / 180)
+            theta.transform_function(self._theta_transform(40 * pi / 180, 180 * pi / 180))
+
+        theta.morph(to=self.theta_red, duration=0.5)
+
+        with self.parallel(duration=1):
+            tracker.value(to=350 * pi / 180)
+            theta.transform_function(self._theta_transform(180 * pi / 180, 350 * pi / 180))
+
 
 class MovingDots(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.d1 = dot(-.5,0,BLUE,.12); self.d2 = dot(.5,0,GREEN,.12)
+        self.d1 = dot(0, 0, BLUE, 0.08)
+        self.d2 = dot(0.58, 0, GREEN, 0.08)
+        self.line = Line((0, 0), (0.58, 0), stroke=RED)
+
     def construct(self):
-        d1,d2 = self.add(self.d1,self.d2)
-        self.add(header("MovingDots"), Line((-.5,0),(.5,0),stroke=RED))
-        d1.move(by=(5,0),frame=WORLD,duration=1.5); d2.move(by=(0,4),frame=WORLD,duration=1.5); self.wait(.5)
+        d1, d2, line = self.add(self.d1, self.d2, self.line)
+        d1.move(by=(5, 0), frame=WORLD)
+        d2.move(by=(0, 4), frame=WORLD)
+        self.wait()
+
 
 class MovingGroupToDestination(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.group = Group([Circle(.55,position=(-.75,0),fill=BLUE), Square(1,position=(.75,0),fill=GREEN)])
-        self.target = Rectangle(3.4,1.8,position=(3.2,.3),fill=None,stroke=WHITE)
+        self.group = Group([dot(-1.4, 0), dot(0, 0), dot(1.4, 0, RED), dot(2.8, 0)])
+        self.dest = dot(4, 3, YELLOW)
+
     def construct(self):
-        group = self.add(self.group); self.add(header("MovingGroupToDestination"),self.target)
-        group.move(by=(3.2,.3),frame=WORLD,duration=2); group.rotate(by=PI/3,frame=WORLD,duration=1.2); self.wait(.5)
+        group = self.add(self.group)
+        self.add(self.dest)
+        group.move(by=(2.6, 3), frame=WORLD)
+        self.wait(0.5)
+
 
 class MovingFrameBox(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.text = Text("d/dx [f(x)g(x)] = f(x)g′(x) + g(x)f′(x)", font_size=30, opacity=0)
-        self.box = Rectangle(2.3,.9,position=(1.0,0),fill=None,stroke=YELLOW,opacity=0)
+
+        self.left = Math('(d)/(d x) f(x) g(x) =', font_size=38, reveal=0)
+        self.mid = Math('f(x) (d)/(d x) g(x)', font_size=38, reveal=0)
+        self.plus = Math('+', font_size=38, reveal=0)
+        self.right = Math('g(x) (d)/(d x) f(x)', font_size=38, reveal=0)
+
+        Row(gap=0.04, at=(0, 0)).place(self.left, self.mid, self.plus, self.right)
+
+        self.framebox1 = SurroundingRectangle(self.mid, buff=0.1, trim=0)
+        self.framebox2 = SurroundingRectangle(self.right, buff=0.1)
+
     def construct(self):
-        text,box = self.add(self.text,self.box); self.add(header("MovingFrameBox"))
-        text.fade_in(duration=.7); box.fade_in(duration=.6); self.wait(.6)
-        box.move(by=(3.1,0),frame=WORLD,duration=1); self.wait(.6)
+        left, mid, plus, right = self.add(self.left, self.mid, self.plus, self.right)
+        with self.parallel(duration=1):
+            left.create()
+            mid.create()
+            plus.create()
+            right.create()
+
+        framebox1 = self.add(self.framebox1)
+        framebox1.create(duration=1)
+        self.wait()
+
+        self.replace(framebox1, self.framebox2, duration=1)
+        self.wait()
+
 
 class RotationUpdater(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.line = Line((0,0),(3.1,0),stroke=BLUE,stroke_width=.055)
+        self.reference = Line((0, 0), (-1, 0), stroke=WHITE)
+        self.moving = Line((0, 0), (-1, 0), stroke=YELLOW)
+
     def construct(self):
-        line = self.add(self.line); self.add(header("RotationUpdater"))
-        line.transform_function(lambda a: affine2d(rotation=TAU*1.4*a),duration=5,easing=Easing.LINEAR)
+        moving = self.add(self.moving)
+        self.add(self.reference)
+        moving.rotate(by=2, about=(0, 0), frame=WORLD, duration=2, easing=Easing.LINEAR)
+        moving.rotate(by=-2, about=(0, 0), frame=WORLD, duration=2, easing=Easing.LINEAR)
+        self.wait(0.5)
+
 
 class PointWithTrace(Scene):
     def setup(self):
         self.canvas = CANVAS
-        pts=[(-4+i*.04,1.7*sin(i*.07)) for i in range(200)]
-        self.trace = path(pts,CYAN,.045,trim=0)
-        self.point = dot(-4,0,YELLOW,.11)
+        self.dot = dot(0, 0, WHITE, 0.08)
+
     def construct(self):
-        trace,point = self.add(self.trace,self.point); self.add(header("PointWithTrace"))
-        with self.parallel(duration=4.5):
-            trace.create(easing=Easing.LINEAR)
-            point.move(by=(7.9,0),frame=WORLD)
-        self.wait(.5)
+        dot_obj = self.add(self.dot)
+        dot_obj.rotate(by=PI, about=(1, 0), frame=WORLD, duration=2)
+        self.wait()
+        dot_obj.move(by=(0, 1), frame=WORLD)
+        dot_obj.move(by=(-1, 0), frame=WORLD)
+        self.wait()
+
 
 class SinAndCosFunctionPlot(Scene):
     def setup(self):
         self.canvas = CANVAS
-        xs=[-8+16*i/299 for i in range(300)]
-        self.sin_curve=path([(x*.62,sin(x)*1.35) for x in xs],BLUE,.035)
-        self.cos_curve=path([(x*.62,cos(x)*1.35) for x in xs],RED,.035)
+        blue = Color(88, 196, 221)
+        red = Color(252, 98, 85)
+        green = Color(131, 193, 103)
+        yellow = Color(247, 217, 111)
+
+        self.axes_model = Axes((-10, 10.3), (-1.5, 1.5), width=10, height=6)
+
+        axis_parts = [
+            Line(
+                self.axes_model.c2p(-10, 0),
+                self.axes_model.c2p(10.3, 0),
+                stroke=green,
+                stroke_width=0.026,
+            ),
+            Line(
+                self.axes_model.c2p(0, -1.5),
+                self.axes_model.c2p(0, 1.5),
+                stroke=green,
+                stroke_width=0.026,
+            ),
+        ]
+        for x in range(-10, 11):
+            q = self.axes_model.c2p(x, 0)
+            size = 0.13 if x % 2 == 0 else 0.07
+            axis_parts.append(Line((q.x, q.y - size), (q.x, q.y + size), stroke=green, stroke_width=0.022))
+        for y in (-1, 0, 1):
+            q = self.axes_model.c2p(0, y)
+            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=green, stroke_width=0.022))
+        self.axes = Group(axis_parts)
+
+        self.sin_curve = self.axes_model.plot(sin, x_range=(-10, 10.3), color=blue)
+        self.cos_curve = self.axes_model.plot(cos, x_range=(-10, 10.3), color=red)
+
+        tau_point = self.axes_model.c2p(TAU, cos(TAU))
+        tau_base = self.axes_model.c2p(TAU, 0)
+        self.tau_line = Line(tau_base, tau_point, stroke=yellow, stroke_width=0.03)
+
+        labels = []
+        for x in range(-10, 11, 2):
+            if x == 0:
+                continue
+            q = self.axes_model.c2p(x, 0)
+            labels.append(Math(str(x), font_size=24, transform=affine2d(position=(q.x, q.y - 0.38))))
+
+        x_end = self.axes_model.c2p(10.3, 0)
+        y_end = self.axes_model.c2p(0, 1.5)
+        sin_point = self.axes_model.c2p(-10, sin(-10))
+        cos_point = self.axes_model.c2p(10.3, cos(10.3))
+        labels.extend(
+            [
+                Math(
+                    "x",
+                    font_size=32,
+                    transform=affine2d(position=(x_end.x + 0.42, x_end.y + 0.42)),
+                ),
+                Math(
+                    "y",
+                    font_size=32,
+                    transform=affine2d(position=(y_end.x + 0.32, y_end.y + 0.25)),
+                ),
+                Math(
+                    "sin(x)",
+                    font_size=38,
+                    color=blue,
+                    transform=affine2d(position=(sin_point.x, sin_point.y + 0.42)),
+                ),
+                Math(
+                    "cos(x)",
+                    font_size=38,
+                    color=red,
+                    transform=affine2d(position=(cos_point.x + 1.05, cos_point.y)),
+                ),
+                Math(
+                    "x = 2 pi",
+                    font_size=34,
+                    transform=affine2d(position=(tau_point.x + 1.05, tau_point.y + 0.40)),
+                ),
+            ]
+        )
+        self.labels = Group(labels)
+
     def construct(self):
-        self.add(header("SinAndCosFunctionPlot"),InfiniteGrid(step=1,color=BLUE.with_alpha(30)),self.sin_curve,self.cos_curve)
-        self.wait(4)
+        self.add(self.axes, self.sin_curve, self.cos_curve, self.tau_line, self.labels)
+
 
 class ArgMinExample(Scene):
     def setup(self):
         self.canvas = CANVAS
-        xs=[i*10/220 for i in range(221)]
-        self.curve=path([(-4.8+x*.96,-1.8+2*(x-5)**2*.037) for x in xs],PINK,.035)
-        self.point=dot(-4.8,-1.8+50*.037,YELLOW,.11)
+        self.ax = Axes((0, 10), (0, 100), width=12, height=6)
+        self.tracker = ScalarValue(0)
+        self.maroon = Color(197, 95, 115)
+
+        def func(x):
+            return 2 * (x - 5) ** 2
+
+        self.func = func
+        self.graph = self.ax.plot(func, x_range=(0, 10), color=self.maroon)
+
+        axis_parts = [
+            Line(self.ax.c2p(0, 0), self.ax.c2p(10, 0), stroke=WHITE, stroke_width=0.026),
+            Line(self.ax.c2p(0, 0), self.ax.c2p(0, 100), stroke=WHITE, stroke_width=0.026),
+        ]
+        for x in range(11):
+            q = self.ax.c2p(x, 0)
+            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+        for y in range(0, 101, 10):
+            q = self.ax.c2p(0, y)
+            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+        self.axes = Group(axis_parts)
+
+        x_end = self.ax.c2p(10, 0)
+        y_end = self.ax.c2p(0, 100)
+        self.labels = Group(
+            [
+                Math("x", font_size=32, transform=affine2d(position=(x_end.x + 0.32, x_end.y + 0.18))),
+                Math("f(x)", font_size=32, transform=affine2d(position=(y_end.x + 0.45, y_end.y + 0.28))),
+            ]
+        )
+
+        def dot_geometry(time):
+            x = self.tracker.value_at(time)
+            p = self.ax.c2p(x, func(x))
+            r = 0.08
+            return Polygon(
+                [(p.x + r * cos(TAU * i / 24), p.y + r * sin(TAU * i / 24)) for i in range(24)]
+            ).geometry
+
+        self.dot = DynamicGeometryObject2D(dot_geometry, style=Style.solid(WHITE), z_index=10)
+
     def construct(self):
-        point=self.add(self.point); self.add(header("ArgMinExample"),self.curve)
-        point.move(by=(4.8,-50*.037),frame=WORLD,duration=2.8); self.wait(.7)
+        tracker = self.add(self.tracker)
+        self.add(self.axes, self.labels, self.graph, self.dot)
+        tracker.value(to=5, duration=1, easing=Easing.SMOOTH)
+        self.wait()
+
 
 class GraphAreaPlot(Scene):
     def setup(self):
         self.canvas = CANVAS
-        xs=[4*i/180 for i in range(181)]
-        self.f1=path([(-4.5+x*1.7,-2.1+(4*x-x*x)*.7) for x in xs],BLUE,.035)
-        self.f2=path([(-4.5+x*1.7,-2.1+(.8*x*x-3*x+4)*.7) for x in xs],GREEN,.035)
+        self.ax = Axes((0, 5), (0, 6), width=12, height=6)
+        blue_c = Color(88, 196, 221)
+        green_b = Color(166, 207, 140)
+        yellow = Color(255, 255, 0)
+
+        def f1(x):
+            return 4 * x - x * x
+
+        def f2(x):
+            return 0.8 * x * x - 3 * x + 4
+
+        axis_parts = [
+            Line(self.ax.c2p(0, 0), self.ax.c2p(5, 0), stroke=WHITE, stroke_width=0.026),
+            Line(self.ax.c2p(0, 0), self.ax.c2p(0, 6), stroke=WHITE, stroke_width=0.026),
+        ]
+        for x in range(6):
+            q = self.ax.c2p(x, 0)
+            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+        for y in range(7):
+            q = self.ax.c2p(0, y)
+            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+        self.axes = Group(axis_parts)
+
+        self.curve1 = self.ax.plot(f1, x_range=(0, 4), color=blue_c)
+        self.curve2 = self.ax.plot(f2, x_range=(0, 4), color=green_b)
+        self.lines = Group(
+            [
+                Line(self.ax.c2p(2, 0), self.ax.c2p(2, f1(2)), stroke=yellow, stroke_width=0.03),
+                Line(self.ax.c2p(3, 0), self.ax.c2p(3, f1(3)), stroke=yellow, stroke_width=0.03),
+            ]
+        )
+
+        rects = []
+        dx = 0.03
+        x = 0.3
+        while x < 0.6 - 1e-9:
+            a = self.ax.c2p(x, 0)
+            b = self.ax.c2p(x + dx, f1(x))
+            rects.append(
+                Rectangle(
+                    abs(b.x - a.x),
+                    abs(b.y - a.y),
+                    position=((a.x + b.x) / 2, (a.y + b.y) / 2),
+                    fill=blue_c.with_alpha(128),
+                    stroke=blue_c,
+                    stroke_width=0.008,
+                )
+            )
+            x += dx
+        self.riemann = Group(rects)
+
+        top = [self.ax.c2p(2 + i / 80, f1(2 + i / 80)) for i in range(81)]
+        bottom = [self.ax.c2p(3 - i / 80, f2(3 - i / 80)) for i in range(81)]
+        self.area = Polygon(
+            [(p.x, p.y) for p in top + bottom],
+            fill=Color(136, 136, 136, 128),
+            stroke=None,
+            z_index=-1,
+        )
+
+        p2, p3 = self.ax.c2p(2, 0), self.ax.c2p(3, 0)
+        x_end, y_end = self.ax.c2p(5, 0), self.ax.c2p(0, 6)
+        self.labels = Group(
+            [
+                Math("2", font_size=24, transform=affine2d(position=(p2.x, p2.y - 0.38))),
+                Math("3", font_size=24, transform=affine2d(position=(p3.x, p3.y - 0.38))),
+                Math("x", font_size=32, transform=affine2d(position=(x_end.x + 0.34, x_end.y + 0.18))),
+                Math("y", font_size=32, transform=affine2d(position=(y_end.x + 0.28, y_end.y + 0.25))),
+            ]
+        )
+
     def construct(self):
-        self.add(header("GraphAreaPlot"),InfiniteGrid(step=1,color=BLUE.with_alpha(25)),self.f1,self.f2)
-        self.wait(4)
+        self.add(self.axes, self.curve1, self.curve2, self.lines, self.riemann, self.area, self.labels)
+
 
 class PolygonOnAxes(Scene):
     def setup(self):
         self.canvas = CANVAS
-        xs=[2.5+(10-2.5)*i/180 for i in range(181)]
-        self.curve=path([(-4.6+x*.72,-2.25+(25/x)*.42) for x in xs],YELLOW,.035)
-        self.point=dot(-1.0,-.15,ORANGE,.11)
-        self.box=Rectangle(2.4,2.0,position=(-3.3,-.8),fill=BLUE.with_alpha(65),stroke=YELLOW)
+        self.ax = Axes((0, 10), (0, 10), width=6, height=6)
+        self.tracker = ScalarValue(5)
+        self.k = 25
+        blue = Color(88, 196, 221)
+        yellow_b = Color(255, 234, 148)
+        yellow_d = Color(244, 211, 69)
+
+        axis_parts = [
+            Line(self.ax.c2p(0, 0), self.ax.c2p(10, 0), stroke=WHITE, stroke_width=0.026),
+            Line(self.ax.c2p(0, 0), self.ax.c2p(0, 10), stroke=WHITE, stroke_width=0.026),
+        ]
+        for x in range(11):
+            q = self.ax.c2p(x, 0)
+            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+        for y in range(11):
+            q = self.ax.c2p(0, y)
+            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+        self.axes = Group(axis_parts)
+
+        self.graph = self.ax.plot(
+            lambda x: self.k / x,
+            x_range=(self.k / 10, 10),
+            samples=420,
+            color=yellow_d,
+        )
+
+        def rect_geometry(time):
+            x = self.tracker.value_at(time)
+            y = self.k / x
+            o = self.ax.c2p(0, 0)
+            p = self.ax.c2p(x, y)
+            return Polygon([(p.x, p.y), (o.x, p.y), (o.x, o.y), (p.x, o.y)]).geometry
+
+        def dot_geometry(time):
+            x = self.tracker.value_at(time)
+            p = self.ax.c2p(x, self.k / x)
+            r = 0.08
+            return Polygon(
+                [(p.x + r * cos(TAU * i / 24), p.y + r * sin(TAU * i / 24)) for i in range(24)]
+            ).geometry
+
+        self.polygon = DynamicGeometryObject2D(
+            rect_geometry,
+            style=Style.paint(blue.with_alpha(128), yellow_b, 1 / 90),
+            opacity=0,
+            z_index=-1,
+        )
+        self.dot = DynamicGeometryObject2D(dot_geometry, style=Style.solid(WHITE), z_index=10)
+
     def construct(self):
-        point,box=self.add(self.point,self.box); self.add(header("PolygonOnAxes"),self.curve)
-        with self.parallel(duration=1.8):
-            point.move(by=(3.4,-.8),frame=WORLD); box.scale(by=1.45,frame=WORLD)
-        with self.parallel(duration=2):
-            point.move(by=(-2.8,1.1),frame=WORLD); box.scale(by=.68,frame=WORLD)
-        self.wait(.4)
+        tracker = self.add(self.tracker)
+        polygon = self.add(self.polygon)
+        self.add(self.axes, self.graph, self.dot)
+        polygon.fade_in(duration=1)
+        tracker.value(to=10, duration=1, easing=Easing.SMOOTH)
+        tracker.value(to=2.5, duration=1, easing=Easing.SMOOTH)
+        tracker.value(to=5, duration=1, easing=Easing.SMOOTH)
+
 
 class HeatDiagramPlot(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.curve=path(((-4.8,1.05),(-2.9,-1.55),(4.1,-1.55),(4.35,-2.2)),BLUE,.05)
+        self.ax = Axes((0, 40), (-8, 32), width=9, height=6)
+        yellow = Color(255, 255, 0)
+
+        axis_parts = [
+            Line(self.ax.c2p(0, 0), self.ax.c2p(40, 0), stroke=WHITE, stroke_width=0.026),
+            Line(self.ax.c2p(0, -8), self.ax.c2p(0, 32), stroke=WHITE, stroke_width=0.026),
+        ]
+        for x in range(0, 41, 5):
+            q = self.ax.c2p(x, 0)
+            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+        for y in range(-5, 31, 5):
+            q = self.ax.c2p(0, y)
+            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+        self.axes = Group(axis_parts)
+
+        values = [(0, 20), (8, 0), (38, 0), (39, -5)]
+        points = [self.ax.c2p(x, y) for x, y in values]
+        self.graph = Polyline([(p.x, p.y) for p in points], stroke=yellow)
+        self.dots = Group([Dot((p.x, p.y), color=yellow) for p in points])
+
+        labels = []
+        for x in range(0, 40, 5):
+            q = self.ax.c2p(x, 0)
+            labels.append(Math(str(x), font_size=24, transform=affine2d(position=(q.x, q.y - 0.38))))
+        for y in range(-5, 31, 5):
+            q = self.ax.c2p(0, y)
+            labels.append(Math(str(y), font_size=24, transform=affine2d(position=(q.x - 0.42, q.y))))
+        x_end, y_end = self.ax.c2p(40, 0), self.ax.c2p(0, 32)
+        labels.extend(
+            [
+                Math("Delta Q", font_size=32, transform=affine2d(position=(x_end.x + 0.55, x_end.y + 0.18))),
+                Math(
+                    "T[degree C]", font_size=32, transform=affine2d(position=(y_end.x + 0.62, y_end.y + 0.25))
+                ),
+            ]
+        )
+        self.labels = Group(labels)
+
     def construct(self):
-        self.add(header("HeatDiagramPlot"),InfiniteGrid(step=.8,color=BLUE.with_alpha(25)),self.curve)
-        self.wait(4)
+        self.add(self.axes, self.graph, self.dots, self.labels)
+
 
 class FollowingGraphCamera(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.curve=path([(-4.5+i*.04,1.2*sin(i*.06)) for i in range(225)],BLUE,.04)
-        self.point=dot(-4.5,0,ORANGE,.12)
+        self.curve = path([(-4.5 + i * 0.04, 1.2 * sin(i * 0.06)) for i in range(225)], BLUE, 0.04)
+        self.point = dot(-4.5, 0, ORANGE, 0.12)
+
     def construct(self):
-        point=self.add(self.point); self.add(header("FollowingGraphCamera"),self.curve)
-        self.camera.affine(position=(-2.5,0),scale=1.7,duration=1)
+        point = self.add(self.point)
+        self.add(self.curve)
+        self.camera.affine(position=(-2.5, 0), scale=1.7, duration=1)
         with self.parallel(duration=4):
-            point.move(by=(8.8,0),frame=WORLD,easing=Easing.LINEAR)
-            self.camera.affine(position=(2.5,0),scale=1.7,easing=Easing.LINEAR)
-        self.camera.affine(position=(0,0),scale=1,duration=1)
+            point.move(by=(8.8, 0), frame=WORLD, easing=Easing.LINEAR)
+            self.camera.affine(position=(2.5, 0), scale=1.7, easing=Easing.LINEAR)
+        self.camera.affine(position=(0, 0), scale=1, duration=1)
+
 
 class MovingZoomedSceneAround(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.image=Rectangle(8.5,4.6,fill=BLUE.with_alpha(50),stroke=None)
-        self.focus=Rectangle(1.5,1,position=(-2.2,.6),fill=None,stroke=YELLOW,opacity=0)
+
+        pixels = (
+            (0, 100, 30, 200),
+            (255, 0, 5, 33),
+        )
+
+        # Child scene sampled by the real secondary viewport.
+        self.zoom_source = Scene(canvas=CANVAS)
+        self.zoom_source.add(ArrayImage(pixels, height=7), Dot((-2, 2), color=WHITE))
+
+        self.image = ArrayImage(pixels, height=7)
+        self.dot = Dot((-2, 2), color=WHITE)
+
+        self.source_frame = Rectangle(
+            1.8,
+            0.3,
+            position=(-2, 2),
+            fill=None,
+            stroke=PURPLE,
+            stroke_width=3 / 90,
+            trim=0,
+            z_index=30,
+        )
+        self.frame_text = Text(
+            "Frame",
+            color=PURPLE,
+            font_size=34,
+            opacity=0,
+            transform=affine2d(position=(-2, 1.55)),
+            z_index=31,
+        )
+
+        def source_center(time):
+            if time <= 7:
+                return (-2, 2)
+            if time >= 8:
+                return (-2, -0.5)
+            a = Easing.SMOOTH.apply(time - 7)
+            return (-2, 2 - 2.5 * a)
+
+        def source_size(time):
+            if time <= 3:
+                return (1.8, 0.3)
+            if time >= 4:
+                return (0.9, 0.45)
+            a = Easing.SMOOTH.apply(time - 3)
+            return (
+                1.8 * (1 - 0.5 * a),
+                0.3 * (1 + 0.5 * a),
+            )
+
+        self.viewport = SceneViewport(
+            self.zoom_source,
+            source_center=source_center,
+            source_size=source_size,
+            width=6,
+            height=1,
+            duration=12,
+            transform=affine2d(position=(-2, 2), scale=0.3),
+            z_index=10,
+        )
+        self.display_frame = Rectangle(
+            6,
+            1,
+            fill=None,
+            stroke=RED,
+            stroke_width=6 / 90,
+            transform=affine2d(position=(-2, 2), scale=0.3),
+            z_index=20,
+        )
+        self.zoom_text = Text(
+            "Zoomed camera",
+            color=RED,
+            font_size=34,
+            opacity=0,
+            transform=affine2d(position=(3.6, 1.15)),
+            z_index=31,
+        )
+
     def construct(self):
-        focus=self.add(self.focus); self.add(header("MovingZoomedSceneAround"),self.image)
-        focus.fade_in(duration=.6); focus.scale(by=.6,frame=WORLD,duration=1)
-        focus.scale(by=2,frame=WORLD,duration=1); focus.move(by=(0,-2.5),frame=WORLD,duration=1)
-        focus.scale(by=.5,frame=WORLD,duration=.8); focus.fade_out(duration=.6)
-        self.wait(.4)
+        image, dot_obj, frame, frame_text = self.add(self.image, self.dot, self.source_frame, self.frame_text)
+
+        # 0..1
+        with self.parallel(duration=1):
+            frame.create()
+            frame_text.fade_in()
+
+        # 1..2
+        viewport, display_frame = self.add(self.viewport, self.display_frame)
+        with self.parallel(duration=1):
+            viewport.affine(position=(3.6, 2), scale=1)
+            display_frame.affine(position=(3.6, 2), scale=1)
+
+        # 2..3
+        zoom_text = self.add(self.zoom_text)
+        zoom_text.fade_in(duration=1)
+
+        # 3..4
+        with self.parallel(duration=1):
+            frame.affine(position=(-2, 2), scale=(0.5, 1.5))
+            viewport.affine(position=(3.6, 2), scale=(0.5, 1.5))
+            display_frame.affine(position=(3.6, 2), scale=(0.5, 1.5))
+            zoom_text.fade_out()
+            frame_text.fade_out()
+
+        # 4..5
+        self.wait()
+
+        # 5..6
+        with self.parallel(duration=1):
+            viewport.affine(position=(3.6, 2), scale=(1, 3))
+            display_frame.affine(position=(3.6, 2), scale=(1, 3))
+
+        # 6..7
+        self.wait()
+
+        # 7..8
+        frame.move(by=(0, -2.5), frame=WORLD, duration=1, easing=Easing.SMOOTH)
+
+        # 8..9
+        self.wait()
+
+        # 9..10
+        with self.parallel(duration=1):
+            viewport.affine(position=(-2, -0.5), scale=(0.15, 0.45))
+            display_frame.affine(position=(-2, -0.5), scale=(0.15, 0.45))
+
+        # 10..11
+        with self.parallel(duration=1):
+            display_frame.trim(to=0)
+            frame.fade_out()
+            viewport.fade_out()
+
+        # 11..12
+        self.wait()
+
 
 class FixedInFrameMObjectTest(Scene):
+    def __init__(self):
+        phi = 75 * DEGREES
+        theta = -45 * DEGREES
+        radius = 8
+        position = Vec3(radius * sin(phi) * cos(theta), radius * sin(phi) * sin(theta), radius * cos(phi))
+        super().__init__(
+            canvas=CANVAS,
+            camera3d=Camera3D(
+                position=position,
+                target=Vec3(),
+                up=Vec3(0, 0, 1),
+                fov_y_degrees=42,
+            ),
+        )
+
     def setup(self):
-        self.canvas = CANVAS
-        self.grid=InfiniteGrid(step=.5,color=BLUE.with_alpha(30))
-        self.label=Text("Fixed in frame",font_size=22,color=YELLOW,transform=affine2d(position=(0,-2.4)))
+        white = Color(255, 255, 255)
+        shaft = 0.018
+        tick_length = 0.13
+        tick_width = 0.012
+
+        parts = [
+            Box3D(Vec3(6.4, shaft, shaft), color=white),
+            Box3D(
+                Vec3(6.4, shaft, shaft),
+                color=white,
+                transform=Transform3D.rotation_z(PI / 2),
+            ),
+            Box3D(
+                Vec3(7.0, shaft, shaft),
+                color=white,
+                transform=Transform3D.rotation_y(-PI / 2),
+            ),
+        ]
+
+        for i in (-3, -2, -1, 1, 2, 3):
+            parts.append(
+                Box3D(
+                    Vec3(tick_width, tick_length, tick_width),
+                    color=white,
+                    transform=Transform3D.translation(i, 0, 0),
+                )
+            )
+            parts.append(
+                Box3D(
+                    Vec3(tick_length, tick_width, tick_width),
+                    color=white,
+                    transform=Transform3D.translation(0, i, 0),
+                )
+            )
+        for i in (-2, -1, 1, 2):
+            parts.append(
+                Box3D(
+                    Vec3(tick_length, tick_width, tick_width),
+                    color=white,
+                    transform=Transform3D.translation(0, 0, i),
+                )
+            )
+
+        self.axes = Group3D(parts)
+        self.label = Text(
+            "This is a 3D text",
+            font_size=48,
+            transform=affine2d(position=(-4.35, 3.05)),
+            z_index=20,
+        )
+
     def construct(self):
-        self.add(header("FixedInFrameMObjectTest"),self.grid,self.label); self.wait(4)
+        self.add(self.axes, self.label)
+        self.wait()
+
 
 class ThreeDLightSourcePosition(Scene):
     def __init__(self):
-        super().__init__(canvas=CANVAS,camera3d=Camera3D(position=Vec3(5,4,7),target=Vec3(),fov_y_degrees=34))
+        super().__init__(
+            canvas=CANVAS, camera3d=Camera3D(position=Vec3(5, 4, 7), target=Vec3(), fov_y_degrees=34)
+        )
+
     def setup(self):
-        self.platform=Box3D(Vec3(2.2,2.2,.25),color=BLUE,transform=Transform3D.translation(-1.3,0,0))
-        self.cube=Box3D(Vec3(2,2,2),color=GREEN,transform=Transform3D.translation(1.3,0,.6))
+        self.platform = Box3D(Vec3(2.2, 2.2, 0.25), color=BLUE, transform=Transform3D.translation(-1.3, 0, 0))
+        self.cube = Box3D(Vec3(2, 2, 2), color=GREEN, transform=Transform3D.translation(1.3, 0, 0.6))
+
     def construct(self):
-        self.add(self.platform,self.cube); self.wait(4)
+        self.add(self.platform, self.cube)
+
 
 class ThreeDCameraRotation(Scene):
     def __init__(self):
-        super().__init__(canvas=CANVAS,camera3d=Camera3D(position=Vec3(5.5,4.5,7.5),target=Vec3(),fov_y_degrees=34))
+        super().__init__(
+            canvas=CANVAS, camera3d=Camera3D(position=Vec3(5.5, 4.5, 7.5), target=Vec3(), fov_y_degrees=34)
+        )
+
     def setup(self):
-        self.cube=Box3D(Vec3(2.2,2.2,2.2),color=BLUE)
+        self.cube = Box3D(Vec3(2.2, 2.2, 2.2), color=BLUE)
+
     def construct(self):
-        cube=self.add(self.cube)
-        cube.transform_function(lambda a: Transform3D.rotation_z(TAU*a) @ Transform3D.rotation_y(TAU*.7*a),duration=6,easing=Easing.LINEAR)
+        cube = self.add(self.cube)
+        cube.transform_function(
+            lambda a: Transform3D.rotation_z(TAU * a) @ Transform3D.rotation_y(TAU * 0.7 * a),
+            duration=6,
+            easing=Easing.LINEAR,
+        )
+
 
 class ThreeDCameraIllusionRotation(Scene):
     def __init__(self):
-        super().__init__(canvas=CANVAS,camera3d=Camera3D(position=Vec3(5.5,4.2,7.5),target=Vec3(),fov_y_degrees=34))
+        super().__init__(
+            canvas=CANVAS, camera3d=Camera3D(position=Vec3(5.5, 4.2, 7.5), target=Vec3(), fov_y_degrees=34)
+        )
+
     def setup(self):
-        self.bars=(Box3D(Vec3(3.4,.18,.18),color=RED),Box3D(Vec3(.18,3.4,.18),color=GREEN),Box3D(Vec3(.18,.18,3.4),color=BLUE))
+        self.bars = (
+            Box3D(Vec3(3.4, 0.18, 0.18), color=RED),
+            Box3D(Vec3(0.18, 3.4, 0.18), color=GREEN),
+            Box3D(Vec3(0.18, 0.18, 3.4), color=BLUE),
+        )
+
     def construct(self):
-        bars=self.add(*self.bars)
+        bars = self.add(*self.bars)
         with self.parallel(duration=6):
             for bar in bars:
-                bar.transform_function(lambda a: Transform3D.rotation_z(TAU*a),easing=Easing.LINEAR)
+                bar.transform_function(lambda a: Transform3D.rotation_z(TAU * a), easing=Easing.LINEAR)
+
 
 class ThreeDSurfacePlot(Scene):
     def __init__(self):
-        super().__init__(canvas=CANVAS,camera3d=Camera3D(position=Vec3(6.5,5.2,8.5),target=Vec3(),fov_y_degrees=34))
+        super().__init__(
+            canvas=CANVAS, camera3d=Camera3D(position=Vec3(6.5, 5.2, 8.5), target=Vec3(), fov_y_degrees=34)
+        )
+
     def setup(self):
-        self.tiles=[]
-        for ix in range(-5,6):
-            for iy in range(-5,6):
-                x,y=ix*.42,iy*.42; z=.75*cos(x*1.4)*cos(y*1.4)
-                self.tiles.append(Box3D(Vec3(.36,.36,.08),color=BLUE if z>0 else PURPLE,transform=Transform3D.translation(x,y,z)))
+        self.tiles = []
+        for ix in range(-5, 6):
+            for iy in range(-5, 6):
+                x, y = ix * 0.42, iy * 0.42
+                z = 0.75 * cos(x * 1.4) * cos(y * 1.4)
+                self.tiles.append(
+                    Box3D(
+                        Vec3(0.36, 0.36, 0.08),
+                        color=BLUE if z > 0 else PURPLE,
+                        transform=Transform3D.translation(x, y, z),
+                    )
+                )
+
     def construct(self):
-        self.add(*self.tiles); self.wait(4)
+        self.add(*self.tiles)
+
 
 class OpeningManim(Scene):
     def setup(self):
-        self.canvas=CANVAS
-        self.title=Text("This is some LaTeX",font_size=40,opacity=0)
-        self.formula=Text("Σ 1/n² = π²/6",font_size=44,color=YELLOW,opacity=0,transform=affine2d(position=(0,-.8)))
-        self.grid=InfiniteGrid(step=.5,color=BLUE.with_alpha(35),opacity=0)
+        self.canvas = CANVAS
+
+        self.title = Text("This is some LaTeX", font_size=46, reveal=0)
+        self.title.move_to((0, 0.65))
+        self.basel = Math('sum_(n=1)^infinity 1/n^2 = pi^2/6', font_size=48, opacity=0)
+        self.basel.move_to((0, -0.85))
+
+        self.transform_title = Text("That was a transform", font_size=48)
+        self.transform_title.move_to((-4.25, 3.08))
+
+        self.grid_title = Text('This is a grid', font_size=72, opacity=0)
+        self.grid_title.move_to((-4.35, 3.08))
+
+        self.grid_transform_title = Text('That was a non-linear function\napplied to the grid', font_size=48)
+        self.grid_transform_title.move_to((-3.45, 2.75))
+
+        self.grid_reveal = ScalarValue(0)
+        self.grid_deform = ScalarValue(0)
+
+        blue_d = Color(35, 107, 142)
+        faded = blue_d.with_alpha(128)
+        paths = []
+
+        def vertical(x, color, width):
+            points = tuple(Vec2(x, -4.05 + 8.10 * i / 81) for i in range(82))
+            paths.append((points, color, width))
+
+        def horizontal(y, color, width):
+            points = tuple(Vec2(-7.2 + 14.4 * i / 145, y) for i in range(146))
+            paths.append((points, color, width))
+
+        for x in range(-7, 8):
+            if x != 0:
+                vertical(x, blue_d, 2 / 90)
+        for i in range(-13, 14, 2):
+            vertical(i / 2, faded, 1 / 90)
+        for y in range(-4, 5):
+            if y != 0:
+                horizontal(y, blue_d, 2 / 90)
+        for i in range(-7, 8, 2):
+            horizontal(i / 2, faded, 1 / 90)
+        horizontal(0, WHITE, 2 / 90)
+        vertical(0, WHITE, 2 / 90)
+
+        self._grid_paths = tuple(paths)
+        lag = 0.1
+        count = len(self._grid_paths)
+        total = 1 + lag * (count - 1)
+
+        self.grid_lines = []
+        for path_index, (points, color, width) in enumerate(self._grid_paths):
+
+            def geometry_at(time, *, points=points, path_index=path_index):
+                reveal = self.grid_reveal.value_at(time)
+                deform = self.grid_deform.value_at(time)
+                local = max(0.0, min(1.0, reveal * total - lag * path_index))
+
+                transformed = []
+                for point in points:
+                    tx = point.x + sin(point.y)
+                    ty = point.y + sin(point.x)
+                    transformed.append(Vec2(point.x + (tx - point.x) * deform, point.y + (ty - point.y) * deform))
+
+                if local <= 1e-9:
+                    p0 = transformed[0]
+                    return Polyline((p0, p0)).geometry
+
+                segment_count = len(transformed) - 1
+                visible = local * segment_count
+                whole = min(segment_count, int(visible))
+                fraction = max(0.0, min(1.0, visible - whole))
+
+                visible_points = transformed[: whole + 1]
+                if whole < segment_count and fraction > 1e-9:
+                    a = transformed[whole]
+                    b = transformed[whole + 1]
+                    visible_points.append(Vec2(a.x + (b.x - a.x) * fraction, a.y + (b.y - a.y) * fraction))
+                if len(visible_points) == 1:
+                    visible_points.append(visible_points[0])
+                return Polyline(tuple(visible_points)).geometry
+
+            self.grid_lines.append(
+                DynamicGeometryObject2D(
+                    geometry_at,
+                    style=Style.outline(color, width),
+                    z_index=0,
+                )
+            )
+
+        self.grid = Group(self.grid_lines)
+
     def construct(self):
-        title,formula,grid=self.add(self.title,self.formula,self.grid)
-        with self.parallel(duration=.8):
-            title.fade_in(); formula.fade_in(at=.12)
-        self.wait(.5)
-        with self.parallel(duration=.8):
-            title.move(by=(-3.4,2.3),frame=WORLD); formula.fade_out()
-        self.wait(.4)
-        grid.fade_in(duration=.8); self.wait(.4)
-        grid.transform_function(lambda a: affine2d(shear=(.7*a,.45*sin(PI*a))),duration=3)
-        self.wait(.5)
+        title, basel = self.add(self.title, self.basel)
+
+        with self.parallel(duration=2):
+            title.create()
+            basel.fade_in()
+            basel.move(by=(0, 0.40), frame=WORLD)
+
+        self.wait()
+
+        with self.parallel(duration=1):
+            title.morph(to=self.transform_title)
+            basel.fade_out()
+            basel.move(by=(0, -0.40), frame=WORLD)
+
+        self.wait()
+
+        reveal, deform = self.add(self.grid_reveal, self.grid_deform)
+        grid, grid_title = self.add(self.grid, self.grid_title)
+
+        with self.parallel(duration=3):
+            reveal.value(to=1, easing=Easing.LINEAR)
+            title.fade_out(duration=1)
+            grid_title.fade_in(duration=1)
+
+        self.wait()
+
+        deform.value(to=1, duration=3, easing=Easing.SMOOTH)
+
+        self.wait()
+        grid_title.morph(to=self.grid_transform_title, duration=1)
+        self.wait()
+
 
 class SineCurveUnitCircle(Scene):
     def setup(self):
-        self.canvas=CANVAS
-        self.circle=Circle(1.45,position=(-3.5,0),fill=None,stroke=WHITE)
-        self.curve=path([(-1.5+i*.035,1.45*sin(i*.05)) for i in range(240)],BLUE,.04,trim=0)
-        self.dot=dot(-2.05,0,YELLOW,.1)
+        self.canvas = CANVAS
+
+        self.x_axis = Line((-6, 0), (6, 0), stroke=WHITE, stroke_width=4 / 90)
+        self.y_axis = Line((-4, -2), (-4, 2), stroke=WHITE, stroke_width=4 / 90)
+        self.circle = Circle(1, position=(-4, 0), fill=None, stroke=WHITE, stroke_width=4 / 90)
+
+        self.labels = Group(
+            [
+                Math("pi", font_size=48, transform=affine2d(position=(-1, -0.45))),
+                Math("2 pi", font_size=48, transform=affine2d(position=(1, -0.45))),
+                Math("3 pi", font_size=48, transform=affine2d(position=(3, -0.45))),
+                Math("4 pi", font_size=48, transform=affine2d(position=(5, -0.45))),
+            ]
+        )
+
+        self.offset = ScalarValue(0)
+
+        def dot_geometry(time):
+            u = self.offset.value_at(time)
+            a = TAU * (u % 1)
+            cx = -4 + cos(a)
+            cy = sin(a)
+            r = 0.08
+            return Polygon(
+                [
+                    (
+                        cx + r * cos(TAU * i / 28),
+                        cy + r * sin(TAU * i / 28),
+                    )
+                    for i in range(28)
+                ]
+            ).geometry
+
+        self.dot = DynamicGeometryObject2D(dot_geometry, style=Style.solid(Color(255, 255, 0)), z_index=8)
+
+        blue = Color(88, 196, 221)
+        yellow_a = Color(255, 241, 182)
+        yellow_d = Color(244, 211, 69)
+
+        def radial_geometry(time):
+            u = self.offset.value_at(time)
+            a = TAU * (u % 1)
+            point = Vec2(-4 + cos(a), sin(a))
+            return Line(Vec2(-4, 0), point).geometry
+
+        def connector_geometry(time):
+            u = self.offset.value_at(time)
+            a = TAU * (u % 1)
+            point = Vec2(-4 + cos(a), sin(a))
+            end = Vec2(-3 + 4 * u, point.y)
+            return Line(point, end).geometry
+
+        def curve_geometry(time):
+            u = self.offset.value_at(time)
+            if u <= 1e-9:
+                p0 = Vec2(-3, 0)
+                return Polyline((p0, p0)).geometry
+            samples = max(2, int(u * 240))
+            points = tuple(
+                Vec2(
+                    -3 + 4 * u * i / (samples - 1),
+                    sin(TAU * u * i / (samples - 1)),
+                )
+                for i in range(samples)
+            )
+            return Polyline(points).geometry
+
+        self.radial = DynamicGeometryObject2D(radial_geometry, style=Style.outline(blue, 4 / 90), z_index=2)
+        self.connector = DynamicGeometryObject2D(
+            connector_geometry,
+            style=Style.outline(yellow_a, 2 / 90),
+            z_index=3,
+        )
+        self.curve = DynamicGeometryObject2D(curve_geometry, style=Style.outline(yellow_d, 4 / 90), z_index=4)
+
     def construct(self):
-        curve,dot_obj=self.add(self.curve,self.dot); self.add(header("SineCurveUnitCircle"),self.circle)
-        with self.parallel(duration=7):
-            curve.create(easing=Easing.LINEAR)
-            dot_obj.transform_function(lambda a: affine2d(position=(-3.5+1.45*cos(TAU*1.35*a),1.45*sin(TAU*1.35*a))),easing=Easing.LINEAR)
-        self.wait(.4)
+        offset = self.add(self.offset)
+        self.add(
+            self.x_axis,
+            self.y_axis,
+            self.labels,
+            self.circle,
+            self.dot,
+            self.radial,
+            self.connector,
+            self.curve,
+        )
+        offset.value(to=8.5 * 0.25, duration=8.5, easing=Easing.LINEAR)
+        self.wait()

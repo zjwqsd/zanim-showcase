@@ -16,10 +16,14 @@ const playing = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const muted = ref(true)
+const orbiting = ref(false)
 let scene = null
 let observer = null
 let raf = 0
 let visible = false
+let orbitPointerId = null
+let orbitLastX = 0
+let orbitLastY = 0
 
 async function build() {
   if (props.item.interactive || scene || loading.value || !canvas.value) return
@@ -93,6 +97,62 @@ function seek(event) {
   playing.value = false
 }
 
+function orbitCamera() {
+  if (!props.item.orbit3d || !scene) return null
+  return scene.interactiveCamera3D ?? null
+}
+
+function onOrbitPointerDown(event) {
+  if (event.button !== 2) return
+  const camera3d = orbitCamera()
+  if (!camera3d) return
+  event.preventDefault()
+  orbitPointerId = event.pointerId
+  orbitLastX = event.clientX
+  orbitLastY = event.clientY
+  orbiting.value = true
+  event.currentTarget.setPointerCapture?.(event.pointerId)
+}
+
+function onOrbitPointerMove(event) {
+  if (orbitPointerId == null || event.pointerId !== orbitPointerId) return
+  const camera3d = orbitCamera()
+  if (!camera3d) return
+  const dx = event.clientX - orbitLastX
+  const dy = event.clientY - orbitLastY
+  orbitLastX = event.clientX
+  orbitLastY = event.clientY
+  camera3d.orbitBy(-dx * .0065, dy * .0065)
+  scene.render()
+}
+
+function endOrbit(event) {
+  if (orbitPointerId == null || (event.pointerId != null && event.pointerId !== orbitPointerId)) return
+  try { event.currentTarget?.releasePointerCapture?.(orbitPointerId) } catch {}
+  orbitPointerId = null
+  orbiting.value = false
+}
+
+function onOrbitWheel(event) {
+  const camera3d = orbitCamera()
+  if (!camera3d) return
+  event.preventDefault()
+  camera3d.zoomBy(Math.exp(event.deltaY * .0012))
+  scene.render()
+}
+
+function resetOrbit(event = null) {
+  const camera3d = orbitCamera()
+  if (!camera3d) return
+  event?.preventDefault?.()
+  camera3d.resetViewOverride()
+  scene.render()
+}
+
+function onContextMenu(event) {
+  if (orbitCamera()) event.preventDefault()
+}
+
 function tick() {
   if (scene) currentTime.value = scene.time
   raf = requestAnimationFrame(tick)
@@ -119,6 +179,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   observer?.disconnect()
   cancelAnimationFrame(raf)
+  orbitPointerId = null
   scene?.destroy()
 })
 </script>
@@ -128,8 +189,25 @@ onBeforeUnmount(() => {
     <InteractiveLinearAlgebra v-if="item.interactive === 'linear-algebra'" />
 
     <template v-else>
-      <div class="live-stage" :style="{ aspectRatio: item.width + ' / ' + item.height }">
-        <canvas ref="canvas"></canvas>
+      <div
+        class="live-stage"
+        :class="{ orbitable: item.orbit3d, orbiting }"
+        :style="{ aspectRatio: item.width + ' / ' + item.height }"
+      >
+        <canvas
+          ref="canvas"
+          @pointerdown="onOrbitPointerDown"
+          @pointermove="onOrbitPointerMove"
+          @pointerup="endOrbit"
+          @pointercancel="endOrbit"
+          @lostpointercapture="endOrbit"
+          @wheel="onOrbitWheel"
+          @dblclick="resetOrbit"
+          @contextmenu="onContextMenu"
+        ></canvas>
+        <div v-if="item.orbit3d && scene && !error" class="orbit-hint">
+          右键拖动视角 · 滚轮缩放 · 双击复位
+        </div>
         <div v-if="!scene && !error" class="live-overlay">
           <span v-if="loading" class="docs-spinner"></span>
           <span>{{ loading ? '正在构建 Zanim Scene…' : '滚动到此处后加载' }}</span>

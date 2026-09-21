@@ -197,6 +197,12 @@ export const navGroups = [
     ],
   },
   {
+    title: '复刻对照',
+    items: [
+      ['/manim', 'Manim 复刻'],
+    ],
+  },
+  {
     title: '更多',
     items: [
       ['/janim', 'JAnim 致谢与参考'],
@@ -211,6 +217,26 @@ export const pages = {
   '/': {
     title: 'Zanim 文档',
     lead: 'Zanim 是以 retained state、显式生命周期与绝对时间为核心的动画引擎。Python 与 Web 使用同一套 Scene 心智模型，分别面向本地创作/渲染与浏览器运行。',
+    quickLinks: [
+      {
+        title: '快速开始',
+        meta: 'Tutorial',
+        body: '从一个静态 Scene 开始，再加入第一段时间行为。',
+        url: '/tutorial/quickstart',
+      },
+      {
+        title: 'Example Gallery',
+        meta: 'Live scenes',
+        body: '直接浏览数学、算法、3D、Manim 与 JAnim 复刻示例。',
+        url: '/gallery',
+      },
+      {
+        title: '安装与运行',
+        meta: 'Python + Web',
+        body: '安装 Python 包或 @zanim/web，并了解最小运行环境。',
+        url: '/installation',
+      },
+    ],
     sections: [
       {
         id: 'mental-model',

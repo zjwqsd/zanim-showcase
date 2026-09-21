@@ -55,6 +55,24 @@ function stripPythonImports(source) {
   return out.join('\n').replace(/^\s*\n+/, '').replace(/\n{3,}/g, '\n\n').trim()
 }
 
+function extractPythonFunction(source, functionName) {
+  if (!functionName) return null
+  const lines = source.replace(/\r\n/g, '\n').split('\n')
+  const escaped = functionName.replace(/[.*+?^$()|[\]\\]/g, '\\$&')
+  const start = lines.findIndex((line) => new RegExp(`^def\\s+${escaped}\\b`).test(line))
+  if (start < 0) return null
+
+  let end = lines.length
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i]
+    if (line.trim() && !/^\s/.test(line) && !line.trim().startsWith('#')) {
+      end = i
+      break
+    }
+  }
+  return lines.slice(start, end).join('\n').trimEnd()
+}
+
 function extractPythonClass(source, className) {
   if (!className) return null
   const lines = source.replace(/\r\n/g, '\n').split('\n')
@@ -223,6 +241,34 @@ export function javascriptSource(item) {
   }
 
   return '// 未能从原始源码中定位该 Gallery builder。'
+}
+
+export function manimPortPythonSource(item) {
+  const { file, selector } = sourceParts(item)
+  if (!file) return pythonSource(item)
+
+  const key = `../../examples/${file}`
+  const raw = pythonModules[key]
+  if (!raw) return pythonSource(item)
+
+  const selected = extractPythonClass(raw, selector)
+  if (!selected) return `from zanim import *
+
+${stripPythonImports(raw)}`
+
+  if (item.id === 'manim-point-shapes') {
+    const helper = extractPythonFunction(raw, 'Rotating')
+    return `from zanim import *
+
+# 仅用于 Manim 对照页；Rotating 不属于 Zanim 公共 API。
+${helper ?? ''}
+
+${selected}`
+  }
+
+  return `from zanim import *
+
+${selected}`
 }
 
 export function githubPythonUrl(item) {

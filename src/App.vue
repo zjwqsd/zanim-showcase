@@ -2,7 +2,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import DocPage from './components/DocPage.vue'
 import GalleryPage from './components/GalleryPage.vue'
-import { galleryCollections, galleryItems } from './docs/catalog.js'
+import ManimComparePage from './components/ManimComparePage.vue'
+import { galleryCollections, galleryItems, manimCollection } from './docs/catalog.js'
 import { navGroups, pageFor, pages } from './docs/content.js'
 
 const route = ref('/')
@@ -14,7 +15,7 @@ const theme = ref('light')
 function parseHash() {
   const raw = location.hash.slice(1) || '/'
   const [path, anchor = ''] = raw.split('#')
-  route.value = pages[path] || path === '/gallery' ? path : '/'
+  route.value = pages[path] || path === '/gallery' || path === '/manim' ? path : '/'
   routeAnchor.value = anchor
   mobileOpen.value = false
   nextTick(() => {
@@ -36,6 +37,9 @@ function navigate(path) {
 const activePage = computed(() => pageFor(route.value))
 const tocItems = computed(() => {
   if (route.value === '/gallery') return galleryCollections.map((collection) => ['collection-' + collection.id, collection.title])
+  if (route.value === '/manim') {
+    return manimCollection.groups.map((group) => [group.id, group.title])
+  }
   return (activePage.value.sections ?? []).map((section) => [section.id, section.title])
 })
 
@@ -49,7 +53,7 @@ const searchResults = computed(() => {
   }
   for (const item of galleryItems) {
     const haystack = [item.titleZh, item.description, item.source, item.categoryTitle].join(' ').toLowerCase()
-    if (haystack.includes(q)) result.push({ path: `/gallery#${item.id}`, title: item.titleZh, kind: item.categoryTitle })
+    if (haystack.includes(q)) result.push({ path: `${item.collection === 'manim' ? '/manim' : '/gallery'}#${item.id}`, title: item.titleZh, kind: item.categoryTitle })
   }
   return result.slice(0, 12)
 })
@@ -60,6 +64,10 @@ function chooseSearch(path) {
 }
 
 function scrollToc(id) {
+  if (route.value === '/gallery' && id.startsWith('collection-')) {
+    location.hash = '/gallery#' + id
+    return
+  }
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
@@ -150,7 +158,7 @@ onBeforeUnmount(() => removeEventListener('hashchange', parseHash))
         <div class="breadcrumbs">
           <a href="#/" @click.prevent="navigate('/')">Zanim</a>
           <span>/</span>
-          <strong>{{ route === '/gallery' ? 'Example Gallery' : activePage.title }}</strong>
+          <strong>{{ route === '/gallery' ? 'Example Gallery' : route === '/manim' ? 'Manim 复刻对照' : activePage.title }}</strong>
         </div>
         <div class="topbar-links">
           <a href="https://github.com/zjwqsd/zanim" target="_blank" rel="noreferrer">GitHub ↗</a>
@@ -160,6 +168,7 @@ onBeforeUnmount(() => removeEventListener('hashchange', parseHash))
 
       <div class="docs-content">
         <GalleryPage v-if="route === '/gallery'" :on-navigate="navigate" />
+        <ManimComparePage v-else-if="route === '/manim'" />
         <DocPage v-else :page="activePage" :navigate="navigate" />
 
         <footer class="content-footer">
