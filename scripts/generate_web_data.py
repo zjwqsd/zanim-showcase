@@ -20,6 +20,11 @@ from examples.extras.simulation_collisions import (
     step_world,
 )
 from examples.extras.sorting_algorithms import ALGORITHMS, random_permutation
+from examples.janim.balls_collision_example import (
+    FPS as JANIM_BALLS_FPS,
+    initial_world as janim_balls_initial_world,
+    step_world as janim_balls_step_world,
+)
 
 
 def red_black_data() -> dict:
@@ -93,6 +98,31 @@ def collision_data() -> dict:
     return {"fps": sample_hz, "duration": DURATION, "frames": frames}
 
 
+def janim_balls_data() -> dict:
+    sample_hz = int(JANIM_BALLS_FPS)
+    dt = 1.0 / JANIM_BALLS_FPS
+    simulation_duration = 10.0
+    world = janim_balls_initial_world()
+    frames = []
+    samples = round(simulation_duration * sample_hz) + 1
+    for sample in range(samples):
+        frames.append(
+            [
+                [round(float(pos[0]), 6), round(float(pos[1]), 6)]
+                for pos in world.positions
+            ]
+        )
+        if sample == samples - 1:
+            break
+        janim_balls_step_world(world, dt)
+    return {
+        "fps": sample_hz,
+        "sceneDuration": 12.0,
+        "simulationDuration": simulation_duration,
+        "frames": frames,
+    }
+
+
 def main() -> None:
     output = ROOT / "public" / "generated" / "gallery-data.json"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -100,6 +130,7 @@ def main() -> None:
         "redBlack": red_black_data(),
         "sorting": sorting_data(),
         "collisions": collision_data(),
+        "janimBalls": janim_balls_data(),
     }
     output.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
     print(output, output.stat().st_size)

@@ -1,4 +1,5 @@
 import {
+  Box3D,
   Camera3D,
   Circle,
   Column,
@@ -27,16 +28,16 @@ import {
   VectorObject2D,
 } from '@zanim/web'
 
-const WHITE = '#eef1f7'
-const BLUE = '#5091ff'
+const WHITE = '#ffffff'
+const BLUE = '#58c4dd'
 const BLUE_E = '#224b87'
-const GREEN = '#50d287'
-const RED = '#f55262'
-const YELLOW = '#fad24e'
-const GOLD = '#f5b437'
-const ORANGE = '#f58737'
-const PURPLE = '#aa64e6'
-const MAROON = '#b94669'
+const GREEN = '#83c167'
+const RED = '#fc6255'
+const YELLOW = '#f7d96f'
+const GOLD = '#f0ac5f'
+const ORANGE = '#ff862f'
+const PURPLE = '#9a72ac'
+const MAROON = '#c55f73'
 const LIGHT_BROWN = '#b78b64'
 const PURPLE_E = '#5c3782'
 const MUTED = '#919eb8'
@@ -47,13 +48,24 @@ const alpha = (hex, a) => `${hex}${globalThis.Math.round(clamp01(a) * 255).toStr
 const T = (x = 0, y = 0, rotation = 0, scale = 1) => Transform2D.affine({ position: [x, y], rotation, scale })
 const asset = (name) => `${import.meta.env.BASE_URL}assets/${name}`
 
-async function makeScene(canvas) {
+async function makeScene(canvas, { background = '#000000', fps = 60 } = {}) {
   const rect = canvas.getBoundingClientRect()
   const scale = globalThis.Math.max(0.2, rect.width / 1920)
   return Scene.create(canvas, {
-    fps: 30,
-    renderer: { unitSize: 135 * scale, background: '#0e1118' },
+    fps,
+    renderer: { unitSize: 135 * scale, background },
   })
+}
+
+let generatedDataPromise = null
+function generatedData() {
+  if (!generatedDataPromise) {
+    generatedDataPromise = fetch(`${import.meta.env.BASE_URL}generated/gallery-data.json`).then((response) => {
+      if (!response.ok) throw new Error(`gallery data: HTTP ${response.status}`)
+      return response.json()
+    })
+  }
+  return generatedDataPromise
 }
 
 function starPoints(outer = 1, inner = 0.45, count = 5, phase = PI / 2) {
@@ -157,7 +169,7 @@ async function basicAnimation(canvas) {
   scene.create(circle, { duration: 1 })
   scene.affine(circle, { position: [-3, 0], scale: 1.5, duration: 1 })
   scene.style(circle, { to: { fill: alpha(RED, 0.5), stroke: RED, width: 0.045, worldStroke: true }, duration: 1 })
-  scene.transformFunction(star, (a) => T(0, 0, TAU * a, 1.5 * a), { duration: 1 })
+  scene.transformFunction(star, (a) => T(0, 0, TAU * a, a), { duration: 1 })
   scene.affine(star, { position: [3, 0], scale: 1.5, duration: 1 })
   scene.style(star, { to: { fill: alpha(YELLOW, 0.5), stroke: YELLOW, width: 0.045, worldStroke: true }, duration: 1 })
   scene.wait(1)
@@ -209,21 +221,22 @@ async function textExample(canvas) {
 async function typstExample(canvas) {
   const scene = await makeScene(canvas)
   const lines = [
-    new Text('Zanim provides Text and Math classes to insert Typst content.', { fontSize: 27, opacity: 0 }),
+    new Text('JAnim provides TypstText and TypstMath classes to insert Typst content.', { fontSize: 27, opacity: 0 }),
     new Text('Math expressions are also supported.', { fontSize: 27, opacity: 0 }),
     new ZMath('A = pi r^2', { fontSize: 34, color: WHITE, reveal: 0 }),
     new ZMath('"area" = pi dot "radius"^2', { fontSize: 34, color: WHITE, reveal: 0 }),
     new ZMath('cal(A) := { x in RR | x "is natural" }', { fontSize: 31, color: WHITE, reveal: 0 }),
     new ZMath('5 < 17', { fontSize: 34, color: WHITE, reveal: 0 }),
-    new Text('Vector documents can also be composed as a full Typst-style document.', { fontSize: 26, opacity: 0 }),
+    new Text('You can also use TypstDoc, which automatically align to the top of the viewport,', { fontSize: 24, opacity: 0 }),
+    new Text('instead of the center.', { fontSize: 24, opacity: 0 }),
   ]
   await Promise.all(lines.filter((item) => item.ready).map((item) => item.ready))
   new Column({ gap: 0.25, at: [0, 0.3] }).place(...lines)
   scene.add(...lines)
   scene.parallel((api) => {
     lines.forEach((item, i) => {
-      if (item instanceof VectorObject2D) api.create(item, { duration: 3.2, at: i * 0.12 })
-      else api.fadeIn(item, { duration: 3.2, at: i * 0.12 })
+      if (item instanceof VectorObject2D) api.create(item, { duration: 3.5, at: i * 0.12 })
+      else api.fadeIn(item, { duration: 3.5, at: i * 0.12 })
     })
   })
   scene.wait(1)
@@ -250,48 +263,48 @@ async function typstExample(canvas) {
 
 async function typstColorize(canvas) {
   const scene = await makeScene(canvas)
+
   const objs = [
-    new ZMath('cos', { fontSize: 95, color: WHITE }),
-    new ZMath('space^2', { fontSize: 95, color: WHITE }),
-    new ZMath('theta', { fontSize: 95, color: WHITE }),
-    new ZMath('+', { fontSize: 95, color: WHITE }),
-    new ZMath('sin', { fontSize: 95, color: WHITE }),
-    new ZMath('space^2', { fontSize: 95, color: WHITE }),
-    new ZMath('theta', { fontSize: 95, color: WHITE }),
-    new ZMath('=', { fontSize: 95, color: WHITE }),
-    new ZMath('1', { fontSize: 95, color: WHITE }),
+    new ZMath('cos', { fontSize: 95, color: WHITE, transform: T(-2.75, 0) }),
+    new ZMath('2', { fontSize: 56, color: WHITE, transform: T(-2.02, .34) }),
+    new ZMath('theta', { fontSize: 95, color: WHITE, transform: T(-1.58, 0) }),
+    new ZMath('+', { fontSize: 95, color: WHITE, transform: T(-.68, 0) }),
+    new ZMath('sin', { fontSize: 95, color: WHITE, transform: T(.10, 0) }),
+    new ZMath('2', { fontSize: 56, color: WHITE, transform: T(.79, .34) }),
+    new ZMath('theta', { fontSize: 95, color: WHITE, transform: T(1.23, 0) }),
+    new ZMath('=', { fontSize: 95, color: WHITE, transform: T(2.13, 0) }),
+    new ZMath('1', { fontSize: 95, color: WHITE, transform: T(2.86, 0) }),
   ]
   const replacements = {
-    cosBlue: new ZMath('cos', { fontSize: 95, color: BLUE, opacity: 0 }),
-    sinBlue: new ZMath('sin', { fontSize: 95, color: BLUE, opacity: 0 }),
-    thetaGold: new ZMath('theta', { fontSize: 95, color: GOLD, opacity: 0 }),
-    thetaOrange: new ZMath('theta', { fontSize: 95, color: ORANGE, opacity: 0 }),
-    thetaGreen0: new ZMath('theta', { fontSize: 95, color: GREEN, opacity: 0 }),
-    thetaGreen1: new ZMath('theta', { fontSize: 95, color: GREEN, opacity: 0 }),
-    spaceRed0: new ZMath('space^2', { fontSize: 95, color: RED, opacity: 0 }),
-    spaceRed1: new ZMath('space^2', { fontSize: 95, color: RED, opacity: 0 }),
+    cosBlue: new ZMath('cos', { fontSize: 95, color: BLUE, opacity: 0, transform: T(-2.75, 0) }),
+    sinBlue: new ZMath('sin', { fontSize: 95, color: BLUE, opacity: 0, transform: T(.10, 0) }),
+    thetaGold: new ZMath('theta', { fontSize: 95, color: GOLD, opacity: 0, transform: T(-1.58, 0) }),
+    thetaOrange: new ZMath('theta', { fontSize: 95, color: ORANGE, opacity: 0, transform: T(1.23, 0) }),
+    thetaGreen0: new ZMath('theta', { fontSize: 95, color: GREEN, opacity: 0, transform: T(-1.58, 0) }),
+    thetaGreen1: new ZMath('theta', { fontSize: 95, color: GREEN, opacity: 0, transform: T(1.23, 0) }),
+    powRed0: new ZMath('2', { fontSize: 56, color: RED, opacity: 0, transform: T(-2.02, .34) }),
+    powRed1: new ZMath('2', { fontSize: 56, color: RED, opacity: 0, transform: T(.79, .34) }),
   }
   await Promise.all([...objs, ...Object.values(replacements)].map((obj) => obj.ready))
-  new Row({ gap: 0.04, at: [0, 0] }).place(...objs)
   scene.add(...objs)
   scene.wait(1)
 
-  function placeReplacement(index, next) {
-    next.transform = objs[index].transform
+  const swap = (index, next) => {
     scene.add(next)
     const old = objs[index]
-    scene.parallel(1, (api) => { api.fadeOut(old); api.fadeIn(next) })
+    scene.parallel(1, (api) => {
+      api.fadeOut(old)
+      api.fadeIn(next)
+    })
     objs[index] = next
   }
 
-  placeReplacement(0, replacements.cosBlue)
-  placeReplacement(4, replacements.sinBlue)
-  placeReplacement(2, replacements.thetaGold)
-  placeReplacement(6, replacements.thetaOrange)
+  swap(0, replacements.cosBlue)
+  swap(4, replacements.sinBlue)
+  swap(2, replacements.thetaGold)
+  swap(6, replacements.thetaOrange)
   scene.wait(1)
 
-  replacements.thetaGreen0.transform = objs[2].transform
-  replacements.thetaGreen1.transform = objs[6].transform
   scene.add(replacements.thetaGreen0, replacements.thetaGreen1)
   scene.parallel(1, (api) => {
     api.fadeOut(objs[2]); api.fadeIn(replacements.thetaGreen0)
@@ -300,15 +313,11 @@ async function typstColorize(canvas) {
   objs[2] = replacements.thetaGreen0
   objs[6] = replacements.thetaGreen1
 
-  replacements.spaceRed0.transform = objs[1].transform
-  replacements.spaceRed1.transform = objs[5].transform
-  scene.add(replacements.spaceRed0, replacements.spaceRed1)
+  scene.add(replacements.powRed0, replacements.powRed1)
   scene.parallel(1, (api) => {
-    api.fadeOut(objs[1]); api.fadeIn(replacements.spaceRed0)
-    api.fadeOut(objs[5]); api.fadeIn(replacements.spaceRed1)
+    api.fadeOut(objs[1]); api.fadeIn(replacements.powRed0)
+    api.fadeOut(objs[5]); api.fadeIn(replacements.powRed1)
   })
-  objs[1] = replacements.spaceRed0
-  objs[5] = replacements.spaceRed1
   scene.wait(1)
   return scene
 }
@@ -372,21 +381,53 @@ async function animatingPi(canvas) {
 async function numberPlane(canvas) {
   const scene = await makeScene(canvas)
   const lines = []
-  for (let x = -7; x <= 7; x++) lines.push(new Polyline([[x, -4], [x, 4]], { stroke: 'rgba(95,105,130,.47)', strokeWidth: 0.012, trim: 0 }))
-  for (let y = -4; y <= 4; y++) lines.push(new Polyline([[-7, y], [7, y]], { stroke: 'rgba(95,105,130,.47)', strokeWidth: 0.012, trim: 0 }))
+
+  // JAnim NumberPlane(faded_line_ratio=1): one faded half-step line between
+  // adjacent major grid lines, plus the coordinate axes.
+  for (let x = -7; x <= 7; x++) {
+    if (x !== 0) lines.push(new Polyline([[x, -4], [x, 4]], {
+      stroke: '#236b8e', strokeWidth: 2 / 90, trim: 0,
+    }))
+  }
+  for (let x = -6.5; x <= 6.5; x += 1) {
+    lines.push(new Polyline([[x, -4], [x, 4]], {
+      stroke: 'rgba(35,107,142,.5)', strokeWidth: 1 / 90, trim: 0,
+    }))
+  }
+  for (let y = -4; y <= 4; y++) {
+    if (y !== 0) lines.push(new Polyline([[-7, y], [7, y]], {
+      stroke: '#236b8e', strokeWidth: 2 / 90, trim: 0,
+    }))
+  }
+  for (let y = -3.5; y <= 3.5; y += 1) {
+    lines.push(new Polyline([[-7, y], [7, y]], {
+      stroke: 'rgba(35,107,142,.5)', strokeWidth: 1 / 90, trim: 0,
+    }))
+  }
+  lines.push(new Polyline([[-7, 0], [7, 0]], { stroke: WHITE, strokeWidth: 2 / 90, trim: 0 }))
+  lines.push(new Polyline([[0, -4], [0, 4]], { stroke: WHITE, strokeWidth: 2 / 90, trim: 0 }))
+
   const plane = new Group(lines)
   const graphPoints = Array.from({ length: 320 }, (_, i) => {
     const x = -7 + 14 * i / 319
     return [x, globalThis.Math.sin(x)]
   })
-  const graph = new Polyline(graphPoints, { stroke: BLUE, strokeWidth: 0.035, trim: 0 })
+  const graph = new Polyline(graphPoints, { stroke: BLUE, strokeWidth: 4 / 90, trim: 0 })
+
   scene.add(plane, graph)
-  scene.wait(0.2)
-  scene.parallel((api) => lines.forEach((line, i) => api.create(line, { duration: 1.2, at: i * 0.03 })))
+  scene.wait(.2)
+  scene.parallel((api) => {
+    const stagger = lines.length > 1 ? (2 - 1.32) / (lines.length - 1) : 0
+    lines.forEach((line, i) => api.create(line, { duration: 1.32, at: i * stagger }))
+  })
   scene.create(graph, { duration: 1 })
   scene.wait(1)
+
   const matrix = new Transform2D(3, -1, 1, 2, 0, 0)
-  scene.parallel(2, (api) => { api.animate(plane, { transform: matrix }); api.animate(graph, { transform: matrix }) })
+  scene.parallel(2, (api) => {
+    api.animate(plane, { transform: matrix })
+    api.animate(graph, { transform: matrix })
+  })
   scene.wait(1)
   return scene
 }
@@ -623,14 +664,60 @@ function stage2Mask(renderer, ctx, t) {
 }
 
 function stage3Mask(renderer, ctx, t) {
-  const p1 = circleDevicePath(renderer, -1, 0, 1.5), p2 = circleDevicePath(renderer, 1, 0, 1.5)
-  ctx.save(); ctx.fillStyle = 'rgba(248,210,68,.25)'; ctx.fill(p1); ctx.fill(p2); ctx.restore()
-  const intersection = t >= 1.8 && t < 3
+  const p1 = circleDevicePath(renderer, -1, 0, 1.5)
+  const p2 = circleDevicePath(renderer, 1, 0, 1.5)
+
+  const fadeOut = 1 - smooth((t - 4.5) / 1)
   ctx.save()
-  if (intersection) { ctx.clip(p1); ctx.clip(p2) }
-  else { const union = new Path2D(); union.addPath(p1); union.addPath(p2); ctx.clip(union) }
-  drawScreenText(renderer, ctx, 'Some Example Text Here', 0, 0, 88, WHITE)
+  ctx.globalAlpha *= fadeOut
+  ctx.fillStyle = 'rgba(247,217,111,.25)'
+  ctx.fill(p1)
+  ctx.fill(p2)
   ctx.restore()
+
+  const maskOpacity = smooth((t - 1) / 1)
+  let intersectionMix = 0
+  if (t >= 2.5 && t < 3) intersectionMix = smooth((t - 2.5) / .5)
+  else if (t >= 3 && t < 3.5) intersectionMix = 1
+  else if (t >= 3.5 && t < 4) intersectionMix = 1 - smooth((t - 3.5) / .5)
+
+  const textOpacity = fadeOut
+
+  // Before FadeIn(mask_union), the held text is fully visible.
+  if (maskOpacity < 1) {
+    drawScreenText(
+      renderer,
+      ctx,
+      'Some Example Text Here',
+      0,
+      0,
+      88,
+      WHITE,
+      textOpacity * (1 - maskOpacity),
+    )
+  }
+
+  // Union contribution.
+  if (maskOpacity > 0 && intersectionMix < 1) {
+    ctx.save()
+    ctx.globalAlpha *= textOpacity * maskOpacity * (1 - intersectionMix)
+    const union = new Path2D()
+    union.addPath(p1)
+    union.addPath(p2)
+    ctx.clip(union)
+    drawScreenText(renderer, ctx, 'Some Example Text Here', 0, 0, 88, WHITE)
+    ctx.restore()
+  }
+
+  // Intersection contribution.
+  if (maskOpacity > 0 && intersectionMix > 0) {
+    ctx.save()
+    ctx.globalAlpha *= textOpacity * maskOpacity * intersectionMix
+    ctx.clip(p1)
+    ctx.clip(p2)
+    drawScreenText(renderer, ctx, 'Some Example Text Here', 0, 0, 88, WHITE)
+    ctx.restore()
+  }
 }
 
 function stage4Mask(renderer, ctx, t, cache) {
@@ -763,7 +850,7 @@ function dotMesh3D(grid, radius = .045) {
 }
 
 function torusGrid3D() {
-  const major = .78, minor = .31
+  const major = 2, minor = 1
   return new Grid3D(
     (u, v) => new Vec3((major + minor * globalThis.Math.cos(TAU * v)) * globalThis.Math.cos(TAU * u), (major + minor * globalThis.Math.cos(TAU * v)) * globalThis.Math.sin(TAU * u), minor * globalThis.Math.sin(TAU * v)),
     (u, v) => new Vec3(globalThis.Math.cos(TAU * v) * globalThis.Math.cos(TAU * u), globalThis.Math.cos(TAU * v) * globalThis.Math.sin(TAU * u), globalThis.Math.sin(TAU * v)),
@@ -772,7 +859,7 @@ function torusGrid3D() {
 }
 
 function cylinderGrid3D() {
-  const radius = .82, height = 2.15
+  const radius = 2, height = 4
   return new Grid3D(
     (u, v) => new Vec3(radius * globalThis.Math.cos(TAU * u), height * (v - .5), radius * globalThis.Math.sin(TAU * u)),
     (u) => new Vec3(globalThis.Math.cos(TAU * u), 0, globalThis.Math.sin(TAU * u)),
@@ -781,7 +868,7 @@ function cylinderGrid3D() {
 }
 
 function coneGrid3D() {
-  const radius = .92, height = 2.25
+  const radius = 2, height = 4
   return new Grid3D(
     (u, v) => new Vec3(radius * (.025 + .975 * v) * globalThis.Math.cos(TAU * u), height * (.5 - v), radius * (.025 + .975 * v) * globalThis.Math.sin(TAU * u)),
     (u) => new Vec3(height * globalThis.Math.cos(TAU * u), radius, height * globalThis.Math.sin(TAU * u)),
@@ -789,52 +876,217 @@ function coneGrid3D() {
   )
 }
 
-function shape3DOpacity(time, start) {
-  if (time < start || time >= start + SHAPE3D_DURATION) return 0
-  if (time < start + .12) return smooth((time - start) / .12)
-  if (time >= start + SHAPE3D_DURATION - .12) return 1 - smooth((time - (start + SHAPE3D_DURATION - .12)) / .12)
-  return 1
+function panelSplit(time) {
+  return smooth(clamp01(time - 1))
 }
 
-function shape3DTransform(time, center, start) {
+function panelCenter(time, center) {
+  const a = panelSplit(time)
+  return new Vec3(center.x * a, center.y * a, 0)
+}
+
+function panelScale(time) {
+  return 1 - .5 * panelSplit(time)
+}
+
+function shape3DOpacity(time, start, styleIndex) {
+  if (time < start || time >= start + SHAPE3D_DURATION) return 0
+  if (styleIndex > 0 && time < 1) return 0
+
+  let opacity = 1
+  if (styleIndex > 0 && time < 1.25) opacity *= smooth((time - 1) / .25)
+  if (time < start + .12) opacity *= smooth((time - start) / .12)
+  if (time >= start + SHAPE3D_DURATION - .12) {
+    opacity *= 1 - smooth((time - (start + SHAPE3D_DURATION - .12)) / .12)
+  }
+  return clamp01(opacity)
+}
+
+function shape3DRotation(time, start) {
   const a = clamp01((time - start) / SHAPE3D_DURATION)
-  return Transform3D.translation(center.x, center.y, 0)
-    .mul(Transform3D.rotationZ(TAU * a))
-    .mul(Transform3D.rotationX(TAU * a - .38))
+  return Transform3D.rotationZ(-TAU * a)
+    .mul(Transform3D.rotationX(-TAU * a - .38))
     .mul(Transform3D.rotationY(.45))
 }
 
-function styleMeshes3D(grid, styleName, center, start) {
+function shape3DTransform(time, center, start) {
+  const c = panelCenter(time, center)
+  const scale = panelScale(time)
+  return Transform3D.translation(c.x, c.y, 0)
+    .mul(Transform3D.scaling(scale))
+    .mul(shape3DRotation(time, start))
+}
+
+function styleMeshes3D(grid, styleName, center, start, styleIndex) {
   const common = (mesh, color) => new MeshObject3D(mesh, {
     color,
     transform: (time) => shape3DTransform(time, center, start),
-    opacity: (time) => shape3DOpacity(time, start),
+    opacity: (time) => shape3DOpacity(time, start, styleIndex),
   })
   if (styleName === 'checker') {
     const [a, b] = checkerMeshes3D(grid)
     return [common(a, '#2a64cd'), common(b, '#69b1ff')]
   }
-  if (styleName === 'wire') return [common(wireMesh3D(grid), '#68b2ff')]
+  if (styleName === 'wire') return [common(wireMesh3D(grid, .04), '#68b2ff')]
   if (styleName === 'smooth') return [common(smoothMesh3D(grid), '#58a6f2')]
-  if (styleName === 'dots') return [common(dotMesh3D(grid), '#7dbcff')]
+  if (styleName === 'dots') return [common(dotMesh3D(grid, .08), '#7dbcff')]
   throw new Error(styleName)
 }
 
+function smoothAxes3D(center) {
+  const white = '#ffffff'
+  const thin = .025
+  const axes = [
+    new Box3D(new Vec3(6, thin, thin), { color: white }),
+    new Box3D(new Vec3(6, thin, thin), {
+      color: white,
+      geometryTransform: Transform3D.rotationZ(PI / 2),
+    }),
+    new Box3D(new Vec3(6, thin, thin), {
+      color: white,
+      geometryTransform: Transform3D.rotationY(-PI / 2),
+    }),
+  ]
+  return axes.map((axis) => {
+    axis.transform = (time) => {
+      const local = globalThis.Math.max(0, time % SHAPE3D_DURATION)
+      const c = panelCenter(time, center)
+      const scale = panelScale(time)
+      return Transform3D.translation(c.x, c.y, 0)
+        .mul(Transform3D.scaling(scale))
+        .mul(shape3DRotation(local, 0))
+    }
+    axis.opacity = (time) => {
+      if (time < 1) return 0
+      return smooth(clamp01((time - 1) / .35))
+    }
+    return axis
+  })
+}
+
+
 async function threeDShapesExample(canvas) {
   const scene = await makeScene(canvas)
-  const panelW = 1920 / 135 / 2, panelH = 1080 / 135 / 2
-  const centers = [new Vec3(-panelW / 2, panelH / 2, 0), new Vec3(panelW / 2, panelH / 2, 0), new Vec3(-panelW / 2, -panelH / 2, 0), new Vec3(panelW / 2, -panelH / 2, 0)]
+  const fullW = 1920 / 135
+  const fullH = 1080 / 135
+  const panelW = fullW / 2
+  const panelH = fullH / 2
+  const centers = [
+    new Vec3(-panelW / 2, panelH / 2, 0),
+    new Vec3(panelW / 2, panelH / 2, 0),
+    new Vec3(-panelW / 2, -panelH / 2, 0),
+    new Vec3(panelW / 2, -panelH / 2, 0),
+  ]
   const backgrounds = ['#000022', '#000033', '#000033', '#000022']
-  centers.forEach((center, i) => scene.add(new Rectangle(panelW + .01, panelH + .01, { fill: backgrounds[i], stroke: null, transform: T(center.x, center.y), zIndex: -10 })))
 
-  const styles = ['checker', 'wire', 'smooth', 'dots'], grids = [torusGrid3D(), cylinderGrid3D(), coneGrid3D()], meshes = []
+  const background = new DynamicRectSet((time) => {
+    if (time < 1) return [[0, 0, fullW, fullH, backgrounds[0], null, 0]]
+    const a = panelSplit(time)
+    const scale = 1 - .5 * a
+    return centers.map((center, i) => [
+      center.x * a,
+      center.y * a,
+      fullW * scale,
+      fullH * scale,
+      backgrounds[i],
+      null,
+      0,
+    ])
+  }, { zIndex: -10 })
+  scene.add(background)
+
+  const styles = ['checker', 'wire', 'smooth', 'dots']
+  const grids = [torusGrid3D(), cylinderGrid3D(), coneGrid3D()]
+  const meshes = []
+
   grids.forEach((grid, shapeIndex) => {
     const start = shapeIndex * SHAPE3D_DURATION
-    styles.forEach((styleName, i) => meshes.push(...styleMeshes3D(grid, styleName, centers[i], start)))
+    styles.forEach((styleName, styleIndex) => {
+      meshes.push(...styleMeshes3D(grid, styleName, centers[styleIndex], start, styleIndex))
+    })
   })
-  const camera = new Camera3D({ position: new Vec3(0, 0, 15), target: new Vec3(), up: new Vec3(0, 1, 0), orthographicHeight: 8, layerZIndex: 0 })
-  scene.add(new Scene3DLayer(meshes, { camera, resolution: .9, maxWidth: 1280, maxHeight: 720, zIndex: 0 }))
+
+  meshes.push(...smoothAxes3D(centers[2]))
+
+  const camera = new Camera3D({
+    position: new Vec3(0, 0, 15),
+    target: new Vec3(),
+    up: new Vec3(0, 1, 0),
+    orthographicHeight: 8,
+    layerZIndex: 0,
+  })
+  scene.add(new Scene3DLayer(meshes, {
+    camera,
+    resolution: 1,
+    maxWidth: 1280,
+    maxHeight: 720,
+    zIndex: 0,
+  }))
+
   scene.wait(12)
+  return scene
+}
+
+
+function janimBallSimulationTime(time) {
+  if (time <= 4) return time
+  if (time < 6) return 4
+  return globalThis.Math.min(10, time - 2)
+}
+
+function janimBallFrame(data, sceneTime) {
+  const simulationTime = janimBallSimulationTime(sceneTime)
+  const index = globalThis.Math.max(
+    0,
+    globalThis.Math.min(
+      data.frames.length - 1,
+      globalThis.Math.round(simulationTime * data.fps),
+    ),
+  )
+  return data.frames[index]
+}
+
+async function ballsCollisionExample(canvas) {
+  const data = (await generatedData()).janimBalls
+  const scene = await makeScene(canvas, { background: '#000000', fps: 60 })
+
+  const arena = new Rectangle(8, 6, {
+    fill: alpha(BLUE, .2),
+    stroke: BLUE,
+  })
+
+  const balls = new DynamicCircleSet((time) => {
+    const frame = janimBallFrame(data, time)
+    return frame.map(([x, y], index) => {
+      const selected = index === 6
+      const color = selected
+        ? lerpHex(BLUE, YELLOW, smooth(clamp01((time - 4.5) / 1)))
+        : BLUE
+      return [x, y, .25, color]
+    })
+  }, { zIndex: 1 })
+
+  scene.add(arena, balls)
+
+  const target = data.frames[4 * data.fps][6]
+  scene.wait(4.5)
+  scene.camera.transformFunction((a) => {
+    const scale = 1 + a
+    const cx = target[0] * a
+    const cy = target[1] * a
+    return T(-scale * cx, -scale * cy, 0, scale)
+  }, { duration: 1 })
+
+  scene.wait(.5)
+  scene.camera.transformFunction((a) => {
+    const frameIndex = globalThis.Math.min(
+      data.frames.length - 1,
+      globalThis.Math.round((4 + 6 * a) * data.fps),
+    )
+    const [cx, cy] = data.frames[frameIndex][6]
+    return T(-2 * cx, -2 * cy, 0, 2)
+  }, { duration: 6, easing: Easing.LINEAR })
+
   return scene
 }
 
@@ -852,6 +1104,7 @@ export const janimScenes = [
   { id: 'janim-pie', title: 'JAnim · Rotating pie', source: 'janim/suite.py · RotatingPieExample', width: 1920, height: 1080, builder: rotatingPie },
   { id: 'janim-marked', title: 'JAnim · Marked item', source: 'janim/suite.py · MarkedItemExample', width: 1920, height: 1080, builder: markedItem },
   { id: 'janim-frame-effect', title: 'JAnim · Frame effect', source: 'janim/frame_effect_example.py · FrameEffectExample', width: 1920, height: 1080, builder: frameEffect, note: 'Recreated with the public CustomObject2D Canvas API: identical 8 s rotation and effect onset times, browser-native channel/scanline compositing.' },
-  { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim/mask_example.py', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages, original timing, boolean masks, and stage-two feathering are preserved.' },
+  { id: 'janim-mask', title: 'JAnim · Mask', source: 'janim/mask_example.py · MaskExample', width: 1920, height: 1080, builder: maskExample, note: 'Four mask stages, original timing, boolean masks, and stage-two feathering are preserved.' },
   { id: 'janim-3d-shapes', title: 'JAnim · 3D shapes', source: 'janim/three_d_shapes_example.py · ThreeDShapesExample', width: 1920, height: 1080, builder: threeDShapesExample, note: 'Real WASM depth rasterization using the same camera/projection conventions as Native Zanim; torus, cylinder and cone keep the original 3 × 4 s timing.' },
+  { id: 'janim-balls', title: 'JAnim · Balls collision', source: 'janim/balls_collision_example.py · BallsCollisionExample', width: 1920, height: 1080, builder: ballsCollisionExample, note: '60 Hz deterministic simulation matching JAnim\'s seed, pause, zoom, highlight, and follow-camera timeline.' },
 ]

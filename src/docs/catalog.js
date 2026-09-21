@@ -58,6 +58,7 @@ const janimZh = {
   'janim-frame-effect': ['Frame Effect', 'Canvas 后处理风格的帧效果。'],
   'janim-mask': ['Mask', '多阶段遮罩、布尔区域与 feather。'],
   'janim-3d-shapes': ['3D Shapes', 'Torus / Cylinder / Cone 的多种网格显示风格。'],
+  'janim-balls': ['Balls Collision', '25 个等质量小球的完全弹性碰撞，以及相机缩放与跟随。'],
 }
 
 const manimZh = {
@@ -138,9 +139,10 @@ const manimGroups = [
 ]
 
 const janimGroups = [
-  { id: 'janim-foundation', title: '基础与文本', intro: '基础动画、Text、Typst 与 Number Plane。', ids: ['janim-hello', 'janim-basic', 'janim-text', 'janim-typst', 'janim-colorize', 'janim-pi', 'janim-plane'] },
-  { id: 'janim-effects', title: 'Updater 与效果', intro: '动态更新、箭头、扇形、标注、Frame Effect 与 Mask。', ids: ['janim-updater', 'janim-arrow', 'janim-combine', 'janim-pie', 'janim-marked', 'janim-frame-effect', 'janim-mask'] },
-  { id: 'janim-3d', title: '3D', intro: 'Torus / Cylinder / Cone 的多种显示风格。', ids: ['janim-3d-shapes'] },
+  { id: 'janim-foundation', title: '基础与文本', intro: 'Hello、基础动画、Text、Typst、π 网格与 NumberPlane。', ids: ['janim-hello', 'janim-basic', 'janim-text', 'janim-typst', 'janim-colorize', 'janim-pi', 'janim-plane'] },
+  { id: 'janim-updaters', title: 'Updater 与组合', intro: 'DataUpdater / GroupUpdater / MarkedItem 等动态行为的 Zanim absolute-time 表达。', ids: ['janim-updater', 'janim-arrow', 'janim-combine', 'janim-pie', 'janim-marked'] },
+  { id: 'janim-effects', title: '效果与 3D', intro: 'Frame Effect、3D Shapes 与 ShapeMask。', ids: ['janim-frame-effect', 'janim-3d-shapes', 'janim-mask'] },
+  { id: 'janim-simulation', title: 'Simulation', intro: '确定性物理模拟与跟随相机。', ids: ['janim-balls'] },
 ]
 
 export const manimCollection = {
@@ -150,6 +152,13 @@ export const manimCollection = {
   groups: manimGroups,
 }
 
+export const janimCollection = {
+  id: 'janim',
+  title: 'JAnim API Demonstration 复刻',
+  intro: '对应 JAnim 5.0.0-rc4 文档中的 API Demonstration，共 16 个官方示例；使用 Zanim 的显式生命周期与绝对时间模型重新实现。',
+  groups: janimGroups,
+}
+
 export const galleryCollections = [
   {
     id: 'zanim',
@@ -157,15 +166,9 @@ export const galleryCollections = [
     intro: 'Zanim 自己设计的教程型与能力型 examples，优先展示状态模型、绝对时间、批量几何、数学可视化和 3D。',
     groups: zanimGroups,
   },
-  {
-    id: 'janim',
-    title: 'JAnim 示例复刻',
-    intro: '感谢 JAnim 项目在动画 API、效果设计和示例组织方面提供的参考。这里用 Zanim 自己的状态模型重新实现公开示例效果。',
-    groups: janimGroups,
-  },
 ]
 
-const catalogCollections = [...galleryCollections, manimCollection]
+const catalogCollections = [...galleryCollections, manimCollection, janimCollection]
 
 export const galleryGroups = catalogCollections.flatMap((collection) =>
   collection.groups.map((group) => ({ ...group, collection: collection.id, collectionTitle: collection.title })),

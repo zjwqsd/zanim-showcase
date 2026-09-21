@@ -45,9 +45,8 @@ onBeforeUnmount(() => removeEventListener('hashchange', syncCollectionFromHash))
   <article class="docs-article gallery-page">
     <h1>Example Gallery</h1>
     <p class="lead">
-      Gallery 保留 Zanim 原生示例与 JAnim 示例复刻；更完整的 Manim 官方 Example Gallery
-      复刻已经迁移到独立的“Manim 复刻”页面。所有网页结果都直接运行真实
-      <code>@zanim/web</code> Scene，可播放、暂停与 seek。
+      Gallery 只保留 Zanim 自己的原生示例；Manim 与 JAnim 的复刻对照已经迁移到独立页面。
+      所有网页结果都直接运行真实 <code>@zanim/web</code> Scene，可播放、暂停与 seek。
     </p>
 
     <div class="admonition tip">
@@ -85,15 +84,6 @@ onBeforeUnmount(() => removeEventListener('hashchange', syncCollectionFromHash))
         <h2>{{ currentCollection.title }}</h2>
         <p>{{ currentCollection.intro }}</p>
       </header>
-
-      <div v-if="currentCollection.id === 'janim'" class="admonition important">
-        <div class="admonition-title">致谢</div>
-        <p>
-          感谢 JAnim 项目在动画 API、效果设计和示例组织方面给 Zanim 提供的参考与启发。
-          这里是效果级复刻，不是 JAnim API 兼容层。
-        </p>
-        <p><a href="https://github.com/jkjkil4/JAnim" target="_blank" rel="noreferrer">JAnim GitHub ↗</a></p>
-      </div>
 
       <nav class="gallery-jump">
         <strong>本集合</strong>

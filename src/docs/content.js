@@ -200,12 +200,12 @@ export const navGroups = [
     title: '复刻对照',
     items: [
       ['/manim', 'Manim 复刻'],
+      ['/janim', 'JAnim 复刻'],
     ],
   },
   {
     title: '更多',
     items: [
-      ['/janim', 'JAnim 致谢与参考'],
       ['/reference', '紧凑参考'],
       ['https://github.com/zjwqsd/zanim', 'Zanim GitHub ↗'],
       ['https://github.com/zjwqsd/zanim-showcase', 'Showcase GitHub ↗'],
@@ -227,7 +227,7 @@ export const pages = {
       {
         title: 'Example Gallery',
         meta: 'Live scenes',
-        body: '直接浏览数学、算法、3D、Manim 与 JAnim 复刻示例。',
+        body: '直接浏览 Zanim 原生数学、算法、模拟与 3D 示例。',
         url: '/gallery',
       },
       {
@@ -264,7 +264,7 @@ export const pages = {
           '做数学/教学可视化：布局 → Text/Math → 动态对象。',
           '做机器人、层级坐标或空间动画：变换与坐标系 → 3D。',
           '做网页交互：Web Runtime → Scene IR。',
-          '直接看能力范围：Example Gallery 的 Zanim / Manim / JAnim 三个集合。',
+          '直接看能力范围：Example Gallery；复刻对照请进入独立的 Manim / JAnim 页面。',
         ],
         links: [['/gallery', '打开 Example Gallery']],
       },
@@ -660,35 +660,6 @@ export default defineConfig({
     ],
   },
 
-  '/janim': {
-    title: 'JAnim 致谢与参考',
-    lead: 'Zanim 的部分 API 设计、效果验证与示例组织曾参考 JAnim。Showcase 保留独立 JAnim 集合，用 Zanim 自己的公开 API 重新表达这些效果。',
-    sections: [
-      {
-        id: 'thanks',
-        title: '感谢 JAnim',
-        paragraphs: [
-          '感谢 JAnim 项目在动画 API、效果设计和示例组织方面给 Zanim 提供的参考与启发。',
-          '这些场景用于效果与能力验证，不构成 JAnim API 兼容层。',
-        ],
-        links: [
-          ['/gallery#collection-janim', '查看 JAnim 集合'],
-          ['https://github.com/jkjkil4/JAnim', 'JAnim 项目 ↗'],
-        ],
-      },
-      {
-        id: 'coverage',
-        title: '当前覆盖',
-        bullets: [
-          '基础动画、Text、Typst、Number Plane。',
-          'Updater、Arrow、Pie、Marked Item。',
-          'Frame Effect、Mask。',
-          'Torus / Cylinder / Cone 3D shapes。',
-        ],
-        scene: 'janim-pi',
-      },
-    ],
-  },
 
   '/reference': {
     title: '紧凑参考',

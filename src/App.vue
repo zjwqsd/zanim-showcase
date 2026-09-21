@@ -3,7 +3,8 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import DocPage from './components/DocPage.vue'
 import GalleryPage from './components/GalleryPage.vue'
 import ManimComparePage from './components/ManimComparePage.vue'
-import { galleryCollections, galleryItems, manimCollection } from './docs/catalog.js'
+import JanimComparePage from './components/JanimComparePage.vue'
+import { galleryCollections, galleryItems, janimCollection, manimCollection } from './docs/catalog.js'
 import { navGroups, pageFor, pages } from './docs/content.js'
 
 const route = ref('/')
@@ -15,7 +16,7 @@ const theme = ref('light')
 function parseHash() {
   const raw = location.hash.slice(1) || '/'
   const [path, anchor = ''] = raw.split('#')
-  route.value = pages[path] || path === '/gallery' || path === '/manim' ? path : '/'
+  route.value = pages[path] || path === '/gallery' || path === '/manim' || path === '/janim' ? path : '/'
   routeAnchor.value = anchor
   mobileOpen.value = false
   nextTick(() => {
@@ -40,6 +41,9 @@ const tocItems = computed(() => {
   if (route.value === '/manim') {
     return manimCollection.groups.map((group) => [group.id, group.title])
   }
+  if (route.value === '/janim') {
+    return janimCollection.groups.map((group) => [group.id, group.title])
+  }
   return (activePage.value.sections ?? []).map((section) => [section.id, section.title])
 })
 
@@ -53,7 +57,7 @@ const searchResults = computed(() => {
   }
   for (const item of galleryItems) {
     const haystack = [item.titleZh, item.description, item.source, item.categoryTitle].join(' ').toLowerCase()
-    if (haystack.includes(q)) result.push({ path: `${item.collection === 'manim' ? '/manim' : '/gallery'}#${item.id}`, title: item.titleZh, kind: item.categoryTitle })
+    if (haystack.includes(q)) result.push({ path: `${item.collection === 'manim' ? '/manim' : item.collection === 'janim' ? '/janim' : '/gallery'}#${item.id}`, title: item.titleZh, kind: item.categoryTitle })
   }
   return result.slice(0, 12)
 })
@@ -158,7 +162,7 @@ onBeforeUnmount(() => removeEventListener('hashchange', parseHash))
         <div class="breadcrumbs">
           <a href="#/" @click.prevent="navigate('/')">Zanim</a>
           <span>/</span>
-          <strong>{{ route === '/gallery' ? 'Example Gallery' : route === '/manim' ? 'Manim 复刻对照' : activePage.title }}</strong>
+          <strong>{{ route === '/gallery' ? 'Example Gallery' : route === '/manim' ? 'Manim 复刻对照' : route === '/janim' ? 'JAnim 复刻对照' : activePage.title }}</strong>
         </div>
         <div class="topbar-links">
           <a href="https://github.com/zjwqsd/zanim" target="_blank" rel="noreferrer">GitHub ↗</a>
@@ -169,6 +173,7 @@ onBeforeUnmount(() => removeEventListener('hashchange', parseHash))
       <div class="docs-content">
         <GalleryPage v-if="route === '/gallery'" :on-navigate="navigate" />
         <ManimComparePage v-else-if="route === '/manim'" />
+        <JanimComparePage v-else-if="route === '/janim'" />
         <DocPage v-else :page="activePage" :navigate="navigate" />
 
         <footer class="content-footer">

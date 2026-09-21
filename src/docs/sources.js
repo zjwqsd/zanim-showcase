@@ -243,6 +243,22 @@ export function javascriptSource(item) {
   return '// 未能从原始源码中定位该 Gallery builder。'
 }
 
+export function janimPortPythonSource(item) {
+  const { file, selector } = sourceParts(item)
+  if (!file) return pythonSource(item)
+
+  const key = '../../examples/' + file
+  const raw = pythonModules[key]
+  if (!raw) return pythonSource(item)
+
+  const selected = extractPythonClass(raw, selector)
+  if (!selected) {
+    return 'from zanim import *\n\n# import / 共享辅助函数已省略；完整文件可从下方链接打开。\n\n' + stripPythonImports(raw)
+  }
+
+  return 'from zanim import *\n\n# 共享辅助类与函数位于完整源文件中；这里展示 Scene 本体。\n\n' + selected
+}
+
 export function manimPortPythonSource(item) {
   const { file, selector } = sourceParts(item)
   if (!file) return pythonSource(item)
