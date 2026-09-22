@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 
 from zanim import (
-    RIGHT,
+    PARENT,
     WORLD,
     Canvas,
     Circle,
@@ -11,8 +11,8 @@ from zanim import (
     Easing,
     Group,
     Rectangle,
+    Row,
     Scene,
-    Style,
     Text,
     Transform2D,
     Vec2,
@@ -64,16 +64,15 @@ def _stage1(duration=4.0) -> Scene:
     content = _subscene()
     chars = [Text(ch, font_size=56) for ch in "Mask Example!"]
     group = Group(chars)
-    group.arrange(RIGHT, buff=0.015)
-    group.move_to(Vec2(0, 0.45))
+    Row(gap=0.015).place(*group.children)
+    group.move(to=Vec2(0, 0.45))
     finals = [c.transform for c in chars]
     for c in chars:
-        c.shift(Vec2(0, -1.65))
-    content.add(group)
+        c.move(by=Vec2(0, -1.65), frame=PARENT)
+    group = content.add(group)
     with content.parallel():
-        for i, (c, target) in enumerate(zip(chars, finals)):
-            content.transform(
-                c,
+        for i, (c, target) in enumerate(zip(group.children, finals)):
+            c.transform(
                 to=target,
                 duration=1.15,
                 easing=Easing.SMOOTHSTEP,
@@ -97,22 +96,23 @@ def _stage2(duration=9.8) -> Scene:
     content = _subscene()
     txt = Text("Mask Example!", font_size=64)
     txt2 = Text("The mask should be hold", font_size=54, opacity=0)
-    content.add(txt, txt2)
+    txt, txt2 = content.add(txt, txt2)
     left = Transform2D.translation(-1, 0)
     right = Transform2D.translation(1, 0)
     with content.parallel():
-        content.transform(txt, to=left, duration=0.9, at=3.0)
-        content.transform(txt, to=right, duration=0.9, at=3.9)
-        content.transform(txt, to=Transform2D(), duration=0.9, at=4.8)
-        content.fade_out(txt, duration=1.0, at=6.1)
-        content.fade_in(txt2, duration=1.0, at=6.1)
+        txt.transform(to=left, duration=0.9, at=3.0)
+        txt.transform(to=right, duration=0.9, at=3.9)
+        txt.transform(to=Transform2D(), duration=0.9, at=4.8)
+        txt.fade_out(duration=1.0, at=6.1)
+        txt2.fade_in(duration=1.0, at=6.1)
     content.wait(max(0.0, duration - content.duration))
 
     mask = _subscene()
     shape = DynamicGeometryObject2D(
         lambda t: _rect_circle_polygon(min(1.0, t / 1.1)),
-        transform=affine2d(position=(0, 0.5)),
-        style=Style.solid(WHITE),
+        position=(0, 0.5),
+        fill=WHITE,
+        stroke=None,
     )
     mask.add(shape)
     mask.wait(duration)
@@ -128,11 +128,11 @@ def _stage2(duration=9.8) -> Scene:
     brown = Rectangle(3, 3, fill=LIGHT_BROWN, opacity=0, z_index=-2)
     layer = _full(masked)
     layer.z_index = 1
-    stage.add(brown, layer)
+    brown, layer = stage.add(brown, layer)
     with stage.parallel():
-        stage.media(layer, duration=duration)
-        stage.fade_in(brown, duration=0.8, at=1.8)
-        stage.fade_out(brown, duration=0.8, at=7.9)
+        layer.media(duration=duration)
+        brown.fade_in(duration=0.8, at=1.8)
+        brown.fade_out(duration=0.8, at=7.9)
     return stage
 
 
@@ -166,11 +166,11 @@ def _stage3(duration=6.0) -> Scene:
     d2 = Circle(1.5, position=(1, 0), fill=YELLOW.with_alpha(64))
     u = _full(union)
     i = _full(intersection)
-    stage.add(d1, d2, u, i)
+    _d1, _d2, u, i = stage.add(d1, d2, u, i)
     # union -> intersection -> union, with brief holds matching the reference rhythm
-    stage.media(u, duration=1.8)
-    stage.media(i, duration=1.2)
-    stage.media(u, duration=1.2)
+    u.media(duration=1.8)
+    i.media(duration=1.2)
+    u.media(duration=1.2)
     stage.wait(duration - stage.duration)
     return stage
 
@@ -204,8 +204,8 @@ def _stage4(duration=8.9) -> Scene:
     )
     stage = _subscene()
     layer = _full(masked)
-    stage.add(layer)
-    stage.media(layer, duration=duration)
+    layer = stage.add(layer)
+    layer.media(duration=duration)
     return stage
 
 

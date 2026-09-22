@@ -46,36 +46,37 @@ class ThreeD(Scene):
         )
 
     def setup(self) -> None:
-        self.cube_base = Transform3D.translation(-2.35, 0.35, 0)
-        self.cube = Box3D(Vec3(1.55, 1.55, 1.55), color=BLUE, transform=self.cube_base)
+        self.cube_position = Vec3(-2.35, 0.35, 0)
+        self.cube = Box3D(
+            Vec3(1.55, 1.55, 1.55), color=BLUE, position=self.cube_position
+        )
 
-        self.surface_base = Transform3D.translation(
-            2.25, -0.35, 0
-        ) @ Transform3D.scaling(0.72)
+        self.surface_position = Vec3(2.25, -0.35, 0)
         self.surface = Surface3D(
             terrain,
             x_range=(-2.4, 2.4),
             y_range=(-2.4, 2.4),
             resolution=(49, 49),
             color=GREEN,
-            transform=self.surface_base,
+            position=self.surface_position,
+            scale=0.72,
         )
 
         self.axes = (
             Box3D(
                 Vec3(2.3, 0.025, 0.025),
                 color=RED,
-                transform=Transform3D.translation(0.9, -1.55, 0),
+                position=(0.9, -1.55, 0),
             ),
             Box3D(
                 Vec3(0.025, 2.3, 0.025),
                 color=GREEN,
-                transform=Transform3D.translation(-0.25, -0.4, 0),
+                position=(-0.25, -0.4, 0),
             ),
             Box3D(
                 Vec3(0.025, 0.025, 2.3),
                 color=BLUE,
-                transform=Transform3D.translation(-0.25, -1.55, 1.15),
+                position=(-0.25, -1.55, 1.15),
             ),
         )
 
@@ -109,14 +110,20 @@ class ThreeD(Scene):
             right_label.fade_in(duration=0.8, at=0.2)
             cube.transform_function(
                 lambda a: (
-                    self.cube_base
+                    Transform3D.translation(
+                        self.cube_position.x, self.cube_position.y, self.cube_position.z
+                    )
                     @ SO3.rotation_axis(Vec3(1, 1, 0.35), TAU * a).to_transform3d()
                 ),
                 easing=Easing.LINEAR,
             )
             surface.transform_function(
                 lambda a: (
-                    Transform3D.translation(2.25, -0.35, 0)
+                    Transform3D.translation(
+                        self.surface_position.x,
+                        self.surface_position.y,
+                        self.surface_position.z,
+                    )
                     @ Transform3D.rotation_y(-0.65 * PI * a)
                     @ Transform3D.scaling(0.72)
                 ),

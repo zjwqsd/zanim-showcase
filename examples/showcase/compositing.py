@@ -30,12 +30,19 @@ DURATION = 4.0
 
 def content_scene() -> Scene:
     scene = Scene(canvas=Canvas(480, 320, 70), fps=60)
-    square = Square(1.35, fill=BLUE.with_alpha(225), stroke=WHITE)
-    circle = Circle(0.82, fill=ORANGE.with_alpha(225), stroke=WHITE)
-    bar = Rectangle(3.8, 0.35, fill=GREEN.with_alpha(210))
-    square.transform = affine2d(position=(-1.25, 0.45), rotation=-0.2)
-    circle.transform = affine2d(position=(1.15, -0.35))
-    bar.transform = affine2d(position=(0, -1.35), rotation=0.12)
+    square = Square(
+        1.35,
+        fill=BLUE.with_alpha(225),
+        stroke=WHITE,
+        position=(-1.25, 0.45),
+        rotation=-0.2,
+    )
+    circle = Circle(
+        0.82, fill=ORANGE.with_alpha(225), stroke=WHITE, position=(1.15, -0.35)
+    )
+    bar = Rectangle(
+        3.8, 0.35, fill=GREEN.with_alpha(210), position=(0, -1.35), rotation=0.12
+    )
     group = scene.add(Group([square, circle, bar]))
     group.transform_function(
         lambda a: affine2d(rotation=0.8 * PI * a, scale=1.0 + 0.08 * a),
@@ -46,9 +53,7 @@ def content_scene() -> Scene:
 
 def mask_scene() -> Scene:
     scene = Scene(canvas=Canvas(480, 320, 70), fps=60)
-    aperture = Circle(
-        1.25, fill=WHITE, transform=affine2d(position=(-1.75, 0), scale=0.8)
-    )
+    aperture = Circle(1.25, fill=WHITE, position=(-1.75, 0), scale=0.8)
     aperture = scene.add(aperture)
     aperture.transform_function(
         lambda a: affine2d(
@@ -81,12 +86,12 @@ class Compositing(Scene):
         self.content_view = RasterObject2D(
             SceneRasterSource(content),
             width=3.7,
-            transform=affine2d(position=(-4.25, -0.55)),
+            position=(-4.25, -0.55),
         )
         self.mask_view = RasterObject2D(
             SceneRasterSource(mask),
             width=3.7,
-            transform=affine2d(position=(0.0, -0.55)),
+            position=(0.0, -0.55),
         )
         self.result = RasterObject2D(
             AlphaMaskSource(
@@ -95,7 +100,7 @@ class Compositing(Scene):
                 feather=lambda t: 1.5 + 2.0 * (0.5 + 0.5 * sin(PI * t / DURATION)),
             ),
             width=3.7,
-            transform=affine2d(position=(4.25, -0.55)),
+            position=(4.25, -0.55),
         )
 
         self.labels = [

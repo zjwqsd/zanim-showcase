@@ -454,15 +454,15 @@ class RedBlackTreeExample(Scene):
             font_size=18,
             color=MUTED,
         )
-        self.title.move_to((0, 4.35))
-        self.sequence.move_to((0, 3.90))
+        self.title.move(to=(0, 4.35))
+        self.sequence.move(to=(0, 3.90))
         self.nodes = BatchObject2D(_node_batch(None, self.values), z_index=2)
         self.edges = BatchObject2D(_edge_batch(None, self.values), z_index=0)
         initial_positions = _position_map(TraceStep("empty", "", ()), self.values)
         self.labels = {}
         for value in self.values:
             label = Text(str(value), font_size=18, color=WHITE, opacity=0, z_index=4)
-            label.move_to(initial_positions[value])
+            label.move(to=initial_positions[value])
             self.labels[value] = label
         self.status = Text(
             f"seed {self._arg_seed} · {self._arg_count} unique keys",
@@ -471,7 +471,7 @@ class RedBlackTreeExample(Scene):
             opacity=0,
             z_index=10,
         )
-        self.status.move_to((0, 3.43))
+        self.status.move(to=(0, 3.43))
 
     def construct(self) -> None:
         seed, count = self._arg_seed, self._arg_count
@@ -498,7 +498,7 @@ class RedBlackTreeExample(Scene):
                 opacity=0,
                 z_index=10,
             )
-            next_status.move_to((0, 3.43))
+            next_status.move(to=(0, 3.43))
             next_status = scene.add(next_status)
             with scene.parallel(duration=STATUS_FADE):
                 status.fade_out()
@@ -530,7 +530,7 @@ class RedBlackTreeExample(Scene):
             opacity=0,
             z_index=10,
         )
-        final_status.move_to((0, 3.43))
+        final_status.move(to=(0, 3.43))
         final_status = scene.add(final_status)
         with scene.parallel(duration=0.24):
             status.fade_out()
@@ -561,7 +561,7 @@ def main() -> None:
     scene = RedBlackTreeExample(seed=args.seed, count=args.count)
     scene._run_authoring_hooks()
     info = scene.info
-    output = scene.render_video(
+    output = scene.render(
         args.output,
         fps=60,
         workers=8,

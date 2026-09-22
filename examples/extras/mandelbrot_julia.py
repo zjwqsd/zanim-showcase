@@ -48,8 +48,8 @@ class MandelbrotJulia(Scene):
             opacity=0,
             z_index=20,
         )
-        self.title.move_to((0.0, 1.94))
-        self.subtitle.move_to((0.0, 1.62))
+        self.title.move(to=(0.0, 1.94))
+        self.subtitle.move(to=(0.0, 1.62))
         self.mandel_label = Text(
             "Mandelbrot  ·  z ← z² + c",
             font_size=22,
@@ -64,8 +64,8 @@ class MandelbrotJulia(Scene):
             opacity=0,
             z_index=20,
         )
-        self.mandel_label.move_to((-2.70, -1.88))
-        self.julia_label.move_to((-2.82, -1.88))
+        self.mandel_label.move(to=(-2.70, -1.88))
+        self.julia_label.move(to=(-2.82, -1.88))
         self.mandelbrot = MandelbrotSet(
             max_iter=360,
             inside_color=Color(4, 6, 13),
@@ -139,7 +139,7 @@ def main() -> None:
     args = parser.parse_args()
     scene = MandelbrotJulia()
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         args.output,
         fps=60,
         workers=args.workers,

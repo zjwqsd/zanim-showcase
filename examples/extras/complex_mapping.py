@@ -35,7 +35,7 @@ HOLD_DURATION = 0.65
 
 def _label(scene: Scene, formula: str):
     label = Math(formula, font_size=34, color=YELLOW, opacity=0, z_index=10)
-    label.move_to((0.0, -4.12))
+    label.move(to=(0.0, -4.12))
     return scene.add(label)
 
 
@@ -101,10 +101,10 @@ class ComplexMapping(Scene):
         self.legend_v = Text(
             "Im(z) = constant", font_size=17, color=CYAN, opacity=0, z_index=10
         )
-        self.title.move_to((0.0, 4.25))
-        self.subtitle.move_to((0.0, 3.82))
-        self.legend_h.move_to((-4.75, 3.33))
-        self.legend_v.move_to((-4.75, 3.01))
+        self.title.move(to=(0.0, 4.25))
+        self.subtitle.move(to=(0.0, 3.82))
+        self.legend_h.move(to=(-4.75, 3.33))
+        self.legend_v.move(to=(-4.75, 3.01))
 
     def construct(self) -> None:
         scene = self
@@ -161,7 +161,7 @@ def main() -> None:
 
     scene = ComplexMapping()
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         args.output,
         fps=60,
         workers=args.workers,

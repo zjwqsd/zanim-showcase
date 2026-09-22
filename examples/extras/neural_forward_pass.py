@@ -290,7 +290,7 @@ def value_group(layer: int) -> Group:
     for value, position in zip(values, NODE_POSITIONS[layer * 2 : layer * 2 + 2], strict=True):
         text = f"{value:+.2f}" if layer < 2 else f"{value:.2f}"
         label = Text(text, font_size=19, color=WHITE, opacity=1.0)
-        label.move_to(position)
+        label.move(to=position)
         labels.append(label)
     return Group(labels, opacity=0.0, z_index=10)
 
@@ -308,15 +308,15 @@ class NeuralForwardPass(Scene):
         self.selected = DynamicBatchObject2D(selected_geometry, opacity=0.0, z_index=5)
 
         self.stage = Text("x", font_size=28, color=BLUE, opacity=0.0, z_index=12)
-        self.stage.move_to((0.0, 3.6))
+        self.stage.move(to=(0.0, 3.6))
 
         edges = BatchObject2D(edge_geometry(), z_index=0)
         nodes = DynamicBatchObject2D(node_geometry, z_index=2)
         headings = Group(
             [
-                Text("x", font_size=24, color=BLUE).move_to((COLUMNS[0], 2.25)),
-                Text("tanh", font_size=24, color=GOLD).move_to((COLUMNS[1], 2.25)),
-                Text("softmax", font_size=24, color=GOLD).move_to((COLUMNS[2], 2.25)),
+                Text("x", font_size=24, color=BLUE).move(to=(COLUMNS[0], 2.25)),
+                Text("tanh", font_size=24, color=GOLD).move(to=(COLUMNS[1], 2.25)),
+                Text("softmax", font_size=24, color=GOLD).move(to=(COLUMNS[2], 2.25)),
             ],
             z_index=8,
         )
@@ -397,7 +397,7 @@ class NeuralForwardPass(Scene):
 def main() -> None:
     scene = NeuralForwardPass()
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         OUTPUT,
         fps=60,
         workers=8,

@@ -51,10 +51,22 @@ def _stage(
     duration: float = 1.65,
     hold: float = 0.42,
 ) -> None:
-    label = Text(name, font_size=24, color=WHITE, opacity=0, z_index=20)
-    formula = Text(matrix, font_size=19, color=MUTED, opacity=0, z_index=20)
-    label.move_to((0.0, -2.72))
-    formula.move_to((0.0, -3.05))
+    label = Text(
+        name,
+        font_size=24,
+        color=WHITE,
+        opacity=0,
+        z_index=20,
+        position=(0.0, -2.72),
+    )
+    formula = Text(
+        matrix,
+        font_size=19,
+        color=MUTED,
+        opacity=0,
+        z_index=20,
+        position=(0.0, -3.05),
+    )
     label, formula = scene.add(label, formula)
 
     with scene.parallel(duration=0.28):
@@ -76,16 +88,19 @@ class InfiniteSpace(Scene):
         self.fps = 60
 
         self.title = Text(
-            "Linear algebra on an infinite plane", font_size=32, color=WHITE, z_index=20
+            "Linear algebra on an infinite plane",
+            font_size=32,
+            color=WHITE,
+            z_index=20,
+            position=(0.0, 3.16),
         )
         self.subtitle = Text(
             "the infinite grid and the finite reference shape receive the same 2×2 matrix",
             font_size=19,
             color=MUTED,
             z_index=20,
+            position=(0.0, 2.76),
         )
-        self.title.move_to((0.0, 3.16))
-        self.subtitle.move_to((0.0, 2.76))
 
         self.grid = InfiniteGrid(
             0.5,
@@ -114,21 +129,18 @@ class InfiniteSpace(Scene):
             z_index=4,
         )
         self.origin = Dot((0, 0), radius=0.055, color=YELLOW, z_index=8)
-        self.reference_note = Text("same A", font_size=17, color=CYAN, z_index=20)
-        self.reference_note.move_to((1.28, 2.02))
+        self.reference_note = Text(
+            "same A",
+            font_size=17,
+            color=CYAN,
+            z_index=20,
+            position=(1.28, 2.02),
+        )
 
     def construct(self) -> None:
-        grid, x_axis, y_axis, reference, origin, title, subtitle, reference_note = (
-            self.add(
-                self.grid,
-                self.x_axis,
-                self.y_axis,
-                self.reference,
-                self.origin,
-                self.title,
-                self.subtitle,
-                self.reference_note,
-            )
+        self.add(self.origin, self.title, self.subtitle, self.reference_note)
+        grid, x_axis, y_axis, reference = self.add(
+            self.grid, self.x_axis, self.y_axis, self.reference
         )
         linear_objects = (grid, x_axis, y_axis, reference)
         self.wait(0.55)

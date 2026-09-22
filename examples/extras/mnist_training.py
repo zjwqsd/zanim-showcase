@@ -35,7 +35,6 @@ from zanim import (
     NumberFormat,
     Rectangle,
     Scene,
-    Style,
     Text,
     Transform2D,
     Vec2,
@@ -1036,7 +1035,7 @@ def _dynamic_number(
         number_format=NumberFormat(width=width, decimals=decimals, sign="space"),
         font_size=font_size,
         color=color,
-        transform=affine2d(position=at),
+        position=at,
         opacity=opacity,
         z_index=15,
     )
@@ -1253,17 +1252,20 @@ class MnistTraining(Scene):
         )
         loss_curve = DynamicGeometryObject2D(
             lambda t: _curve(loss_points, visual.completed_epochs(t)),
-            style=Style.outline(ORANGE, 0.028),
+            stroke=ORANGE,
+            stroke_width=0.028,
             z_index=10,
         )
         train_curve = DynamicGeometryObject2D(
             lambda t: _curve(train_points, visual.completed_epochs(t)),
-            style=Style.outline(CYAN, 0.025),
+            stroke=CYAN,
+            stroke_width=0.025,
             z_index=10,
         )
         test_curve = DynamicGeometryObject2D(
             lambda t: _curve(test_points, visual.completed_epochs(t)),
-            style=Style.outline(GREEN, 0.025),
+            stroke=GREEN,
+            stroke_width=0.025,
             z_index=10,
         )
         loss_legend = Text("mean loss", font_size=13, color=ORANGE)
@@ -1397,6 +1399,32 @@ class MnistTraining(Scene):
             plus_label,
             next_weight_label,
         )
+        animated_items = (
+            weight_filters,
+            gradient_filters,
+            *metric_labels,
+            pred_label,
+            conf_label,
+            pred_num,
+            conf_num,
+            loss_num,
+            train_num,
+            test_num,
+            g1_num,
+            g2_num,
+            forward_formula,
+            backward_formula,
+            update_formula,
+            weight_slot_label,
+            grad_slot_label,
+            plus_label,
+            next_weight_label,
+        )
+        animated_ids = {id(obj) for obj in animated_items}
+        self._static_items = tuple(
+            obj for obj in self._initial_items if id(obj) not in animated_ids
+        )
+
         self._weight_filters = weight_filters
         self._gradient_filters = gradient_filters
         self._gradient_tile_objects = gradient_tile_objects
@@ -1442,33 +1470,27 @@ class MnistTraining(Scene):
         plus_label = self._plus_label
         next_weight_label = self._next_weight_label
 
-        scene.add(*self._initial_items)
+        scene.add(*self._static_items)
 
-        forward_formula = scene.on(forward_formula)
-        backward_formula = scene.on(backward_formula)
-        update_formula = scene.on(update_formula)
-        weight_filters = scene.on(weight_filters)
-        gradient_filters = scene.on(gradient_filters)
-        gradient_tiles = [scene.on(tile) for tile in gradient_tile_objects]
-        pred_label = scene.on(pred_label)
-        conf_label = scene.on(conf_label)
-        pred_num = scene.on(pred_num)
-        conf_num = scene.on(conf_num)
-        loss_label, train_label, test_label = (
-            scene.on(metric_labels[1]),
-            scene.on(metric_labels[2]),
-            scene.on(metric_labels[3]),
+        weight_filters, gradient_filters = scene.add(weight_filters, gradient_filters)
+        gradient_tiles = list(gradient_filters.children)
+
+        metric_labels = scene.add(*metric_labels)
+        loss_label, train_label, test_label = metric_labels[1:4]
+        g1_label, g2_label = metric_labels[4:6]
+
+        pred_label, conf_label, pred_num, conf_num = scene.add(
+            pred_label, conf_label, pred_num, conf_num
         )
-        g1_label, g2_label = scene.on(metric_labels[4]), scene.on(metric_labels[5])
-        loss_num = scene.on(loss_num)
-        train_num = scene.on(train_num)
-        test_num = scene.on(test_num)
-        g1_num = scene.on(g1_num)
-        g2_num = scene.on(g2_num)
-        weight_slot_label = scene.on(weight_slot_label)
-        grad_slot_label = scene.on(grad_slot_label)
-        plus_label = scene.on(plus_label)
-        next_weight_label = scene.on(next_weight_label)
+        loss_num, train_num, test_num, g1_num, g2_num = scene.add(
+            loss_num, train_num, test_num, g1_num, g2_num
+        )
+        forward_formula, backward_formula, update_formula = scene.add(
+            forward_formula, backward_formula, update_formula
+        )
+        weight_slot_label, grad_slot_label, plus_label, next_weight_label = scene.add(
+            weight_slot_label, grad_slot_label, plus_label, next_weight_label
+        )
 
         # Reuse the same formula and metric panels for all eight epochs. No result
         # metric is visible before the corresponding computation has happened.
@@ -1724,7 +1746,7 @@ def main() -> None:
     render_seconds = None
     if not args.dry_run:
         started = perf_counter()
-        scene.render_video(
+        scene.render(
             output,
             fps=args.fps,
             workers=args.workers,

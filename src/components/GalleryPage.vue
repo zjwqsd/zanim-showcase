@@ -49,14 +49,6 @@ onBeforeUnmount(() => removeEventListener('hashchange', syncCollectionFromHash))
       所有网页结果都直接运行真实 <code>@zanim/web</code> Scene，可播放、暂停与 seek。
     </p>
 
-    <div class="admonition tip">
-      <div class="admonition-title">代码阅读</div>
-      <p>
-        页面只展示场景主体：重复 import、共享辅助函数与 CLI 输出入口会被折叠。
-        下方“完整源文件”链接仍指向仓库中的可运行源码。
-      </p>
-    </div>
-
     <nav class="gallery-collection-nav" aria-label="Gallery collections">
       <a
         v-for="collection in galleryCollections"

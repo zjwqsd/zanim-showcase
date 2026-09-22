@@ -17,7 +17,6 @@ from zanim import (
     Group3D,
     Scene,
     Text,
-    Transform3D,
     Vec3,
 )
 
@@ -58,14 +57,14 @@ def sticker(face: tuple[int, int, int], color: Color):
     x, y, z = face
     if x:
         size = Vec3(STICKER_THICKNESS, STICKER_SIDE, STICKER_SIDE)
-        pose = Transform3D.translation(x * STICKER_OFFSET, 0, 0)
+        position = (x * STICKER_OFFSET, 0, 0)
     elif y:
         size = Vec3(STICKER_SIDE, STICKER_THICKNESS, STICKER_SIDE)
-        pose = Transform3D.translation(0, y * STICKER_OFFSET, 0)
+        position = (0, y * STICKER_OFFSET, 0)
     else:
         size = Vec3(STICKER_SIDE, STICKER_SIDE, STICKER_THICKNESS)
-        pose = Transform3D.translation(0, 0, z * STICKER_OFFSET)
-    return Box3D(size, color=color, transform=pose)
+        position = (0, 0, z * STICKER_OFFSET)
+    return Box3D(size, color=color, position=position)
 
 
 def make_cubie(coord: tuple[int, int, int]) -> Cubie:
@@ -110,6 +109,7 @@ def rotation(axis: str, quarter: int) -> SO3:
 def turn(
     scene: Scene,
     cubies: list[Cubie],
+    nodes,
     axis: str,
     layer: int,
     quarter: int,
@@ -117,12 +117,16 @@ def turn(
     duration: float = TURN_DURATION,
 ) -> None:
     axis_index = {"x": 0, "y": 1, "z": 2}[axis]
-    moving = [cubie for cubie in cubies if cubie.coord[axis_index] == layer]
+    moving = [
+        (cubie, node)
+        for cubie, node in zip(cubies, nodes)
+        if cubie.coord[axis_index] == layer
+    ]
     delta = SE3(rotation=rotation(axis, quarter))
     with scene.parallel(duration=duration):
-        for cubie in moving:
-            scene.on(cubie.node).transform(by=delta, frame=PARENT)
-    for cubie in moving:
+        for _cubie, node in moving:
+            node.transform(by=delta, frame=PARENT)
+    for cubie, _node in moving:
         cubie.coord = rotate_coord(cubie.coord, axis, quarter)
 
 
@@ -161,13 +165,13 @@ class RubiksCube(Scene):
         root_rotation = SO3.rotation_y(-0.28) @ SO3.rotation_x(0.18)
         self.cube = Group3D(
             [cubie.node for cubie in self.cubies],
-            transform=SE3(rotation=root_rotation).as_affine(),
+            rotation=root_rotation,
             opacity=0.0,
         )
         self.pedestal = Box3D(
             Vec3(5.8, 0.08, 5.2),
             color=Color(25, 29, 36),
-            transform=Transform3D.translation(0, -1.72, 0),
+            position=(0, -1.72, 0),
         )
         self.title = Text(
             "Rubik's Cube · scramble",
@@ -176,18 +180,17 @@ class RubiksCube(Scene):
             opacity=0.0,
             z_index=20,
         )
-        self.title.move_to((0, 2.83))
+        self.title.move(to=(0, 2.83))
         self.move_text = Text(
             "R", font_size=27, color=Color(157, 181, 222), opacity=0.0, z_index=20
         )
-        self.move_text.move_to((5.15, -2.62))
+        self.move_text.move(to=(5.15, -2.62))
 
     def construct(self) -> None:
         scene = self
         cubies = self.cubies
-        pedestal, cube, title, move_text = scene.add(
-            self.pedestal, self.cube, self.title, self.move_text
-        )
+        scene.add(self.pedestal)
+        cube, title, move_text = scene.add(self.cube, self.title, self.move_text)
         scene.wait(0.35)
         with scene.parallel(duration=0.75):
             cube.fade_in()
@@ -198,14 +201,14 @@ class RubiksCube(Scene):
         for index, (notation, axis, layer, quarter) in enumerate(SCRAMBLE):
             if index:
                 target = Text(notation, font_size=27, color=Color(157, 181, 222))
-                target.move_to((5.15, -2.62))
+                target.move(to=(5.15, -2.62))
                 move_text.morph(to=target, duration=0.18)
-            turn(scene, cubies, axis, layer, quarter)
+            turn(scene, cubies, cube.children, axis, layer, quarter)
             scene.wait(TURN_PAUSE)
 
         scene.wait(0.3)
         solve_title = Text("Rubik's Cube · reverse solve", font_size=31, color=WHITE)
-        solve_title.move_to((0, 2.83))
+        solve_title.move(to=(0, 2.83))
         title.morph(to=solve_title, duration=0.45)
         scene.wait(0.15)
 
@@ -214,9 +217,9 @@ class RubiksCube(Scene):
                 notation.removesuffix("'") if notation.endswith("'") else notation + "'"
             )
             target = Text(shown, font_size=27, color=Color(157, 181, 222))
-            target.move_to((5.15, -2.62))
+            target.move(to=(5.15, -2.62))
             move_text.morph(to=target, duration=0.16)
-            turn(scene, cubies, axis, layer, -quarter)
+            turn(scene, cubies, cube.children, axis, layer, -quarter)
             scene.wait(TURN_PAUSE)
 
         scene.wait(0.8)

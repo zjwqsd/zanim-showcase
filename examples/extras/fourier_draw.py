@@ -135,14 +135,14 @@ class FourierDraw(Scene):
             "f(t) = sum_k c_k e^(2 pi i k t)",
             font_size=29,
             color=Color(223, 228, 240),
-            transform=affine2d(position=(0, 4.25)),
+            position=(0, 4.25),
             z_index=10,
         )
         self.term_label = Math(
             f"N = {len(self.epicycles.visual_indices)}",
             font_size=21,
             color=Color(150, 163, 188),
-            transform=affine2d(position=(0, 3.72)),
+            position=(0, 3.72),
             z_index=10,
         )
         self.follow_view = follow_view
@@ -220,7 +220,7 @@ def main() -> None:
     scene._run_authoring_hooks()
     info = scene.info
     output_path = args.output or (FOLLOW_OUTPUT if args.follow else OUTPUT)
-    output = scene.render_video(
+    output = scene.render(
         output_path, fps=60, workers=8, verify_random_access=True
     )
     print(output)

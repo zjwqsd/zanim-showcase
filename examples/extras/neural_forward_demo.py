@@ -4,6 +4,7 @@ The geometry, data, weights, timings, labels, contribution pulses and final valu
 match the supplied Manim Community 0.19.0 source. The default Manim smooth
 rate function is represented by Easing.SMOOTH.
 """
+
 from __future__ import annotations
 
 from math import exp, tanh
@@ -19,13 +20,12 @@ from zanim import (
     Group,
     Rectangle,
     Scene,
-    Style,
     Text,
     Transform2D,
     Vec2,
 )
 from zanim.batch import BatchObject2D, CircleSet, DynamicBatchObject2D, LineSet
-from zanim.geometry import PolylineGeometry, StrokeStyle
+from zanim.geometry import PolylineGeometry
 from zanim.plot import DynamicGeometryObject2D
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -65,7 +65,9 @@ def _lerp(a: float, b: float, p: float) -> float:
     return a + (b - a) * p
 
 
-def _lerp2(a: tuple[float, float], b: tuple[float, float], p: float) -> tuple[float, float]:
+def _lerp2(
+    a: tuple[float, float], b: tuple[float, float], p: float
+) -> tuple[float, float]:
     return (_lerp(a[0], b[0], p), _lerp(a[1], b[1], p))
 
 
@@ -135,11 +137,14 @@ def _grid_line(points, *, major: bool) -> DynamicGeometryObject2D:
     color = BLUE.with_alpha(round(255 * (0.55 if major else 0.23)))
 
     def geometry(time: float):
-        return PolylineGeometry(tuple(Vec2(*_data_point(point, time)) for point in points))
+        return PolylineGeometry(
+            tuple(Vec2(*_data_point(point, time)) for point in points)
+        )
 
     obj = DynamicGeometryObject2D(
         geometry,
-        style=Style(fill=None, stroke=StrokeStyle(color, 1.0 / UNIT_SIZE)),
+        stroke=color,
+        stroke_width=1.0 / UNIT_SIZE,
         z_index=0,
     )
     obj.trim = 0.0
@@ -193,7 +198,9 @@ def _edge_geometry():
                 weight = weights[j][i]
                 starts.append(Vec2(*start))
                 ends.append(Vec2(*end))
-                colors.append((GOLD if weight > 0 else BLUE).with_alpha(round(255 * 0.34)))
+                colors.append(
+                    (GOLD if weight > 0 else BLUE).with_alpha(round(255 * 0.34))
+                )
                 widths.append((1.0 + abs(weight)) / UNIT_SIZE)
                 layer_endpoints.append((start, end))
         layers.append(LineSet(tuple(starts), tuple(ends), tuple(colors), tuple(widths)))
@@ -265,7 +272,9 @@ class NeuralForwardDemo(Scene):
     def setup(self) -> None:
         self.canvas = Canvas(width=1920, height=1080, unit_size=UNIT_SIZE)
         self.fps = 60
-        self.background = Rectangle(18.0, 11.0, fill=BACKGROUND, stroke=None, z_index=-1000)
+        self.background = Rectangle(
+            18.0, 11.0, fill=BACKGROUND, stroke=None, z_index=-1000
+        )
 
         vertical = [
             tuple((float(x), float(y)) for y in np.linspace(-1.5, 1.5, 81))
@@ -276,11 +285,9 @@ class NeuralForwardDemo(Scene):
             for y in np.linspace(-1.5, 1.5, 13)
         ]
         self.grid = [
-            _grid_line(points, major=abs(points[0][0]) < 1e-8)
-            for points in vertical
+            _grid_line(points, major=abs(points[0][0]) < 1e-8) for points in vertical
         ] + [
-            _grid_line(points, major=abs(points[0][1]) < 1e-8)
-            for points in horizontal
+            _grid_line(points, major=abs(points[0][1]) < 1e-8) for points in horizontal
         ]
 
         rng = np.random.default_rng(31)
@@ -297,7 +304,7 @@ class NeuralForwardDemo(Scene):
         self.stage = Text(
             "x", font_size=28, font="DejaVu Sans", color=BLUE, opacity=0, z_index=12
         )
-        self.stage.move_to((0.0, 3.6))
+        self.stage.move(to=(0.0, 3.6))
 
         z, h, out = forward(SAMPLE)
         self.values = (SAMPLE, h, out)
@@ -308,10 +315,16 @@ class NeuralForwardDemo(Scene):
         nodes = _node_batch(self.values)
         pulses = _pulse_batch(self.values, endpoints)
         headings = [
-            Text(label, font_size=24, font="DejaVu Sans", color=color, z_index=8).move_to((x, 2.25))
-            for label, x, color in zip(("x", "tanh", "softmax"), COLUMNS, (BLUE, GOLD, GOLD))
+            Text(label, font_size=24, font="DejaVu Sans", color=color, z_index=8).move(
+                to=(x, 2.25)
+            )
+            for label, x, color in zip(
+                ("x", "tanh", "softmax"), COLUMNS, (BLUE, GOLD, GOLD)
+            )
         ]
-        self.network = Group([*edges, nodes, pulses, *headings], position=(-0.25, 0), opacity=0.0)
+        self.network = Group(
+            [*edges, nodes, pulses, *headings], position=(-0.25, 0), opacity=0.0
+        )
 
         self.value_labels = []
         for layer, values in enumerate(self.values):
@@ -326,7 +339,7 @@ class NeuralForwardDemo(Scene):
                     opacity=0.0,
                     z_index=9,
                 )
-                label.move_to((COLUMNS[layer], y))
+                label.move(to=(COLUMNS[layer], y))
                 labels.append(label)
             self.value_labels.append(tuple(labels))
 
@@ -392,7 +405,9 @@ class NeuralForwardDemo(Scene):
         labels = [self.add(label) for layer in self.value_labels for label in layer]
         with self.parallel(duration=1.2):
             network.fade_in(easing=Easing.SMOOTH)
-            network.move(by=(0.25, 0.0), frame=WORLD, duration=1.2, easing=Easing.SMOOTH)
+            network.move(
+                by=(0.25, 0.0), frame=WORLD, duration=1.2, easing=Easing.SMOOTH
+            )
             stage.affine(
                 position=(-4.25, 2.25),
                 scale=0.72,
@@ -427,7 +442,7 @@ class NeuralForwardDemo(Scene):
 def main() -> None:
     scene = NeuralForwardDemo()
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         OUTPUT,
         fps=60,
         workers=8,

@@ -11,21 +11,19 @@ from zanim import (
     Axes,
     Canvas,
     Color,
+    DynamicGeometryObject2D,
     DynamicNumber,
     FormulaLiteral,
     FormulaTemplate,
     MatrixSlot,
     NumberFormat,
     NumberSlot,
+    ScalarValue,
     Scene,
     ScriptSlots,
-    Style,
     Text,
     Vec2,
-    affine2d,
 )
-from zanim.plot import DynamicGeometryObject2D
-from zanim.value import ScalarValue
 
 
 def f(x: float) -> float:
@@ -73,7 +71,9 @@ class MathExample(Scene):
         )
         self.area = DynamicGeometryObject2D(
             lambda t: self.axes.area_polygon(f, lower(t), upper(t), samples=120),
-            style=Style.paint(Color(78, 139, 255, 105), Color(112, 170, 255), 0.018),
+            fill=Color(78, 139, 255, 105),
+            stroke=Color(112, 170, 255),
+            stroke_width=0.018,
         )
         self.graph = self.axes.plot(
             f, samples=260, color=Color(118, 205, 255), stroke_width=0.04
@@ -129,7 +129,7 @@ class MathExample(Scene):
             number_format=NumberFormat(width=6, decimals=1, sign="space"),
             font_size=23,
             color=Color(255, 220, 145),
-            transform=affine2d(position=(5.05, -3.25)),
+            position=(5.05, -3.25),
         )
         self.progress_label = Text(
             "ScalarValue → DynamicNumber",
@@ -151,7 +151,7 @@ class MathExample(Scene):
                     f, lower(t), upper(t), samples=120
                 ),
             },
-            transform=affine2d(position=(3.7, 2.25)),
+            position=(3.7, 2.25),
         )
         self.product.mount(
             self,
@@ -160,10 +160,10 @@ class MathExample(Scene):
                 "B": lambda t: matrices(t)[1],
                 "C": lambda t: matrices(t)[2],
             },
-            transform=affine2d(position=(3.7, -1.2)),
+            position=(3.7, -1.2),
         )
 
-        progress, progress_number = self.add(self.progress, self.progress_number)
+        progress, _ = self.add(self.progress, self.progress_number)
         self.add(self.progress_label)
 
         with self.parallel(duration=5.3):

@@ -1,12 +1,12 @@
 const code = {
   hello: {
-    python: `from zanim import BLUE, Canvas, Circle, Scene
+    python: `from zanim import *
 
 scene = Scene(canvas=Canvas(1280, 720, 90), fps=60)
 circle = scene.add(Circle(1, fill=BLUE))
 
 circle.move(to=(2, 0), duration=2)
-circle.rotate(by=1.2, duration=0.8)
+circle.rotate(by=1.2, about=circle.center, duration=0.8)
 
 scene.preview()`,
     js: `import { BLUE, Circle, Scene } from '@zanim/web'
@@ -23,16 +23,15 @@ scene.play()`,
   },
 
   classFrontend: {
-    python: `from zanim import BLUE, WORLD, Circle, Row, Scene, Square
+    python: `from zanim import *
 
 class Demo(Scene):
-    def setup(self):
-        self.square = Square(1)
-        self.circle = Circle(0.6, fill=BLUE)
-        Row(gap=0.5).place(self.square, self.circle)
-
     def construct(self):
-        square, circle = self.add(self.square, self.circle)
+        square = Square(1)
+        circle = Circle(0.6, fill=BLUE)
+        Row(gap=0.5).place(square, circle)
+        square, circle = self.add(square, circle)
+
         with self.parallel(duration=1):
             square.move(by=(-1, 0), frame=WORLD)
             circle.move(by=(1, 0), frame=WORLD)`,
@@ -41,8 +40,8 @@ class Demo(Scene):
 
   parallel: {
     python: `with scene.parallel(duration=1.2):
-    square.move(by=(2, 0))
-    circle.rotate(by=PI)
+    square.move(by=(2, 0), frame=WORLD)
+    circle.rotate(by=PI, about=circle.center)
     label.fade_in(at=0.25)
 
 scene.wait(0.3)`,
@@ -92,7 +91,10 @@ scene.layout(square, circle, card, {
 
   values: {
     python: `progress = ScalarValue(0)
-number = DynamicNumber(progress, digits=1)
+number = DynamicNumber(
+    progress,
+    number_format=NumberFormat(width=6, decimals=1),
+)
 
 progress, number = scene.add(progress, number)
 progress.value(to=100, duration=2)`,
@@ -126,7 +128,7 @@ scene.wait(6)`,
 )
 
 scene = Scene(canvas=Canvas(1280, 720, 90), camera3d=camera)
-cube = scene.add(Cube3D(size=1.5, color=BLUE))
+cube = scene.add(Cube3D(side=1.5, color=BLUE))
 
 cube.transform_function(
     lambda a: Transform3D.rotation_y(TAU * a),
@@ -161,10 +163,10 @@ scene.seek(2.75)`,
   },
 
   ir: {
-    python: `from zanim import scene_to_ir, write_scene_ir
+    python: `ir = scene.to_ir()
+scene.write_ir("scene.zanim.json")
 
-ir = scene_to_ir(scene)
-write_scene_ir(ir, "scene.zanim.json")`,
+restored = Scene.from_ir(ir)`,
     js: `import { sceneToIR } from '@zanim/web/ir'
 
 const ir = sceneToIR(scene)
@@ -343,11 +345,11 @@ export default defineConfig({
         id: 'authoring-style',
         title: '3. 两种 Python 创作入口',
         paragraphs: [
-          '顶层脚本式写法适合小型实验和快速验证；Scene 子类适合把 setup() 与 construct() 分开组织。两者最终写入同一个 Scene 模型。',
+          '顶层脚本式写法适合快速实验；Scene 子类默认直接写 construct()。只有资源准备、复杂初始状态值得独立组织时再使用 setup()。两者最终写入同一个 Scene 模型。',
         ],
         table: [
           ['脚本式', 'scene = Scene(); scene.add(...); scene.preview()'],
-          ['Scene 子类', 'setup() 声明初始状态；construct() 编排时间行为'],
+          ['Scene 子类', 'construct() 足以覆盖常见场景；setup() 是可选组织钩子'],
           ['共同点', 'add() 是生命周期边界；时间轴语义相同'],
         ],
       },

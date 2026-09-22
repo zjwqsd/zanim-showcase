@@ -1004,8 +1004,8 @@ class MidiPiano(Scene):
             opacity=0,
             z_index=10,
         )
-        self.title.move_to((0, 4.34))
-        self.subtitle.move_to((0, 3.92))
+        self.title.move(to=(0, 4.34))
+        self.subtitle.move(to=(0, 3.92))
         self.audio = Audio(self.audio_path, gain=self._arg_gain)
 
     def construct(self) -> None:
@@ -1022,7 +1022,7 @@ class MidiPiano(Scene):
         with scene.parallel():
             title.fade_in(duration=0.45)
             subtitle.fade_in(duration=0.55, at=0.05)
-            audio.media(duration=audio.raw.source.duration, at=LEAD_TIME)
+            audio.media(duration=audio.duration, at=LEAD_TIME)
         scene.wait(OUTRO)
 
 
@@ -1047,9 +1047,7 @@ def main() -> None:
     )
     scene._run_authoring_hooks()
     song = scene.song
-    output = scene.render_video(
-        args.output, fps=60, workers=8, verify_random_access=True
-    )
+    output = scene.render(args.output, fps=60, workers=8, verify_random_access=True)
     print(output)
     print(
         f"duration={scene.duration:.2f}s midi_duration={song.duration:.2f}s "

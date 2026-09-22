@@ -140,11 +140,11 @@ class ModularMultiplication(Scene):
         self.n_label = Text(
             f"n = {self._arg_points}", font_size=18, color=MUTED, opacity=0, z_index=10
         )
-        self.title.move_to((0, 4.25))
-        self.subtitle.move_to((0, 3.80))
-        self.k_label.move_to((-0.48, -4.18))
-        self.k_value.move_to((0.34, -4.18))
-        self.n_label.move_to((4.60, -4.18))
+        self.title.move(to=(0, 4.25))
+        self.subtitle.move(to=(0, 3.80))
+        self.k_label.move(to=(-0.48, -4.18))
+        self.k_value.move(to=(0.34, -4.18))
+        self.n_label.move(to=(4.60, -4.18))
 
     def construct(self) -> None:
         multiplier, outline, lines, dots, title, subtitle, k_label, k_value, n_label = (
@@ -190,7 +190,7 @@ def main() -> None:
         points=args.points, start=args.start, end=args.end, duration=args.duration
     )
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         args.output, fps=60, workers=8, verify_random_access=True
     )
     print(output)

@@ -23,70 +23,60 @@ from zanim import (
     Square,
     Text,
     Vec2,
-    affine2d,
 )
-from zanim.geometry import Object2D
 
 
-def axis(color: Color, end: Vec2) -> Object2D:
+def axis(color: Color, end: Vec2):
     return Line(Vec2(), end, stroke=color, stroke_width=0.035)
 
 
-def make_panel(center_x: float) -> tuple[Group, Group]:
-    # The parent frame is deliberately rotated in WORLD. The child frame is
-    # rotated again inside it, so LOCAL/PARENT/WORLD translations visibly differ.
-    parent_x = axis(RED, Vec2(1.5, 0))
-    parent_y = axis(GREEN, Vec2(0, 1.15))
-    origin = Dot(radius=0.07, color=WHITE)
-
-    body = Square(0.72, fill=BLUE.with_alpha(190), stroke=WHITE)
-    child_x = axis(RED, Vec2(0.78, 0))
-    child_y = axis(GREEN, Vec2(0, 0.78))
+def make_panel(center_x: float) -> Group:
     tool = Group(
-        [body, child_x, child_y],
-        transform=affine2d(position=(-0.55, -0.1), rotation=-33 * DEGREES),
+        [
+            Square(0.72, fill=BLUE.with_alpha(190), stroke=WHITE),
+            axis(RED, Vec2(0.78, 0)),
+            axis(GREEN, Vec2(0, 0.78)),
+        ],
+        position=(-0.55, -0.1),
+        rotation=-33 * DEGREES,
     )
-    panel = Group(
-        [parent_x, parent_y, origin, tool],
-        transform=affine2d(position=(center_x, -0.45), rotation=20 * DEGREES),
+    return Group(
+        [
+            axis(RED, Vec2(1.5, 0)),
+            axis(GREEN, Vec2(0, 1.15)),
+            Dot(radius=0.07, color=WHITE),
+            tool,
+        ],
+        position=(center_x, -0.45),
+        rotation=20 * DEGREES,
     )
-    return panel, tool
 
 
 class Transforms(Scene):
-    def setup(self) -> None:
+    def construct(self) -> None:
         self.canvas = Canvas(1280, 720, 90)
         self.fps = 60
 
-        self.title = Text("One vector, three coordinate frames", font_size=35)
-        self.subtitle = Text(
+        title = Text("One vector, three coordinate frames", font_size=35)
+        subtitle = Text(
             "move(by=(1.5, 0), frame=...) changes which basis interprets the vector",
             font_size=21,
             color=MUTED,
         )
-        self.title.place(anchor=TOP, at=self.frame.top + Vec2(0, -0.28))
-        self.subtitle.place(anchor=TOP, at=self.title.anchor(TOP) + Vec2(0, -0.55))
+        title.place(anchor=TOP, at=self.frame.top + Vec2(0, -0.28))
+        subtitle.place(anchor=TOP, at=title.anchor(TOP) + Vec2(0, -0.55))
 
-        self.local_panel, _ = make_panel(-4.1)
-        self.parent_panel, _ = make_panel(0.0)
-        self.world_panel, _ = make_panel(4.1)
-        self.labels = [
+        panels = [make_panel(-4.1), make_panel(0.0), make_panel(4.1)]
+        labels = [
             Text("LOCAL", font_size=24, color=YELLOW),
             Text("PARENT", font_size=24, color=YELLOW),
             Text("WORLD", font_size=24, color=YELLOW),
         ]
-        for x, label in zip((-4.1, 0.0, 4.1), self.labels):
+        for x, label in zip((-4.1, 0.0, 4.1), labels):
             label.place(anchor=TOP, at=Vec2(x, 2.05))
 
-    def construct(self) -> None:
-        title, subtitle, local_panel, parent_panel, world_panel, *_ = self.add(
-            self.title,
-            self.subtitle,
-            self.local_panel,
-            self.parent_panel,
-            self.world_panel,
-            *self.labels,
-        )
+        self.add(title, subtitle, *labels)
+        local_panel, parent_panel, world_panel = self.add(*panels)
         local_tool = local_panel.children[-1]
         parent_tool = parent_panel.children[-1]
         world_tool = world_panel.children[-1]

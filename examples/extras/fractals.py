@@ -222,8 +222,8 @@ def _curve(spec: FractalSpec, order: int, *, trim: float = 1.0) -> Polyline:
 def _heading(spec: FractalSpec) -> tuple[Text, Text]:
     title = Text(spec.name, font_size=35, color=WHITE, opacity=0, z_index=10)
     subtitle = Text(spec.subtitle, font_size=19, color=MUTED, opacity=0, z_index=10)
-    title.move_to((0, 4.25))
-    subtitle.move_to((0, 3.78))
+    title.move(to=(0, 4.25))
+    subtitle.move(to=(0, 3.78))
     return title, subtitle
 
 
@@ -235,7 +235,7 @@ def _order_label(order: int, point_count: int) -> Text:
         opacity=0,
         z_index=10,
     )
-    label.move_to((0, -4.28))
+    label.move(to=(0, -4.28))
     return label
 
 
@@ -317,7 +317,7 @@ def main() -> None:
 
     scene = Fractals(section=args.section)
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         args.output,
         fps=60,
         workers=8,

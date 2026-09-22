@@ -381,9 +381,9 @@ def _animate_trace(
         opacity=0,
         z_index=10,
     )
-    title.move_to((0, 4.2))
-    subtitle.move_to((0, 3.76))
-    legend.move_to((0, -4.25))
+    title.move(to=(0, 4.2))
+    subtitle.move(to=(0, 3.76))
+    legend.move(to=(0, -4.25))
 
     bars = BatchObject2D(_line_state(_initial_step(initial), n), opacity=0, z_index=1)
     baseline = BatchObject2D(
@@ -464,7 +464,7 @@ def main() -> None:
     scene = SortingAlgorithms(n=args.n, seed=args.seed, algorithm=args.algorithm)
     scene._run_authoring_hooks()
     initial, traces = scene.initial, scene.traces
-    output = scene.render_video(
+    output = scene.render(
         args.output, fps=60, workers=8, verify_random_access=True
     )
     print(output)

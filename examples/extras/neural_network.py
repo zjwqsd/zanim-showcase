@@ -76,7 +76,7 @@ class NeuralNetwork(Scene):
         self.title = Text(
             "Signals flow; geometry stays batched",
             font_size=31,
-            transform=affine2d(position=(0, 3.55)),
+            position=(0, 3.55),
             opacity=0,
             z_index=10,
         )
@@ -119,7 +119,7 @@ def main() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     scene = NeuralNetwork()
     scene._run_authoring_hooks()
-    print(scene.render_video(OUTPUT, verify_random_access=True))
+    print(scene.render(OUTPUT, verify_random_access=True))
 
 
 if __name__ == "__main__":

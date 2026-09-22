@@ -133,9 +133,9 @@ class HilbertCurve(Scene):
         self.title = Text(
             "Hilbert curve", font_size=36, color=WHITE, opacity=0, z_index=10
         )
-        self.title.move_to((0, 4.25))
+        self.title.move(to=(0, 4.25))
         self.label = _order_label(1)
-        self.label.move_to((0, -4.25))
+        self.label.move(to=(0, -4.25))
         self.first = _curve(1)
         self.first.trim = 0
 
@@ -157,7 +157,7 @@ class HilbertCurve(Scene):
             curve = scene.replace(curve, _curve(order), duration=transition_duration)
 
             next_label = _order_label(order)
-            next_label.move_to((0, -4.25))
+            next_label.move(to=(0, -4.25))
             next_label = scene.add(next_label)
             with scene.parallel(duration=LABEL_FADE):
                 label.fade_out()
@@ -185,7 +185,7 @@ def main() -> None:
         hold=args.hold,
     )
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         args.output,
         fps=60,
         workers=8,

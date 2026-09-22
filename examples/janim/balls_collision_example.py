@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from math import cos, sin, tau
 
 import numpy as np
-
 from zanim import *
 
 LEFT = -4.0
@@ -162,7 +161,8 @@ class BallsCollisionExample(Scene):
         self.balls = [
             DynamicGeometryObject2D(
                 ball_geometry(index),
-                style=Style.solid(BLUE),
+                fill=BLUE,
+                stroke=None,
                 z_index=1,
             )
             for index in range(BALL_COUNT)
@@ -184,7 +184,7 @@ class BallsCollisionExample(Scene):
 
         with self.parallel(duration=1.0):
             self.camera.transform_function(zoom_to_target)
-            target.style(to=Style.solid(YELLOW))
+            target.style(fill=YELLOW, stroke=None)
 
         self.wait(0.5)
 

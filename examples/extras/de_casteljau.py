@@ -229,13 +229,13 @@ class DeCasteljau(Scene):
             opacity=0,
             z_index=10,
         )
-        self.title.move_to((0, 4.25))
-        self.subtitle.move_to((0, 3.80))
-        self.level_1.move_to((-4.75, 3.35))
-        self.level_2.move_to((-4.75, 2.98))
-        self.curve_label.move_to((-4.75, 2.61))
-        self.t_label.move_to((-0.42, -4.20))
-        self.t_number.move_to((0.38, -4.20))
+        self.title.move(to=(0, 4.25))
+        self.subtitle.move(to=(0, 3.80))
+        self.level_1.move(to=(-4.75, 3.35))
+        self.level_2.move(to=(-4.75, 2.98))
+        self.curve_label.move(to=(-4.75, 2.61))
+        self.t_label.move(to=(-0.42, -4.20))
+        self.t_number.move(to=(0.38, -4.20))
 
     def construct(self) -> None:
         (
@@ -295,7 +295,7 @@ def main() -> None:
 
     scene = DeCasteljau(duration=args.duration)
     scene._run_authoring_hooks()
-    output = scene.render_video(
+    output = scene.render(
         args.output, fps=60, workers=8, verify_random_access=True
     )
     print(output)

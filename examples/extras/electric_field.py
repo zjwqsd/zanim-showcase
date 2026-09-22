@@ -143,7 +143,7 @@ class ElectricField(Scene):
             color=WHITE,
             opacity=0.0,
         )
-        self.title.move_to(Vec2(0.0, 2.96))
+        self.title.move(to=Vec2(0.0, 2.96))
         self.orbit = Simulation(
             OrbitState(), step_orbit, hz=240, checkpoint_interval=0.5
         )
@@ -193,7 +193,7 @@ class ElectricField(Scene):
         next_title = Text(
             "Moving electric field · field lines", font_size=31, color=WHITE
         )
-        next_title.move_to(Vec2(0.0, 2.96))
+        next_title.move(to=Vec2(0.0, 2.96))
         with scene.parallel(duration=1.0):
             vectors.fade_out()
             lines.fade_in()

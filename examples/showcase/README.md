@@ -2,7 +2,7 @@
 
 This directory is the recommended way to learn Zanim. Each lesson is a small complete scene, and the ordering follows the framework's mental model rather than renderer internals.
 
-Every lesson uses the product-default class syntax: one `Scene` subclass with `setup()` and `construct()`. There is no builder function or decorator.
+Every lesson uses one `Scene` subclass. Short scenes put declaration, initial layout and animation directly in `construct()`; `setup()` is reserved for cases where substantial resource preparation or reusable initial state actually benefits from a separate hook. `Scene.add()` is the ownership boundary in both styles.
 
 The lessons also use the built-in palette (`BLUE`, `GREEN`, `RED`, `WHITE`, `MUTED`, etc.) and angle constants (`PI`, `TAU`, `DEGREES`) instead of redefining common values in every file. `Color(...)` is still used where a scene needs a deliberately custom color.
 

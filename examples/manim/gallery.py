@@ -19,7 +19,9 @@ def dot(x, y, color=WHITE, radius=0.09):
 
 
 def path(points, color=CYAN, width=0.03, trim=1.0):
-    return Polyline(tuple(Vec2(*p) for p in points), stroke=color, stroke_width=width, trim=trim)
+    return Polyline(
+        tuple(Vec2(*p) for p in points), stroke=color, stroke_width=width, trim=trim
+    )
 
 
 def Rotating(obj, *, about_point, run_time=1.0):
@@ -34,7 +36,14 @@ def Rotating(obj, *, about_point, run_time=1.0):
 
 class ManimCELogo(Scene):
     def setup(self):
-        self.canvas = Canvas(1280, 720, 90, background=Color(236, 230, 226))
+        self.canvas = Canvas(1280, 720, 90)
+        self.background = Rectangle(
+            self.canvas.width / self.canvas.unit_size,
+            self.canvas.height / self.canvas.unit_size,
+            fill=Color(236, 230, 226),
+            stroke=None,
+            z_index=-100,
+        )
         logo_green = Color(135, 194, 165)
         logo_blue = Color(82, 88, 147)
         logo_red = Color(224, 122, 95)
@@ -44,20 +53,21 @@ class ManimCELogo(Scene):
             "bb(M)",
             font_size=250,
             color=logo_black,
-            transform=affine2d(position=(-2.25, 1.5), scale=(1, 1.04)),
+            position=(-2.25, 1.5),
+            scale=(1, 1.04),
         )
         circle = Circle(1, fill=logo_green, stroke=logo_green)
-        circle.shift(-1, 0)
+        circle.move(by=(-1, 0), frame=PARENT)
         square = Square(2, fill=logo_blue, stroke=logo_blue)
-        square.shift(0, 1)
+        square.move(by=(0, 1), frame=PARENT)
         triangle = RegularPolygon(3, 1, fill=logo_red, stroke=logo_red)
-        triangle.shift(1, 0)
+        triangle.move(by=(1, 0), frame=PARENT)
 
         self.logo = Group([triangle, square, circle, ds_m])
-        self.logo.shift(-self.logo.center.x, -self.logo.center.y)
+        self.logo.move(by=(-self.logo.center.x, -self.logo.center.y), frame=PARENT)
 
     def construct(self):
-        self.add(self.logo)
+        self.add(self.background, self.logo)
 
 
 class BraceAnnotation(Scene):
@@ -73,13 +83,24 @@ class BraceAnnotation(Scene):
 
         lower_label = self.lower.label_point()
         upper_label = self.upper.label_point()
-        self.label = Math('"Horizontal distance"', transform=affine2d(position=(lower_label.x, lower_label.y)))
-        self.tex = Math('x - x_1', transform=affine2d(position=(upper_label.x, upper_label.y)))
+        self.label = Math(
+            '"Horizontal distance"',
+            position=(lower_label.x, lower_label.y),
+        )
+        self.tex = Math("x - x_1", position=(upper_label.x, upper_label.y))
         self.dot1 = Dot(a)
         self.dot2 = Dot(b)
 
     def construct(self):
-        self.add(self.line, self.dot1, self.dot2, self.lower, self.upper, self.label, self.tex)
+        self.add(
+            self.line,
+            self.dot1,
+            self.dot2,
+            self.lower,
+            self.upper,
+            self.label,
+            self.tex,
+        )
 
 
 class VectorArrow(Scene):
@@ -135,7 +156,12 @@ class BooleanOperations(Scene):
             opacity=0,
         )
 
-        self.title = Text('Boolean Operation', font_size=34, opacity=0, transform=affine2d(position=(-3, 3.15)))
+        self.title = Text(
+            "Boolean Operation",
+            font_size=34,
+            opacity=0,
+            position=(-3, 3.15),
+        )
         title_bounds = self.title.bounds()
         self.underline = Line(
             (title_bounds.left, title_bounds.bottom - 0.05),
@@ -144,28 +170,43 @@ class BooleanOperations(Scene):
             opacity=0,
         )
 
-        self.intersection = Intersection(self.ellipse1, self.ellipse2, color=manim_green, fill_opacity=0.5)
-        self.union = Union(self.ellipse1, self.ellipse2, color=manim_orange, fill_opacity=0.5)
-        self.exclusion = Exclusion(self.ellipse1, self.ellipse2, color=manim_yellow, fill_opacity=0.5)
-        self.difference = Difference(self.ellipse1, self.ellipse2, color=manim_pink, fill_opacity=0.5)
+        self.intersection = Intersection(
+            self.ellipse1, self.ellipse2, color=manim_green, fill_opacity=0.5
+        )
+        self.union = Union(
+            self.ellipse1, self.ellipse2, color=manim_orange, fill_opacity=0.5
+        )
+        self.exclusion = Exclusion(
+            self.ellipse1, self.ellipse2, color=manim_yellow, fill_opacity=0.5
+        )
+        self.difference = Difference(
+            self.ellipse1, self.ellipse2, color=manim_pink, fill_opacity=0.5
+        )
 
         self.intersection_text = Text(
             "Intersection",
             font_size=23,
             opacity=0,
-            transform=affine2d(position=(5, 3.43)),
+            position=(5, 3.43),
         )
-        self.union_text = Text('Union', font_size=23, opacity=0, transform=affine2d(position=(5, 1.29)))
-        self.exclusion_text = Text('Exclusion', font_size=23, opacity=0, transform=affine2d(position=(5, -1.11)))
+        self.union_text = Text("Union", font_size=23, opacity=0, position=(5, 1.29))
+        self.exclusion_text = Text(
+            "Exclusion",
+            font_size=23,
+            opacity=0,
+            position=(5, -1.11),
+        )
         self.difference_text = Text(
             "Difference",
             font_size=23,
             opacity=0,
-            transform=affine2d(position=(2.5, 1.29)),
+            position=(2.5, 1.29),
         )
 
     def construct(self):
-        ellipse1, ellipse2, title, underline = self.add(self.ellipse1, self.ellipse2, self.title, self.underline)
+        ellipse1, ellipse2, title, underline = self.add(
+            self.ellipse1, self.ellipse2, self.title, self.underline
+        )
         with self.parallel(duration=1):
             ellipse1.fade_in()
             ellipse2.fade_in()
@@ -220,7 +261,7 @@ class MovingAround(Scene):
     def construct(self):
         square = self.add(self.square)
         square.move(by=(-1, 0), frame=WORLD)
-        square.paint(fill=self.orange, stroke=Color(88, 196, 221))
+        square.style(fill=self.orange, stroke=Color(88, 196, 221))
         square.scale(by=0.3, frame=WORLD)
         square.rotate(by=0.4, frame=WORLD)
 
@@ -246,22 +287,20 @@ class MovingAngle(Scene):
             return Arc(0.5, 0, angle).geometry
 
         self.base = Line((-1, 0), (1, 0), stroke=WHITE)
-        self.ray = DynamicGeometryObject2D(ray_geometry, style=Style.outline(WHITE))
+        self.ray = DynamicGeometryObject2D(ray_geometry, stroke=WHITE)
         self.arc = DynamicGeometryObject2D(
             arc_geometry,
-            style=Style.outline(WHITE),
-            transform=affine2d(position=(self.center.x, self.center.y)),
+            stroke=WHITE,
+            position=(self.center.x, self.center.y),
         )
 
         initial = 110 * pi / 180
         q = initial * 0.5
         self.theta = Math(
             "theta",
-            transform=affine2d(
-                position=(
-                    self.center.x + 0.8 * cos(q),
-                    self.center.y + 0.8 * sin(q),
-                )
+            position=(
+                self.center.x + 0.8 * cos(q),
+                self.center.y + 0.8 * sin(q),
             ),
         )
         self.theta_red = Math("theta", color=RED)
@@ -288,17 +327,23 @@ class MovingAngle(Scene):
 
         with self.parallel(duration=1):
             tracker.value(to=40 * pi / 180)
-            theta.transform_function(self._theta_transform(110 * pi / 180, 40 * pi / 180))
+            theta.transform_function(
+                self._theta_transform(110 * pi / 180, 40 * pi / 180)
+            )
 
         with self.parallel(duration=1):
             tracker.value(to=180 * pi / 180)
-            theta.transform_function(self._theta_transform(40 * pi / 180, 180 * pi / 180))
+            theta.transform_function(
+                self._theta_transform(40 * pi / 180, 180 * pi / 180)
+            )
 
         theta.morph(to=self.theta_red, duration=0.5)
 
         with self.parallel(duration=1):
             tracker.value(to=350 * pi / 180)
-            theta.transform_function(self._theta_transform(180 * pi / 180, 350 * pi / 180))
+            theta.transform_function(
+                self._theta_transform(180 * pi / 180, 350 * pi / 180)
+            )
 
 
 class MovingDots(Scene):
@@ -332,10 +377,10 @@ class MovingFrameBox(Scene):
     def setup(self):
         self.canvas = CANVAS
 
-        self.left = Math('(d)/(d x) f(x) g(x) =', font_size=38, reveal=0)
-        self.mid = Math('f(x) (d)/(d x) g(x)', font_size=38, reveal=0)
-        self.plus = Math('+', font_size=38, reveal=0)
-        self.right = Math('g(x) (d)/(d x) f(x)', font_size=38, reveal=0)
+        self.left = Math("(d)/(d x) f(x) g(x) =", font_size=38, reveal=0)
+        self.mid = Math("f(x) (d)/(d x) g(x)", font_size=38, reveal=0)
+        self.plus = Math("+", font_size=38, reveal=0)
+        self.right = Math("g(x) (d)/(d x) f(x)", font_size=38, reveal=0)
 
         Row(gap=0.04, at=(0, 0)).place(self.left, self.mid, self.plus, self.right)
 
@@ -367,8 +412,8 @@ class RotationUpdater(Scene):
     def construct(self):
         moving = self.add(self.moving)
         self.add(self.reference)
-        moving.rotate(by=2, about=(0, 0), frame=WORLD, duration=2, easing=Easing.LINEAR)
-        moving.rotate(by=-2, about=(0, 0), frame=WORLD, duration=2, easing=Easing.LINEAR)
+        moving.rotate(by=2, about=(0, 0), duration=2, easing=Easing.LINEAR)
+        moving.rotate(by=-2, about=(0, 0), duration=2, easing=Easing.LINEAR)
         self.wait(0.5)
 
 
@@ -379,7 +424,7 @@ class PointWithTrace(Scene):
 
     def construct(self):
         dot_obj = self.add(self.dot)
-        dot_obj.rotate(by=PI, about=(1, 0), frame=WORLD, duration=2)
+        dot_obj.rotate(by=PI, about=(1, 0), duration=2)
         self.wait()
         dot_obj.move(by=(0, 1), frame=WORLD)
         dot_obj.move(by=(-1, 0), frame=WORLD)
@@ -413,10 +458,24 @@ class SinAndCosFunctionPlot(Scene):
         for x in range(-10, 11):
             q = self.axes_model.c2p(x, 0)
             size = 0.13 if x % 2 == 0 else 0.07
-            axis_parts.append(Line((q.x, q.y - size), (q.x, q.y + size), stroke=green, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x, q.y - size),
+                    (q.x, q.y + size),
+                    stroke=green,
+                    stroke_width=0.022,
+                )
+            )
         for y in (-1, 0, 1):
             q = self.axes_model.c2p(0, y)
-            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=green, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x - 0.07, q.y),
+                    (q.x + 0.07, q.y),
+                    stroke=green,
+                    stroke_width=0.022,
+                )
+            )
         self.axes = Group(axis_parts)
 
         self.sin_curve = self.axes_model.plot(sin, x_range=(-10, 10.3), color=blue)
@@ -431,7 +490,7 @@ class SinAndCosFunctionPlot(Scene):
             if x == 0:
                 continue
             q = self.axes_model.c2p(x, 0)
-            labels.append(Math(str(x), font_size=24, transform=affine2d(position=(q.x, q.y - 0.38))))
+            labels.append(Math(str(x), font_size=24, position=(q.x, q.y - 0.38)))
 
         x_end = self.axes_model.c2p(10.3, 0)
         y_end = self.axes_model.c2p(0, 1.5)
@@ -442,29 +501,29 @@ class SinAndCosFunctionPlot(Scene):
                 Math(
                     "x",
                     font_size=32,
-                    transform=affine2d(position=(x_end.x + 0.42, x_end.y + 0.42)),
+                    position=(x_end.x + 0.42, x_end.y + 0.42),
                 ),
                 Math(
                     "y",
                     font_size=32,
-                    transform=affine2d(position=(y_end.x + 0.32, y_end.y + 0.25)),
+                    position=(y_end.x + 0.32, y_end.y + 0.25),
                 ),
                 Math(
                     "sin(x)",
                     font_size=38,
                     color=blue,
-                    transform=affine2d(position=(sin_point.x, sin_point.y + 0.42)),
+                    position=(sin_point.x, sin_point.y + 0.42),
                 ),
                 Math(
                     "cos(x)",
                     font_size=38,
                     color=red,
-                    transform=affine2d(position=(cos_point.x + 1.05, cos_point.y)),
+                    position=(cos_point.x + 1.05, cos_point.y),
                 ),
                 Math(
                     "x = 2 pi",
                     font_size=34,
-                    transform=affine2d(position=(tau_point.x + 1.05, tau_point.y + 0.40)),
+                    position=(tau_point.x + 1.05, tau_point.y + 0.40),
                 ),
             ]
         )
@@ -488,23 +547,49 @@ class ArgMinExample(Scene):
         self.graph = self.ax.plot(func, x_range=(0, 10), color=self.maroon)
 
         axis_parts = [
-            Line(self.ax.c2p(0, 0), self.ax.c2p(10, 0), stroke=WHITE, stroke_width=0.026),
-            Line(self.ax.c2p(0, 0), self.ax.c2p(0, 100), stroke=WHITE, stroke_width=0.026),
+            Line(
+                self.ax.c2p(0, 0), self.ax.c2p(10, 0), stroke=WHITE, stroke_width=0.026
+            ),
+            Line(
+                self.ax.c2p(0, 0), self.ax.c2p(0, 100), stroke=WHITE, stroke_width=0.026
+            ),
         ]
         for x in range(11):
             q = self.ax.c2p(x, 0)
-            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x, q.y - 0.07),
+                    (q.x, q.y + 0.07),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         for y in range(0, 101, 10):
             q = self.ax.c2p(0, y)
-            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x - 0.07, q.y),
+                    (q.x + 0.07, q.y),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         self.axes = Group(axis_parts)
 
         x_end = self.ax.c2p(10, 0)
         y_end = self.ax.c2p(0, 100)
         self.labels = Group(
             [
-                Math("x", font_size=32, transform=affine2d(position=(x_end.x + 0.32, x_end.y + 0.18))),
-                Math("f(x)", font_size=32, transform=affine2d(position=(y_end.x + 0.45, y_end.y + 0.28))),
+                Math(
+                    "x",
+                    font_size=32,
+                    position=(x_end.x + 0.32, x_end.y + 0.18),
+                ),
+                Math(
+                    "f(x)",
+                    font_size=32,
+                    position=(y_end.x + 0.45, y_end.y + 0.28),
+                ),
             ]
         )
 
@@ -513,10 +598,15 @@ class ArgMinExample(Scene):
             p = self.ax.c2p(x, func(x))
             r = 0.08
             return Polygon(
-                [(p.x + r * cos(TAU * i / 24), p.y + r * sin(TAU * i / 24)) for i in range(24)]
+                [
+                    (p.x + r * cos(TAU * i / 24), p.y + r * sin(TAU * i / 24))
+                    for i in range(24)
+                ]
             ).geometry
 
-        self.dot = DynamicGeometryObject2D(dot_geometry, style=Style.solid(WHITE), z_index=10)
+        self.dot = DynamicGeometryObject2D(
+            dot_geometry, fill=WHITE, stroke=None, z_index=10
+        )
 
     def construct(self):
         tracker = self.add(self.tracker)
@@ -540,23 +630,51 @@ class GraphAreaPlot(Scene):
             return 0.8 * x * x - 3 * x + 4
 
         axis_parts = [
-            Line(self.ax.c2p(0, 0), self.ax.c2p(5, 0), stroke=WHITE, stroke_width=0.026),
-            Line(self.ax.c2p(0, 0), self.ax.c2p(0, 6), stroke=WHITE, stroke_width=0.026),
+            Line(
+                self.ax.c2p(0, 0), self.ax.c2p(5, 0), stroke=WHITE, stroke_width=0.026
+            ),
+            Line(
+                self.ax.c2p(0, 0), self.ax.c2p(0, 6), stroke=WHITE, stroke_width=0.026
+            ),
         ]
         for x in range(6):
             q = self.ax.c2p(x, 0)
-            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x, q.y - 0.07),
+                    (q.x, q.y + 0.07),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         for y in range(7):
             q = self.ax.c2p(0, y)
-            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x - 0.07, q.y),
+                    (q.x + 0.07, q.y),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         self.axes = Group(axis_parts)
 
         self.curve1 = self.ax.plot(f1, x_range=(0, 4), color=blue_c)
         self.curve2 = self.ax.plot(f2, x_range=(0, 4), color=green_b)
         self.lines = Group(
             [
-                Line(self.ax.c2p(2, 0), self.ax.c2p(2, f1(2)), stroke=yellow, stroke_width=0.03),
-                Line(self.ax.c2p(3, 0), self.ax.c2p(3, f1(3)), stroke=yellow, stroke_width=0.03),
+                Line(
+                    self.ax.c2p(2, 0),
+                    self.ax.c2p(2, f1(2)),
+                    stroke=yellow,
+                    stroke_width=0.03,
+                ),
+                Line(
+                    self.ax.c2p(3, 0),
+                    self.ax.c2p(3, f1(3)),
+                    stroke=yellow,
+                    stroke_width=0.03,
+                ),
             ]
         )
 
@@ -592,15 +710,31 @@ class GraphAreaPlot(Scene):
         x_end, y_end = self.ax.c2p(5, 0), self.ax.c2p(0, 6)
         self.labels = Group(
             [
-                Math("2", font_size=24, transform=affine2d(position=(p2.x, p2.y - 0.38))),
-                Math("3", font_size=24, transform=affine2d(position=(p3.x, p3.y - 0.38))),
-                Math("x", font_size=32, transform=affine2d(position=(x_end.x + 0.34, x_end.y + 0.18))),
-                Math("y", font_size=32, transform=affine2d(position=(y_end.x + 0.28, y_end.y + 0.25))),
+                Math("2", font_size=24, position=(p2.x, p2.y - 0.38)),
+                Math("3", font_size=24, position=(p3.x, p3.y - 0.38)),
+                Math(
+                    "x",
+                    font_size=32,
+                    position=(x_end.x + 0.34, x_end.y + 0.18),
+                ),
+                Math(
+                    "y",
+                    font_size=32,
+                    position=(y_end.x + 0.28, y_end.y + 0.25),
+                ),
             ]
         )
 
     def construct(self):
-        self.add(self.axes, self.curve1, self.curve2, self.lines, self.riemann, self.area, self.labels)
+        self.add(
+            self.axes,
+            self.curve1,
+            self.curve2,
+            self.lines,
+            self.riemann,
+            self.area,
+            self.labels,
+        )
 
 
 class PolygonOnAxes(Scene):
@@ -614,15 +748,33 @@ class PolygonOnAxes(Scene):
         yellow_d = Color(244, 211, 69)
 
         axis_parts = [
-            Line(self.ax.c2p(0, 0), self.ax.c2p(10, 0), stroke=WHITE, stroke_width=0.026),
-            Line(self.ax.c2p(0, 0), self.ax.c2p(0, 10), stroke=WHITE, stroke_width=0.026),
+            Line(
+                self.ax.c2p(0, 0), self.ax.c2p(10, 0), stroke=WHITE, stroke_width=0.026
+            ),
+            Line(
+                self.ax.c2p(0, 0), self.ax.c2p(0, 10), stroke=WHITE, stroke_width=0.026
+            ),
         ]
         for x in range(11):
             q = self.ax.c2p(x, 0)
-            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x, q.y - 0.07),
+                    (q.x, q.y + 0.07),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         for y in range(11):
             q = self.ax.c2p(0, y)
-            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x - 0.07, q.y),
+                    (q.x + 0.07, q.y),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         self.axes = Group(axis_parts)
 
         self.graph = self.ax.plot(
@@ -644,16 +796,23 @@ class PolygonOnAxes(Scene):
             p = self.ax.c2p(x, self.k / x)
             r = 0.08
             return Polygon(
-                [(p.x + r * cos(TAU * i / 24), p.y + r * sin(TAU * i / 24)) for i in range(24)]
+                [
+                    (p.x + r * cos(TAU * i / 24), p.y + r * sin(TAU * i / 24))
+                    for i in range(24)
+                ]
             ).geometry
 
         self.polygon = DynamicGeometryObject2D(
             rect_geometry,
-            style=Style.paint(blue.with_alpha(128), yellow_b, 1 / 90),
+            fill=blue.with_alpha(128),
+            stroke=yellow_b,
+            stroke_width=1 / 90,
             opacity=0,
             z_index=-1,
         )
-        self.dot = DynamicGeometryObject2D(dot_geometry, style=Style.solid(WHITE), z_index=10)
+        self.dot = DynamicGeometryObject2D(
+            dot_geometry, fill=WHITE, stroke=None, z_index=10
+        )
 
     def construct(self):
         tracker = self.add(self.tracker)
@@ -672,15 +831,33 @@ class HeatDiagramPlot(Scene):
         yellow = Color(255, 255, 0)
 
         axis_parts = [
-            Line(self.ax.c2p(0, 0), self.ax.c2p(40, 0), stroke=WHITE, stroke_width=0.026),
-            Line(self.ax.c2p(0, -8), self.ax.c2p(0, 32), stroke=WHITE, stroke_width=0.026),
+            Line(
+                self.ax.c2p(0, 0), self.ax.c2p(40, 0), stroke=WHITE, stroke_width=0.026
+            ),
+            Line(
+                self.ax.c2p(0, -8), self.ax.c2p(0, 32), stroke=WHITE, stroke_width=0.026
+            ),
         ]
         for x in range(0, 41, 5):
             q = self.ax.c2p(x, 0)
-            axis_parts.append(Line((q.x, q.y - 0.07), (q.x, q.y + 0.07), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x, q.y - 0.07),
+                    (q.x, q.y + 0.07),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         for y in range(-5, 31, 5):
             q = self.ax.c2p(0, y)
-            axis_parts.append(Line((q.x - 0.07, q.y), (q.x + 0.07, q.y), stroke=WHITE, stroke_width=0.022))
+            axis_parts.append(
+                Line(
+                    (q.x - 0.07, q.y),
+                    (q.x + 0.07, q.y),
+                    stroke=WHITE,
+                    stroke_width=0.022,
+                )
+            )
         self.axes = Group(axis_parts)
 
         values = [(0, 20), (8, 0), (38, 0), (39, -5)]
@@ -691,16 +868,22 @@ class HeatDiagramPlot(Scene):
         labels = []
         for x in range(0, 40, 5):
             q = self.ax.c2p(x, 0)
-            labels.append(Math(str(x), font_size=24, transform=affine2d(position=(q.x, q.y - 0.38))))
+            labels.append(Math(str(x), font_size=24, position=(q.x, q.y - 0.38)))
         for y in range(-5, 31, 5):
             q = self.ax.c2p(0, y)
-            labels.append(Math(str(y), font_size=24, transform=affine2d(position=(q.x - 0.42, q.y))))
+            labels.append(Math(str(y), font_size=24, position=(q.x - 0.42, q.y)))
         x_end, y_end = self.ax.c2p(40, 0), self.ax.c2p(0, 32)
         labels.extend(
             [
-                Math("Delta Q", font_size=32, transform=affine2d(position=(x_end.x + 0.55, x_end.y + 0.18))),
                 Math(
-                    "T[degree C]", font_size=32, transform=affine2d(position=(y_end.x + 0.62, y_end.y + 0.25))
+                    "Delta Q",
+                    font_size=32,
+                    position=(x_end.x + 0.55, x_end.y + 0.18),
+                ),
+                Math(
+                    "T[degree C]",
+                    font_size=32,
+                    position=(y_end.x + 0.62, y_end.y + 0.25),
                 ),
             ]
         )
@@ -713,7 +896,9 @@ class HeatDiagramPlot(Scene):
 class FollowingGraphCamera(Scene):
     def setup(self):
         self.canvas = CANVAS
-        self.curve = path([(-4.5 + i * 0.04, 1.2 * sin(i * 0.06)) for i in range(225)], BLUE, 0.04)
+        self.curve = path(
+            [(-4.5 + i * 0.04, 1.2 * sin(i * 0.06)) for i in range(225)], BLUE, 0.04
+        )
         self.point = dot(-4.5, 0, ORANGE, 0.12)
 
     def construct(self):
@@ -757,7 +942,7 @@ class MovingZoomedSceneAround(Scene):
             color=PURPLE,
             font_size=34,
             opacity=0,
-            transform=affine2d(position=(-2, 1.55)),
+            position=(-2, 1.55),
             z_index=31,
         )
 
@@ -787,7 +972,8 @@ class MovingZoomedSceneAround(Scene):
             width=6,
             height=1,
             duration=12,
-            transform=affine2d(position=(-2, 2), scale=0.3),
+            position=(-2, 2),
+            scale=0.3,
             z_index=10,
         )
         self.display_frame = Rectangle(
@@ -796,7 +982,8 @@ class MovingZoomedSceneAround(Scene):
             fill=None,
             stroke=RED,
             stroke_width=6 / 90,
-            transform=affine2d(position=(-2, 2), scale=0.3),
+            position=(-2, 2),
+            scale=0.3,
             z_index=20,
         )
         self.zoom_text = Text(
@@ -804,12 +991,14 @@ class MovingZoomedSceneAround(Scene):
             color=RED,
             font_size=34,
             opacity=0,
-            transform=affine2d(position=(3.6, 1.15)),
+            position=(3.6, 1.15),
             z_index=31,
         )
 
     def construct(self):
-        image, dot_obj, frame, frame_text = self.add(self.image, self.dot, self.source_frame, self.frame_text)
+        image, dot_obj, frame, frame_text = self.add(
+            self.image, self.dot, self.source_frame, self.frame_text
+        )
 
         # 0..1
         with self.parallel(duration=1):
@@ -871,7 +1060,11 @@ class FixedInFrameMObjectTest(Scene):
         phi = 75 * DEGREES
         theta = -45 * DEGREES
         radius = 8
-        position = Vec3(radius * sin(phi) * cos(theta), radius * sin(phi) * sin(theta), radius * cos(phi))
+        position = Vec3(
+            radius * sin(phi) * cos(theta),
+            radius * sin(phi) * sin(theta),
+            radius * cos(phi),
+        )
         super().__init__(
             canvas=CANVAS,
             camera3d=Camera3D(
@@ -930,7 +1123,7 @@ class FixedInFrameMObjectTest(Scene):
         self.label = Text(
             "This is a 3D text",
             font_size=48,
-            transform=affine2d(position=(-4.35, 3.05)),
+            position=(-4.35, 3.05),
             z_index=20,
         )
 
@@ -942,12 +1135,19 @@ class FixedInFrameMObjectTest(Scene):
 class ThreeDLightSourcePosition(Scene):
     def __init__(self):
         super().__init__(
-            canvas=CANVAS, camera3d=Camera3D(position=Vec3(5, 4, 7), target=Vec3(), fov_y_degrees=34)
+            canvas=CANVAS,
+            camera3d=Camera3D(position=Vec3(5, 4, 7), target=Vec3(), fov_y_degrees=34),
         )
 
     def setup(self):
-        self.platform = Box3D(Vec3(2.2, 2.2, 0.25), color=BLUE, transform=Transform3D.translation(-1.3, 0, 0))
-        self.cube = Box3D(Vec3(2, 2, 2), color=GREEN, transform=Transform3D.translation(1.3, 0, 0.6))
+        self.platform = Box3D(
+            Vec3(2.2, 2.2, 0.25),
+            color=BLUE,
+            transform=Transform3D.translation(-1.3, 0, 0),
+        )
+        self.cube = Box3D(
+            Vec3(2, 2, 2), color=GREEN, transform=Transform3D.translation(1.3, 0, 0.6)
+        )
 
     def construct(self):
         self.add(self.platform, self.cube)
@@ -956,7 +1156,10 @@ class ThreeDLightSourcePosition(Scene):
 class ThreeDCameraRotation(Scene):
     def __init__(self):
         super().__init__(
-            canvas=CANVAS, camera3d=Camera3D(position=Vec3(5.5, 4.5, 7.5), target=Vec3(), fov_y_degrees=34)
+            canvas=CANVAS,
+            camera3d=Camera3D(
+                position=Vec3(5.5, 4.5, 7.5), target=Vec3(), fov_y_degrees=34
+            ),
         )
 
     def setup(self):
@@ -965,7 +1168,9 @@ class ThreeDCameraRotation(Scene):
     def construct(self):
         cube = self.add(self.cube)
         cube.transform_function(
-            lambda a: Transform3D.rotation_z(TAU * a) @ Transform3D.rotation_y(TAU * 0.7 * a),
+            lambda a: (
+                Transform3D.rotation_z(TAU * a) @ Transform3D.rotation_y(TAU * 0.7 * a)
+            ),
             duration=6,
             easing=Easing.LINEAR,
         )
@@ -974,7 +1179,10 @@ class ThreeDCameraRotation(Scene):
 class ThreeDCameraIllusionRotation(Scene):
     def __init__(self):
         super().__init__(
-            canvas=CANVAS, camera3d=Camera3D(position=Vec3(5.5, 4.2, 7.5), target=Vec3(), fov_y_degrees=34)
+            canvas=CANVAS,
+            camera3d=Camera3D(
+                position=Vec3(5.5, 4.2, 7.5), target=Vec3(), fov_y_degrees=34
+            ),
         )
 
     def setup(self):
@@ -988,13 +1196,18 @@ class ThreeDCameraIllusionRotation(Scene):
         bars = self.add(*self.bars)
         with self.parallel(duration=6):
             for bar in bars:
-                bar.transform_function(lambda a: Transform3D.rotation_z(TAU * a), easing=Easing.LINEAR)
+                bar.transform_function(
+                    lambda a: Transform3D.rotation_z(TAU * a), easing=Easing.LINEAR
+                )
 
 
 class ThreeDSurfacePlot(Scene):
     def __init__(self):
         super().__init__(
-            canvas=CANVAS, camera3d=Camera3D(position=Vec3(6.5, 5.2, 8.5), target=Vec3(), fov_y_degrees=34)
+            canvas=CANVAS,
+            camera3d=Camera3D(
+                position=Vec3(6.5, 5.2, 8.5), target=Vec3(), fov_y_degrees=34
+            ),
         )
 
     def setup(self):
@@ -1020,18 +1233,20 @@ class OpeningManim(Scene):
         self.canvas = CANVAS
 
         self.title = Text("This is some LaTeX", font_size=46, reveal=0)
-        self.title.move_to((0, 0.65))
-        self.basel = Math('sum_(n=1)^infinity 1/n^2 = pi^2/6', font_size=48, opacity=0)
-        self.basel.move_to((0, -0.85))
+        self.title.move(to=(0, 0.65))
+        self.basel = Math("sum_(n=1)^infinity 1/n^2 = pi^2/6", font_size=48, opacity=0)
+        self.basel.move(to=(0, -0.85))
 
         self.transform_title = Text("That was a transform", font_size=48)
-        self.transform_title.move_to((-4.25, 3.08))
+        self.transform_title.move(to=(-4.25, 3.08))
 
-        self.grid_title = Text('This is a grid', font_size=72, opacity=0)
-        self.grid_title.move_to((-4.35, 3.08))
+        self.grid_title = Text("This is a grid", font_size=72, opacity=0)
+        self.grid_title.move(to=(-4.35, 3.08))
 
-        self.grid_transform_title = Text('That was a non-linear function\napplied to the grid', font_size=48)
-        self.grid_transform_title.move_to((-3.45, 2.75))
+        self.grid_transform_title = Text(
+            "That was a non-linear function\napplied to the grid", font_size=48
+        )
+        self.grid_transform_title.move(to=(-3.45, 2.75))
 
         self.grid_reveal = ScalarValue(0)
         self.grid_deform = ScalarValue(0)
@@ -1078,7 +1293,12 @@ class OpeningManim(Scene):
                 for point in points:
                     tx = point.x + sin(point.y)
                     ty = point.y + sin(point.x)
-                    transformed.append(Vec2(point.x + (tx - point.x) * deform, point.y + (ty - point.y) * deform))
+                    transformed.append(
+                        Vec2(
+                            point.x + (tx - point.x) * deform,
+                            point.y + (ty - point.y) * deform,
+                        )
+                    )
 
                 if local <= 1e-9:
                     p0 = transformed[0]
@@ -1093,7 +1313,9 @@ class OpeningManim(Scene):
                 if whole < segment_count and fraction > 1e-9:
                     a = transformed[whole]
                     b = transformed[whole + 1]
-                    visible_points.append(Vec2(a.x + (b.x - a.x) * fraction, a.y + (b.y - a.y) * fraction))
+                    visible_points.append(
+                        Vec2(a.x + (b.x - a.x) * fraction, a.y + (b.y - a.y) * fraction)
+                    )
                 if len(visible_points) == 1:
                     visible_points.append(visible_points[0])
                 return Polyline(tuple(visible_points)).geometry
@@ -1101,7 +1323,8 @@ class OpeningManim(Scene):
             self.grid_lines.append(
                 DynamicGeometryObject2D(
                     geometry_at,
-                    style=Style.outline(color, width),
+                    stroke=color,
+                    stroke_width=width,
                     z_index=0,
                 )
             )
@@ -1148,14 +1371,16 @@ class SineCurveUnitCircle(Scene):
 
         self.x_axis = Line((-6, 0), (6, 0), stroke=WHITE, stroke_width=4 / 90)
         self.y_axis = Line((-4, -2), (-4, 2), stroke=WHITE, stroke_width=4 / 90)
-        self.circle = Circle(1, position=(-4, 0), fill=None, stroke=WHITE, stroke_width=4 / 90)
+        self.circle = Circle(
+            1, position=(-4, 0), fill=None, stroke=WHITE, stroke_width=4 / 90
+        )
 
         self.labels = Group(
             [
-                Math("pi", font_size=48, transform=affine2d(position=(-1, -0.45))),
-                Math("2 pi", font_size=48, transform=affine2d(position=(1, -0.45))),
-                Math("3 pi", font_size=48, transform=affine2d(position=(3, -0.45))),
-                Math("4 pi", font_size=48, transform=affine2d(position=(5, -0.45))),
+                Math("pi", font_size=48, position=(-1, -0.45)),
+                Math("2 pi", font_size=48, position=(1, -0.45)),
+                Math("3 pi", font_size=48, position=(3, -0.45)),
+                Math("4 pi", font_size=48, position=(5, -0.45)),
             ]
         )
 
@@ -1177,7 +1402,9 @@ class SineCurveUnitCircle(Scene):
                 ]
             ).geometry
 
-        self.dot = DynamicGeometryObject2D(dot_geometry, style=Style.solid(Color(255, 255, 0)), z_index=8)
+        self.dot = DynamicGeometryObject2D(
+            dot_geometry, fill=Color(255, 255, 0), stroke=None, z_index=8
+        )
 
         blue = Color(88, 196, 221)
         yellow_a = Color(255, 241, 182)
@@ -1211,13 +1438,18 @@ class SineCurveUnitCircle(Scene):
             )
             return Polyline(points).geometry
 
-        self.radial = DynamicGeometryObject2D(radial_geometry, style=Style.outline(blue, 4 / 90), z_index=2)
+        self.radial = DynamicGeometryObject2D(
+            radial_geometry, stroke=blue, stroke_width=4 / 90, z_index=2
+        )
         self.connector = DynamicGeometryObject2D(
             connector_geometry,
-            style=Style.outline(yellow_a, 2 / 90),
+            stroke=yellow_a,
+            stroke_width=2 / 90,
             z_index=3,
         )
-        self.curve = DynamicGeometryObject2D(curve_geometry, style=Style.outline(yellow_d, 4 / 90), z_index=4)
+        self.curve = DynamicGeometryObject2D(
+            curve_geometry, stroke=yellow_d, stroke_width=4 / 90, z_index=4
+        )
 
     def construct(self):
         offset = self.add(self.offset)

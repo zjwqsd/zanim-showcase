@@ -2,7 +2,7 @@
 
 The examples have two jobs and are kept separate on purpose:
 
-- [`showcase/`](showcase/) is the executable tutorial. Read it in order; every primary scene is a `Scene` subclass with `setup()` and `construct()` using only public Zanim authoring APIs; no builder function or decorator is required.
+- [`showcase/`](showcase/) is the executable tutorial. Read it in order; every primary scene is a `Scene` subclass using only public Zanim authoring APIs. Most short scenes need only `construct()`; `setup()` is optional for heavier preparation.
 - [`extras/`](extras/) contains complete, heavier animations that show what the framework can do after the tutorial concepts are familiar.
 
 `janim/` is a regression/reference suite that reimplements visible effects from public JAnim examples with Zanim's own APIs. Thanks to the JAnim project for inspiration in animation API design, effects, and example organization. This directory is not an API-compatibility layer and does not define Zanim's API design.

@@ -91,16 +91,29 @@ function extractPythonClass(source, className) {
 }
 
 function cleanPythonSource(source, selector = '') {
-  const selected = extractPythonClass(source, selector)
-  if (selected) return `# import 与共享辅助函数已省略；完整文件可从下方链接打开。\n\n${selected}`
+  const standardImports = source
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim()
+      if (!(trimmed.startsWith('from ') || trimmed.startsWith('import '))) return false
+      return !trimmed.includes('zanim') && !trimmed.startsWith('from __future__')
+    })
+    .join('\n')
 
-  const clean = stripPythonImports(source)
+  let clean = stripPythonImports(source)
+  clean = clean.replace(/^\s*(?:"""[\s\S]*?"""|'''[\s\S]*?''')\s*/, '')
   const classMatches = [...clean.matchAll(/^class\s+(\w+)\b/gm)]
-  if (classMatches.length === 1) {
-    const one = extractPythonClass(clean, classMatches[0][1])
-    if (one) return `# import 已省略。\n\n${one}`
+  const prefix = [standardImports, 'from zanim import *'].filter(Boolean).join('\n')
+
+  if (selector) {
+    if (classMatches.length === 1) return `${prefix}\n\n${clean}`
+    const selected = extractPythonClass(clean, selector)
+    if (selected) return `${prefix}\n\n${selected}`
   }
-  return clean
+
+  if (classMatches.length === 1) return `${prefix}\n\n${clean}`
+  return `${prefix}\n\n${clean}`
 }
 
 function escapeRegex(text) {

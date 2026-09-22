@@ -6,6 +6,7 @@ from pathlib import Path
 
 from zanim import (
     DOWN,
+    PARENT,
     RIGHT,
     Axes,
     Canvas,
@@ -19,10 +20,10 @@ from zanim import (
     NumberFormat,
     Polygon,
     Polyline,
+    Row,
+    Column,
     Scene,
     Square,
-    StrokeStyle,
-    Style,
     Text,
     Transform2D,
     Vec2,
@@ -64,25 +65,6 @@ LIGHT_BROWN = Color(183, 139, 100)
 PURPLE_E = Color(92, 55, 130)
 TAU = math.tau
 PI = math.pi
-
-
-def stroke(color=WHITE, width=0.035, alpha=255):
-    return StrokeStyle(color.with_alpha(alpha), width)
-
-
-def outlined(color=WHITE, fill=None, width=0.035):
-    return (
-        Style.outline(color, width) if fill is None else Style.paint(fill, color, width)
-    )
-
-
-def filled(color, alpha=255, stroke_color=None, stroke_width=0.025):
-    fill = color.with_alpha(alpha)
-    return (
-        Style.solid(fill)
-        if stroke_color is None
-        else Style.paint(fill, stroke_color, stroke_width)
-    )
 
 
 def star_points(outer=1.0, inner=0.45, count=5, phase=PI / 2):
@@ -148,25 +130,21 @@ def sector_polygon(
     )
 
 
-def show_now(sc: Scene, obj):
-    # add() itself means "exists from now"; no opacity trick is needed.
-    sc.add(obj)
-    return obj
-
-
 def add_reveal_group(sc: Scene, group: Group, duration=1.0, lag=0.04):
-    for child in group.children:
+    raw_children = group.children
+    for child in raw_children:
         if isinstance(child, (Text, Math)):
             child.reveal = 0.0
         else:
             child.opacity = 0.0
-    sc.add(group)
+
+    group = sc.add(group)
     with sc.parallel():
-        for i, child in enumerate(group.children):
-            if isinstance(child, (Text, Math)):
-                sc.reveal(child, duration=max(0.15, duration - lag * i), at=lag * i)
+        for i, (raw, child) in enumerate(zip(raw_children, group.children)):
+            if isinstance(raw, (Text, Math)):
+                child.create(duration=max(0.15, duration - lag * i), at=lag * i)
             else:
-                sc.fade_in(child, duration=max(0.15, duration - lag * i), at=lag * i)
+                child.fade_in(duration=max(0.15, duration - lag * i), at=lag * i)
 
 
 class HelloJAnimExample(Scene):
@@ -199,12 +177,12 @@ class BasicAnimationExample(Scene):
         self.wait(1)
         circle.create()
         circle.affine(position=(-3, 0), scale=1.5)
-        circle.paint(fill=RED.with_alpha(128), stroke=RED, stroke_width=0.045)
+        circle.style(fill=RED.with_alpha(128), stroke=RED, stroke_width=0.045)
         star.transform_function(
             lambda a: affine2d(rotation=TAU * a, scale=a), duration=1
         )
         star.affine(position=(3, 0), scale=1.5)
-        star.paint(fill=YELLOW.with_alpha(128), stroke=YELLOW, stroke_width=0.045)
+        star.style(fill=YELLOW.with_alpha(128), stroke=YELLOW, stroke_width=0.045)
         self.wait(1)
 
 
@@ -213,7 +191,7 @@ def rich_line(parts, font_size=28):
     for text, color, size_scale in parts:
         children.append(Text(text, font_size=font_size * size_scale, color=color))
     g = Group(children)
-    g.arrange(RIGHT, buff=0.02)
+    Row(gap=0.02).place(*g.children)
     return g
 
 
@@ -236,20 +214,20 @@ class TextExample(Scene):
                 (" to the text.", WHITE, 1),
             ]
         )
-        self.title.move_to(Vec2(0, 0.7))
-        self.d0.move_to(Vec2(0, -0.6))
-        self.d1.move_to(Vec2(0, -0.6))
+        self.title.move(to=Vec2(0, 0.7))
+        self.d0.move(to=Vec2(0, -0.6))
+        self.d1.move(to=Vec2(0, -0.6))
         self.d0.opacity = 0.0
         self.d1.opacity = 0.0
 
     def construct(self) -> None:
-        self.add(self.title, self.d0, self.d1)
+        title, d0, d1 = self.add(self.title, self.d0, self.d1)
         self.wait(1)
-        self.reveal(self.title, duration=1)
-        self.fade_in(self.d0, duration=1)
+        title.create(duration=1)
+        d0.fade_in(duration=1)
         with self.parallel():
-            self.fade_out(self.d0, duration=1)
-            self.fade_in(self.d1, duration=1)
+            d0.fade_out(duration=1)
+            d1.fade_in(duration=1)
         self.wait(1)
 
 
@@ -267,14 +245,17 @@ class TypstExample(Scene):
             Math('"area" = pi dot "radius"^2', font_size=34),
             Math('cal(A) := { x in RR | x "is natural" }', font_size=31),
             Math("5 < 17", font_size=34),
-            Text("You can also use TypstDoc, which automatically align to the top of the viewport,", font_size=24),
+            Text(
+                "You can also use TypstDoc, which automatically align to the top of the viewport,",
+                font_size=24,
+            ),
             Text("instead of the center.", font_size=24),
         ]
         for item in self.lines:
             item.reveal = 0.0
         self.doc = Group(self.lines)
-        self.doc.arrange(DOWN, buff=0.25)
-        self.doc.move_to(Vec2(0, 0.3))
+        Column(gap=0.25).place(*self.doc.children)
+        self.doc.move(to=Vec2(0, 0.3))
 
         self.cells = [
             Text("TypstText", font_size=34, color=BLUE),
@@ -288,29 +269,29 @@ class TypstExample(Scene):
         for item, pos in zip(
             self.cells, [Vec2(-3, 0.8), Vec2(3, 0.8), Vec2(-3, -0.8), Vec2(3, -0.8)]
         ):
-            item.move_to(pos)
+            item.move(to=pos)
 
     def construct(self) -> None:
-        self.add(self.doc)
+        doc = self.add(self.doc)
         with self.parallel():
-            for i, item in enumerate(self.lines):
-                self.reveal(item, duration=3.5, at=i * 0.12)
+            for i, item in enumerate(doc.children):
+                item.create(duration=3.5, at=i * 0.12)
         self.wait(1)
-        self.fade_out(self.doc, duration=1)
+        doc.fade_out(duration=1)
 
-        self.add(self.grid)
+        grid = self.add(self.grid)
         with self.parallel():
-            for i, item in enumerate(self.cells):
-                self.reveal(item, duration=1.5, at=i * 0.10)
+            for i, item in enumerate(grid.children):
+                item.create(duration=1.5, at=i * 0.10)
         self.wait(1)
-        self.fade_out(self.grid, duration=1)
+        grid.fade_out(duration=1)
 
 
 def token_formula(tokens, font_size=95):
     objs = [Math(tok, font_size=font_size) for tok in tokens]
     g = Group(objs)
-    g.arrange(RIGHT, buff=0.04)
-    g.move_to(Vec2())
+    Row(gap=0.04).place(*g.children)
+    g.move(to=Vec2())
     return g, objs
 
 
@@ -320,17 +301,17 @@ class TypstColorizeExample(Scene):
         self.fps = 60
         self.specs = [
             ("cos", 95, -2.75, 0),
-            ("2", 56, -2.02, .34),
+            ("2", 56, -2.02, 0.34),
             ("theta", 95, -1.58, 0),
-            ("+", 95, -.68, 0),
-            ("sin", 95, .10, 0),
-            ("2", 56, .79, .34),
+            ("+", 95, -0.68, 0),
+            ("sin", 95, 0.10, 0),
+            ("2", 56, 0.79, 0.34),
             ("theta", 95, 1.23, 0),
             ("=", 95, 2.13, 0),
             ("1", 95, 2.86, 0),
         ]
         self.objs = [
-            Math(text, font_size=size, transform=affine2d(position=(x, y)))
+            Math(text, font_size=size, position=(x, y))
             for text, size, x, y in self.specs
         ]
 
@@ -339,12 +320,12 @@ class TypstColorizeExample(Scene):
         self.wait()
 
         def recolor(index, color):
-            text, size, _, _ = self.specs[index]
+            text, size, x, y = self.specs[index]
             replacement = Math(
                 text,
                 font_size=size,
                 color=color,
-                transform=self.objs[index].transform,
+                position=(x, y),
                 opacity=0,
             )
             next_obj = self.add(replacement)
@@ -359,36 +340,106 @@ class TypstColorizeExample(Scene):
         recolor(6, ORANGE)
         self.wait()
 
-        with self.parallel():
-            for index in (2, 6):
-                text, size, _, _ = self.specs[index]
-                replacement = Math(
-                    text,
-                    font_size=size,
-                    color=GREEN,
-                    transform=self.objs[index].transform,
-                    opacity=0,
+        replacements = []
+        for index in (2, 6):
+            text, size, x, y = self.specs[index]
+            replacements.append(
+                (
+                    index,
+                    self.add(
+                        Math(
+                            text,
+                            font_size=size,
+                            color=GREEN,
+                            position=(x, y),
+                            opacity=0,
+                        )
+                    ),
                 )
-                next_obj = self.add(replacement)
+            )
+        with self.parallel():
+            for index, next_obj in replacements:
                 objs[index].fade_out()
                 next_obj.fade_in()
                 objs[index] = next_obj
 
-        with self.parallel():
-            for index in (1, 5):
-                replacement = Math(
-                    "2",
-                    font_size=56,
-                    color=RED,
-                    transform=self.objs[index].transform,
-                    opacity=0,
+        replacements = []
+        for index in (1, 5):
+            _, _, x, y = self.specs[index]
+            replacements.append(
+                (
+                    index,
+                    self.add(
+                        Math(
+                            "2",
+                            font_size=56,
+                            color=RED,
+                            position=(x, y),
+                            opacity=0,
+                        )
+                    ),
                 )
-                next_obj = self.add(replacement)
+            )
+        with self.parallel():
+            for index, next_obj in replacements:
                 objs[index].fade_out()
                 next_obj.fade_in()
                 objs[index] = next_obj
 
         self.wait()
+
+
+def _lerp_color(a: Color, b: Color, alpha: float) -> Color:
+    t = max(0.0, min(1.0, float(alpha)))
+    return Color(
+        round(a.r + (b.r - a.r) * t),
+        round(a.g + (b.g - a.g) * t),
+        round(a.b + (b.b - a.b) * t),
+        round(a.a + (b.a - a.a) * t),
+    )
+
+
+def _recolor_vector(document: VectorDocument, color: Color) -> VectorDocument:
+    return VectorDocument(
+        tuple(
+            VectorPath(
+                path.contours,
+                fill=color if path.fill is not None else None,
+                stroke=path.stroke,
+                group=path.group,
+            )
+            for path in document.paths
+        ),
+        document.width,
+        document.height,
+        document.group_count,
+    )
+
+
+def _pi_grid_document() -> VectorDocument:
+    glyph = Math("pi", font_size=34).document
+    paths = []
+    group_offset = 0
+    x_step, y_step = 0.68, 0.62
+    for row in range(10):
+        for col in range(10):
+            shift = Transform2D.translation(
+                (col - 4.5) * x_step,
+                (4.5 - row) * y_step,
+            )
+            moved = map_vector_document(glyph, shift.apply)
+            paths.extend(
+                VectorPath(
+                    path.contours,
+                    fill=path.fill,
+                    stroke=path.stroke,
+                    group=path.group + group_offset,
+                )
+                for path in moved.paths
+            )
+            group_offset += glyph.group_count
+    return VectorDocument(tuple(paths), 6.8, 6.2, group_offset)
+
 
 class AnimatingPiExample(Scene):
     def setup(self) -> None:
@@ -499,30 +550,42 @@ class NumberPlaneExample(Scene):
 
         for x in range(-7, 8):
             if x:
-                lines.append(Line((x, -4), (x, 4), stroke=blue_d, stroke_width=2 / 90, trim=0))
+                lines.append(
+                    Line((x, -4), (x, 4), stroke=blue_d, stroke_width=2 / 90, trim=0)
+                )
         for i in range(-13, 14, 2):
             x = i / 2
-            lines.append(Line((x, -4), (x, 4), stroke=faded, stroke_width=1 / 90, trim=0))
+            lines.append(
+                Line((x, -4), (x, 4), stroke=faded, stroke_width=1 / 90, trim=0)
+            )
         for y in range(-4, 5):
             if y:
-                lines.append(Line((-7, y), (7, y), stroke=blue_d, stroke_width=2 / 90, trim=0))
+                lines.append(
+                    Line((-7, y), (7, y), stroke=blue_d, stroke_width=2 / 90, trim=0)
+                )
         for i in range(-7, 8, 2):
             y = i / 2
-            lines.append(Line((-7, y), (7, y), stroke=faded, stroke_width=1 / 90, trim=0))
-        lines.extend([
-            Line((-7, 0), (7, 0), stroke=WHITE, stroke_width=2 / 90, trim=0),
-            Line((0, -4), (0, 4), stroke=WHITE, stroke_width=2 / 90, trim=0),
-        ])
+            lines.append(
+                Line((-7, y), (7, y), stroke=faded, stroke_width=1 / 90, trim=0)
+            )
+        lines.extend(
+            [
+                Line((-7, 0), (7, 0), stroke=WHITE, stroke_width=2 / 90, trim=0),
+                Line((0, -4), (0, 4), stroke=WHITE, stroke_width=2 / 90, trim=0),
+            ]
+        )
 
         self.lines = lines
         self.plane = Group(lines)
 
         xs = [(-7 + 14 * i / 319) for i in range(320)]
-        self.graph = Polyline([(x, math.sin(x)) for x in xs], stroke=BLUE, stroke_width=4 / 90, trim=0)
+        self.graph = Polyline(
+            [(x, math.sin(x)) for x in xs], stroke=BLUE, stroke_width=4 / 90, trim=0
+        )
 
     def construct(self) -> None:
         *lines, graph = self.add(*self.lines, self.graph)
-        self.wait(.2)
+        self.wait(0.2)
 
         stagger = (2 - 1.32) / (len(lines) - 1)
         with self.parallel():
@@ -544,6 +607,7 @@ class NumberPlaneExample(Scene):
             )
 
         self.wait()
+
 
 class UpdaterExample(Scene):
     def setup(self) -> None:
@@ -576,7 +640,7 @@ class UpdaterExample(Scene):
         def sq_geom(t):
             return RectangleGeometry(max(0.05, width_at(t)), 2.0)
 
-        square = DynamicGeometryObject2D(sq_geom, style=filled(BLUE_E, 255), z_index=0)
+        square = DynamicGeometryObject2D(sq_geom, fill=BLUE_E, stroke=None, z_index=0)
 
         def brace_geom(t):
             w = width_at(t)
@@ -595,16 +659,14 @@ class UpdaterExample(Scene):
             )
 
         brace = DynamicGeometryObject2D(
-            brace_geom, style=Style.outline(WHITE, 0.03), z_index=1
+            brace_geom, stroke=WHITE, stroke_width=0.03, z_index=1
         )
-        prefix = Text(
-            "Width =", font_size=25, transform=affine2d(position=(-0.55, 2.05))
-        )
+        prefix = Text("Width =", font_size=25, position=(-0.55, 2.05))
         number = DynamicNumber(
             width_at,
             number_format=NumberFormat(width=5, decimals=2, sign="space"),
             font_size=25,
-            transform=affine2d(position=(0.55, 2.05)),
+            position=(0.55, 2.05),
         )
         sc.add(square, brace, prefix, number)
         # Timeline length/phase boundaries are encoded in width_at.
@@ -664,7 +726,7 @@ class ArrowPointingExample(Scene):
                 )
             )
 
-        arrow = DynamicGeometryObject2D(arrow_poly, style=filled(YELLOW), z_index=2)
+        arrow = DynamicGeometryObject2D(arrow_poly, fill=YELLOW, stroke=None, z_index=2)
         sc.add(arrow)
 
 
@@ -692,12 +754,12 @@ class CombineUpdatersExample(Scene):
             return Transform2D.translation(x, y).rotate(rot)
 
         obj = DynamicGeometryObject2D(
-            lambda t: square_polygon(2.0, state(t)), style=Style.outline(WHITE, 0.04)
+            lambda t: square_polygon(2.0, state(t)), stroke=WHITE, stroke_width=0.04
         )
         obj = sc.add(obj)
         sc.wait(2)
         sc.wait(2)
-        obj.outline(BLUE, width=0.04, duration=2, easing=Easing.LINEAR)
+        obj.style(stroke=BLUE, stroke_width=0.04, duration=2, easing=Easing.LINEAR)
 
 
 class RotatingPieExample(Scene):
@@ -717,12 +779,13 @@ class RotatingPieExample(Scene):
                 )
             )
         self.pie = Group(sectors)
+        self.sector0_origin = sectors[0].origin
 
     def construct(self) -> None:
         sc = self
         pie = sc.add(self.pie)
         sector0 = pie.children[0]
-        base0 = sector0.transform_value
+        base0 = self.sector0_origin
         with sc.parallel():
             pie.transform_function(
                 lambda a: affine2d(rotation=TAU * a), duration=5, easing=Easing.LINEAR
@@ -730,8 +793,8 @@ class RotatingPieExample(Scene):
             sector0.transform_function(
                 lambda a: affine2d(
                     position=(
-                        base0.tx + math.sin(PI * a) / math.sqrt(2),
-                        base0.ty + math.sin(PI * a) / math.sqrt(2),
+                        base0.x + math.sin(PI * a) / math.sqrt(2),
+                        base0.y + math.sin(PI * a) / math.sqrt(2),
                     )
                 ),
                 duration=2,
@@ -765,22 +828,26 @@ class MarkedItemExample(Scene):
 
         tri1 = DynamicGeometryObject2D(
             lambda t: triangle_polygon(mark(local1, t), 0.20),
-            style=outlined(GREEN, None, 0.035),
+            stroke=GREEN,
+            stroke_width=0.035,
             z_index=2,
         )
         tri2 = DynamicGeometryObject2D(
             lambda t: triangle_polygon(mark(local2, t), 0.20),
-            style=outlined(BLUE, None, 0.035),
+            stroke=BLUE,
+            stroke_width=0.035,
             z_index=2,
         )
         d1 = DynamicGeometryObject2D(
             lambda t: circle_polygon(mark(local1, t), 0.055, 16),
-            style=filled(RED),
+            fill=RED,
+            stroke=None,
             z_index=3,
         )
         d2 = DynamicGeometryObject2D(
             lambda t: circle_polygon(mark(local2, t), 0.055, 16),
-            style=filled(RED),
+            fill=RED,
+            stroke=None,
             z_index=3,
         )
         sc.add(tri1, tri2, d1, d2)
@@ -821,7 +888,7 @@ def render_one(name: str, *, workers: int | None = None):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = OUT_DIR / f"{name}.mp4"
     resolved_workers = workers if workers is not None else WORKER_HINTS.get(name, 8)
-    sc.render_video(
+    sc.render(
         out,
         fps=30,
         workers=resolved_workers,

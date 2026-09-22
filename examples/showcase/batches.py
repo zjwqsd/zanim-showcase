@@ -4,16 +4,26 @@ from __future__ import annotations
 
 from math import cos, sin
 
-from zanim import DOWN, PI, TAU, TOP, Canvas, Color, Scene, Text, Vec2
-from zanim.batch import BatchObject2D, CircleSet, LineSet
+from zanim import (
+    DOWN,
+    PI,
+    TAU,
+    TOP,
+    BatchObject2D,
+    Canvas,
+    CircleSet,
+    Color,
+    LineSet,
+    Scene,
+    Text,
+    Vec2,
+)
 
 N = 420
 
 
 def circle_state(phase: float) -> CircleSet:
-    centers = []
-    radii = []
-    fills = []
+    centers, radii, fills = [], [], []
     for i in range(N):
         u = i / N
         angle = TAU * (u * 5.0 + phase)
@@ -25,13 +35,9 @@ def circle_state(phase: float) -> CircleSet:
 
 
 def line_state(phase: float) -> LineSet:
-    count = 180
-    starts = []
-    ends = []
-    colors = []
-    widths = []
-    for i in range(count):
-        u = i / count
+    starts, ends, colors, widths = [], [], [], []
+    for i in range(180):
+        u = i / 180
         a = TAU * u
         b = a + phase * PI
         starts.append(Vec2(2.0 * cos(a), 2.0 * sin(a)))
@@ -42,17 +48,17 @@ def line_state(phase: float) -> LineSet:
 
 
 class Batches(Scene):
-    def setup(self) -> None:
+    def construct(self) -> None:
         self.canvas = Canvas(1280, 720, 90)
         self.fps = 60
 
-        self.title = Text("600 primitives, two batch objects", font_size=31, opacity=0)
-        self.title.place(anchor=TOP, at=self.frame.top + 0.35 * DOWN)
-        self.dots = BatchObject2D(circle_state(0.0), z_index=2)
-        self.lines = BatchObject2D(line_state(0.0), z_index=0)
-
-    def construct(self) -> None:
-        lines, dots, title = self.add(self.lines, self.dots, self.title)
+        title = Text("600 primitives, two batch objects", font_size=31, opacity=0)
+        title.place(anchor=TOP, at=self.frame.top + 0.35 * DOWN)
+        lines, dots, title = self.add(
+            BatchObject2D(line_state(0.0), z_index=0),
+            BatchObject2D(circle_state(0.0), z_index=2),
+            title,
+        )
         title.fade_in(duration=0.6)
 
         with self.parallel(duration=2):

@@ -33,7 +33,6 @@ class ShowcaseCurriculumTests(unittest.TestCase):
                 self.assertNotIn("@preview_source", text)
                 self.assertNotIn("build_scene", text)
                 self.assertRegex(text, r"class \w+\(Scene\):")
-                self.assertIn("def setup(self)", text)
                 self.assertIn("def construct(self)", text)
 
                 scene = _load_scene(path)
