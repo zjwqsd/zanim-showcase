@@ -113,7 +113,7 @@ onBeforeUnmount(() => removeEventListener('hashchange', parseHash))
     <aside class="docs-sidebar" :class="{ open: mobileOpen }">
       <div class="sidebar-brand">
         <a href="#/" class="brand-title">Zanim</a>
-        <span>v0.7.0rc1</span>
+        <span>v0.7.0rc2</span>
       </div>
 
       <div class="sidebar-search">

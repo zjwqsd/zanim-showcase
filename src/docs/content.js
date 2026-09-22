@@ -280,7 +280,7 @@ export const pages = {
       {
         id: 'python',
         title: 'Python',
-        shell: 'pip install --pre zanim==0.7.0rc1',
+        shell: 'pip install --pre zanim==0.7.0rc2',
         bullets: [
           'Python 3.12+。',
           'FFmpeg 仅在编码视频时需要。',
